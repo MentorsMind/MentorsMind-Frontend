@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
 
 @layer base {
   body {
@@ -59,5 +62,10 @@
 }
 
 /* ── Font Size Scaling ──────────────────────────────────────── */
-.font-large  { font-size: 112.5%; }
-.font-xlarge { font-size: 125%; }
+.font-large {
+  font-size: 112.5%;
+}
+
+.font-xlarge {
+  font-size: 125%;
+}
