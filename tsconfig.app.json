@@ -11,11 +11,9 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "types": ["vite/client", "react", "react-dom"],
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
 
     /* Linting */
     "strict": true,

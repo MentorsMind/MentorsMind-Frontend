@@ -132,3 +132,13 @@
 .font-xlarge {
   font-size: 125%;
 }
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
