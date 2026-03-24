@@ -45,28 +45,28 @@ const AreaChart = lazy(loadAreaChart);
 type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile';
 
 const earningsData = [
-  { label: 'Jan', earnings: 1200, sessions: 8 },
-  { label: 'Feb', earnings: 1800, sessions: 12 },
-  { label: 'Mar', earnings: 1500, sessions: 10 },
-  { label: 'Apr', earnings: 2200, sessions: 15 },
-  { label: 'May', earnings: 2800, sessions: 18 },
-  { label: 'Jun', earnings: 3100, sessions: 21 },
+  { label: "Jan", earnings: 1200, sessions: 8 },
+  { label: "Feb", earnings: 1800, sessions: 12 },
+  { label: "Mar", earnings: 1500, sessions: 10 },
+  { label: "Apr", earnings: 2200, sessions: 15 },
+  { label: "May", earnings: 2800, sessions: 18 },
+  { label: "Jun", earnings: 3100, sessions: 21 },
 ];
 
 const sessionsByCategory = [
-  { label: 'Web Dev', value: 42 },
-  { label: 'Blockchain', value: 28 },
-  { label: 'Design', value: 18 },
-  { label: 'DevOps', value: 12 },
+  { label: "Web Dev", value: 42 },
+  { label: "Blockchain", value: 28 },
+  { label: "Design", value: 18 },
+  { label: "DevOps", value: 12 },
 ];
 
 const ratingTrend = [
-  { label: 'Jan', rating: 4.2 },
-  { label: 'Feb', rating: 4.4 },
-  { label: 'Mar', rating: 4.3 },
-  { label: 'Apr', rating: 4.6 },
-  { label: 'May', rating: 4.7 },
-  { label: 'Jun', rating: 4.8 },
+  { label: "Jan", rating: 4.2 },
+  { label: "Feb", rating: 4.4 },
+  { label: "Mar", rating: 4.3 },
+  { label: "Apr", rating: 4.6 },
+  { label: "May", rating: 4.7 },
+  { label: "Jun", rating: 4.8 },
 ];
 
 function AnalyticsDashboard() {
@@ -78,16 +78,38 @@ function AnalyticsDashboard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard title="Total Earnings" value="$12,400" change={18.2} changeLabel="vs last month" prefix="" />
-        <MetricCard title="Sessions" value={84} change={12.5} changeLabel="vs last month" />
-        <MetricCard title="Avg. Rating" value="4.8" change={2.1} changeLabel="vs last month" suffix="★" />
-        <MetricCard title="Students" value={136} change={-3.4} changeLabel="vs last month" />
+        <MetricCard
+          title="Total Earnings"
+          value="$12,400"
+          change={18.2}
+          changeLabel="vs last month"
+          prefix=""
+        />
+        <MetricCard
+          title="Sessions"
+          value={84}
+          change={12.5}
+          changeLabel="vs last month"
+        />
+        <MetricCard
+          title="Avg. Rating"
+          value="4.8"
+          change={2.1}
+          changeLabel="vs last month"
+          suffix="★"
+        />
+        <MetricCard
+          title="Students"
+          value={136}
+          change={-3.4}
+          changeLabel="vs last month"
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <AreaChart
           data={earningsData}
-          series={[{ key: 'earnings', name: 'Earnings' }]}
+          series={[{ key: "earnings", name: "Earnings" }]}
           title="Monthly Earnings"
           description="Cumulative earnings over time"
           xAxisKey="label"
@@ -97,7 +119,7 @@ function AnalyticsDashboard() {
         />
         <LineChart
           data={ratingTrend}
-          series={[{ key: 'rating', name: 'Avg Rating' }]}
+          series={[{ key: "rating", name: "Avg Rating" }]}
           title="Rating Trend"
           description="Average session rating per month"
           xAxisKey="label"
@@ -110,7 +132,7 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <BarChart
           data={earningsData}
-          series={[{ key: 'sessions', name: 'Sessions' }]}
+          series={[{ key: "sessions", name: "Sessions" }]}
           title="Sessions per Month"
           xAxisKey="label"
           exportable
