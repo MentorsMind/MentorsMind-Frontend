@@ -6,6 +6,7 @@ import MentorOnboarding from './components/onboarding/MentorOnboarding';
 import LearnerOnboarding from './pages/LearnerOnboarding';
 import MentorWallet from './pages/MentorWallet';
 import LearningGoals from './pages/LearningGoals';
+import MentorProfileSetup from './pages/MentorProfileSetup';
 import RatingBreakdown from './components/reviews/RatingBreakdown';
 import ReviewForm from './components/reviews/ReviewForm';
 import ReviewList from './components/reviews/ReviewList';
@@ -37,7 +38,7 @@ const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics';
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -125,7 +126,7 @@ function AnalyticsDashboard() {
 }
 
 function App() {
-  const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'reviews' | 'analytics'>('onboarding');
+  const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'reviews' | 'analytics' | 'profile'>('onboarding');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
@@ -157,6 +158,7 @@ function App() {
     search: loadMentorSearch,
     learner: loadLearnerOnboarding,
     onboarding: loadMentorOnboarding,
+    profile: loadMentorOnboarding,
     wallet: loadMentorWallet,
     analytics: loadAreaChart,
     reviews: loadReviewList,
@@ -220,6 +222,14 @@ function App() {
               Ratings & Reviews
             </button>
             <button
+              onClick={() => setView('profile')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                view === 'profile' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Profile Setup
+            </button>
+            <button
               onClick={() => setView('search')}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
@@ -234,6 +244,7 @@ function App() {
               { id: 'search', label: 'Search & Booking' },
               { id: 'learner', label: 'Learner Onboarding' },
               { id: 'onboarding', label: 'Mentor Onboarding' },
+              { id: 'profile', label: 'Profile Setup' },
               { id: 'wallet', label: 'Wallet' },
               { id: 'analytics', label: 'Analytics' },
               { id: 'reviews', label: 'Reviews' },
@@ -282,14 +293,14 @@ function App() {
           <MentorWallet />
         ) : view === 'goals' ? (
           <LearningGoals />
+        ) : view === 'profile' ? (
+          <MentorProfileSetup />
         ) : view === 'dashboard' ? (
           <MentorDashboard />
         ) : view === 'search' ? (
           <MentorSearch />
         ) : view === 'analytics' ? (
           <AnalyticsDashboard />
-        ) : view === 'search' ? (
-          <SearchPage />
         ) : (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-end">
