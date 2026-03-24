@@ -4,6 +4,8 @@ import MentorSearchBar from '../components/search/MentorSearchBar';
 import MentorFilterPanel from '../components/search/MentorFilterPanel';
 import SearchSortOptions from '../components/search/SearchSortOptions';
 import MentorGrid from '../components/search/MentorGrid';
+import MentorCard from '../components/search/MentorCard';
+import BookingModal from '../components/learner/BookingModal';
 import type { MentorProfile } from '../types';
 
 const MentorSearch: React.FC = () => {
@@ -29,11 +31,10 @@ const MentorSearch: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(null);
 
   const handleSearch = (query: string) => {
     updateFilter('searchQuery', query);
-    setShowSuggestions(false);
   };
 
   const handleViewProfile = (mentor: MentorProfile) => {
@@ -100,9 +101,10 @@ const MentorSearch: React.FC = () => {
           {/* Mentor Grid/List */}
           <MentorGrid
             mentors={mentors}
-            savedMentors={isSaved as any}
+            savedMentors={new Set(mentors.filter((mentor) => isSaved(mentor.id)).map((mentor) => mentor.id))}
             onSaveToggle={toggleSaveMentor}
             onViewProfile={handleViewProfile}
+            onBookSession={setSelectedMentor}
             viewMode={viewMode}
           />
 
@@ -191,12 +193,19 @@ const MentorSearch: React.FC = () => {
                 isSaved={isSaved(mentor.id)}
                 onSave={toggleSaveMentor}
                 onViewProfile={handleViewProfile}
+                onBookSession={setSelectedMentor}
                 viewMode="grid"
               />
             ))}
           </div>
         </div>
       )}
+
+      <BookingModal
+        isOpen={selectedMentor !== null}
+        mentor={selectedMentor}
+        onClose={() => setSelectedMentor(null)}
+      />
     </div>
   );
 };

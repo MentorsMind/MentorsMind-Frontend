@@ -6,6 +6,7 @@ interface MentorCardProps {
   isSaved: boolean;
   onSave: (id: string) => void;
   onViewProfile: (mentor: MentorProfile) => void;
+  onBookSession?: (mentor: MentorProfile) => void;
   viewMode?: 'grid' | 'list';
 }
 
@@ -14,6 +15,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
   isSaved,
   onSave,
   onViewProfile,
+  onBookSession,
   viewMode = 'grid',
 }) => {
   const isGridView = viewMode === 'grid';
@@ -107,12 +109,22 @@ const MentorCard: React.FC<MentorCardProps> = ({
               {mentor.hourlyRate} <span className="text-sm font-bold text-stellar">XLM</span>
             </div>
           </div>
-          <button
-            onClick={() => onViewProfile(mentor)}
-            className="px-6 py-3 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95"
-          >
-            View Profile
-          </button>
+          <div className="flex items-center gap-3">
+            {onBookSession && (
+              <button
+                onClick={() => onBookSession(mentor)}
+                className="px-4 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all active:scale-95"
+              >
+                Book
+              </button>
+            )}
+            <button
+              onClick={() => onViewProfile(mentor)}
+              className="px-6 py-3 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95"
+            >
+              View Profile
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ interface MentorGridProps {
   savedMentors: Set<string>;
   onSaveToggle: (id: string) => void;
   onViewProfile: (mentor: MentorProfile) => void;
+  onBookSession?: (mentor: MentorProfile) => void;
   viewMode: 'grid' | 'list';
 }
 
@@ -15,6 +16,7 @@ const MentorGrid: React.FC<MentorGridProps> = ({
   savedMentors,
   onSaveToggle,
   onViewProfile,
+  onBookSession,
   viewMode,
 }) => {
   if (mentors.length === 0) {
@@ -43,6 +45,7 @@ const MentorGrid: React.FC<MentorGridProps> = ({
           isSaved={savedMentors.has(mentor.id)}
           onSave={onSaveToggle}
           onViewProfile={onViewProfile}
+          onBookSession={onBookSession}
           viewMode={viewMode}
         />
       ))}

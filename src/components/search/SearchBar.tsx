@@ -134,6 +134,8 @@ const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(({
       )}
     </div>
   );
-})
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar;
