@@ -45,7 +45,7 @@ const MentorOnboarding: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-gradient-to-r from-stellar to-stellar-light rounded-3xl p-8 text-white shadow-xl">
+          <div className="bg-linear-to-r from-stellar to-stellar-light rounded-3xl p-8 text-white shadow-xl">
             <h1 className="text-3xl font-bold mb-2">Welcome Back, Mentor!</h1>
             <p className="opacity-90">You skipped the guided setup. You can always finish it later to unlock your full potential.</p>
           </div>

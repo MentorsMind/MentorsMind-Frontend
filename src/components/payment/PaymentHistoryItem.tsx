@@ -66,7 +66,7 @@ const PaymentHistoryItem: React.FC<PaymentHistoryItemProps> = ({ transaction: tx
     >
       {/* Icon */}
       <div
-        className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105 duration-200 ${
+        className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-200 ${
           isRefund ? 'bg-sky-50 text-sky-500' : 'bg-stellar/10 text-stellar'
         }`}
       >
@@ -85,7 +85,7 @@ const PaymentHistoryItem: React.FC<PaymentHistoryItemProps> = ({ transaction: tx
       </div>
 
       {/* Right side */}
-      <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+      <div className="shrink-0 flex flex-col items-end gap-1.5">
         <span className={`text-base font-black ${isRefund ? 'text-sky-600' : 'text-gray-900'}`}>
           {isRefund ? '−' : '+'}{tx.amount} <span className="text-xs font-bold text-gray-400">{tx.currency}</span>
         </span>
@@ -102,7 +102,7 @@ const PaymentHistoryItem: React.FC<PaymentHistoryItemProps> = ({ transaction: tx
 
       {/* Chevron */}
       <svg
-        className="w-4 h-4 text-gray-300 group-hover:text-stellar transition-colors flex-shrink-0"
+        className="w-4 h-4 text-gray-300 group-hover:text-stellar transition-colors shrink-0"
         fill="none" stroke="currentColor" viewBox="0 0 24 24"
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />

@@ -83,7 +83,7 @@ const MentorDashboard: React.FC = () => {
           <PerformanceMetrics metrics={data.performance} />
           <RecentReviews reviews={data.recentReviews} />
           
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl shadow-gray-200">
+          <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl shadow-gray-200">
               <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
                     <svg className="w-5 h-5 text-stellar" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>

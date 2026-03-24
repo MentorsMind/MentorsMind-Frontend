@@ -161,7 +161,7 @@ const MentorSearch: React.FC = () => {
                     className="w-16 h-16 rounded-xl object-cover border-2 border-white"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-xl">
+                  <div className="w-16 h-16 rounded-xl bg-linear-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-xl">
                     {mentor.name[0]}
                   </div>
                 )}

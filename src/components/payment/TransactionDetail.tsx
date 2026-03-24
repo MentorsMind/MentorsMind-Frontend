@@ -36,7 +36,7 @@ const STATUS_CONFIG: Record<PaymentStatus, { label: string; bg: string; text: st
 
 const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-50 last:border-0">
-    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex-shrink-0 pt-0.5">
+    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest shrink-0 pt-0.5">
       {label}
     </span>
     <div className="text-sm font-semibold text-gray-800 text-right">{children}</div>
@@ -66,7 +66,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
         className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Modal Header */}
-        <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white overflow-hidden">
+        <div className="relative bg-linear-to-br from-gray-900 to-gray-800 p-6 text-white overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-stellar/20 rounded-full -mr-10 -mt-10 pointer-events-none" />
           <div className="relative flex items-start justify-between gap-4">
             <div>
@@ -79,7 +79,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
             <button
               id="close-modal-btn"
               onClick={onClose}
-              className="flex-shrink-0 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all"
+              className="shrink-0 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
