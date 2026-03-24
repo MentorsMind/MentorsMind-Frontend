@@ -25,3 +25,57 @@
     @apply min-h-screen bg-gray-50 text-gray-900 antialiased;
   }
 }
+
+@layer components {
+  /* Custom component styles can be added here if needed */
+}
+
+@layer utilities {
+  /* Screen reader only — visually hidden but accessible */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  .sr-only.focus\:not-sr-only:focus,
+  .focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+/* ── High Contrast Mode ─────────────────────────────────────── */
+.high-contrast {
+  --tw-text-opacity: 1;
+  filter: contrast(1.5);
+}
+.high-contrast a,
+.high-contrast button {
+  text-decoration: underline;
+}
+
+/* ── Reduced Motion ─────────────────────────────────────────── */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ── Font Size Scaling ──────────────────────────────────────── */
+.font-large  { font-size: 112.5%; }
+.font-xlarge { font-size: 125%; }

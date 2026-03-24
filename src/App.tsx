@@ -1,6 +1,11 @@
 import { useState } from 'react';
+import SkipNavigation from './components/a11y/SkipNavigation';
+import LiveRegion from './components/a11y/LiveRegion';
+import AccessibilityPanel from './components/a11y/AccessibilityPanel';
 import MentorOnboarding from './components/onboarding/MentorOnboarding';
 import LearnerOnboarding from './pages/LearnerOnboarding';
+import MentorDashboard from './pages/MentorDashboard';
+import MentorSearch from './pages/MentorSearch';
 import RatingBreakdown from './components/reviews/RatingBreakdown';
 import ReviewForm from './components/reviews/ReviewForm';
 import ReviewList from './components/reviews/ReviewList';
@@ -10,11 +15,14 @@ import BarChart from './components/charts/BarChart';
 import PieChart from './components/charts/PieChart';
 import AreaChart from './components/charts/AreaChart';
 import MetricCard from './components/charts/MetricCard';
-import LearnerDashboard from './pages/LearnerDashboard';
+import SearchPage from './pages/SearchPage';
 
 function App() {
-  const [view, setView] = useState<'onboarding' | 'learner' | 'dashboard' | 'reviews' | 'analytics'>('onboarding');
+  const [view, setView] = useState<'onboarding' | 'learner' | 'dashboard' | 'search' | 'reviews' | 'analytics'>('onboarding');
+  const [view, setView] = useState<'onboarding' | 'learner' | 'reviews' | 'analytics' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
+  const [a11yOpen, setA11yOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
   
   const { 
     reviews, 
@@ -29,22 +37,35 @@ function App() {
     paginate 
   } = useReviews('m1');
 
+  const handleViewChange = (next: typeof view, label: string) => {
+    setView(next);
+    setAnnouncement(`Navigated to ${label}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
-      {/* Dynamic Header */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+      {/* Skip navigation links — visible on focus for keyboard users */}
+      <SkipNavigation />
+
+      {/* Screen reader live region for dynamic announcements */}
+      <LiveRegion message={announcement} />
+
+      {/* Accessibility settings modal */}
+      <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
+
+      {/* Primary navigation */}
+      <nav id="main-nav" aria-label="Main navigation" className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-stellar rounded-lg flex items-center justify-center text-white font-bold">M</div>
-            <span className="font-bold text-xl tracking-tight">MentorMinds <span className="text-stellar">Stellar</span></span>
-          </div>
-          <div className="flex items-center gap-4 bg-gray-50 p-1 rounded-xl">
-            <button
-              onClick={() => setView('onboarding')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'onboarding' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
+            <div
+              className="w-8 h-8 bg-stellar rounded-lg flex items-center justify-center text-white font-bold"
+              aria-hidden="true"
             >
+              M
+            </div>
+            <span className="font-bold text-xl tracking-tight">
+              MentorMinds <span className="text-stellar">Stellar</span>
+            </span>
               Mentor Onboarding
             </button>
             <button
@@ -61,7 +82,15 @@ function App() {
                 view === 'dashboard' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              Learner Dashboard
+              Mentor Dashboard
+            </button>
+            <button
+              onClick={() => setView('search')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Find Mentors
             </button>
             <button
               onClick={() => setView('analytics')}
@@ -79,20 +108,75 @@ function App() {
             >
               Ratings & Reviews
             </button>
+            <button
+              onClick={() => setView('search')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Search & Discovery
+            </button>
           </div>
-          <div className="w-8 h-8 rounded-full bg-stellar/10 border border-stellar/20" />
+
+          {/* View switcher */}
+          <div
+            role="tablist"
+            aria-label="Application views"
+            className="flex items-center gap-4 bg-gray-50 p-1 rounded-xl"
+          >
+            {(
+              [
+                { id: 'onboarding', label: 'Mentor Onboarding' },
+                { id: 'learner',    label: 'Learner Onboarding' },
+                { id: 'analytics',  label: 'Analytics' },
+                { id: 'reviews',    label: 'Ratings & Reviews' },
+              ] as { id: typeof view; label: string }[]
+            ).map(({ id, label }) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={view === id}
+                aria-controls="main-content"
+                onClick={() => handleViewChange(id, label)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-1 ${
+                  view === id ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Accessibility settings trigger */}
+          <button
+            onClick={() => setA11yOpen(true)}
+            aria-label="Open accessibility settings"
+            title="Accessibility settings"
+            className="w-8 h-8 rounded-full bg-stellar/10 border border-stellar/20 flex items-center justify-center text-stellar hover:bg-stellar/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" strokeWidth="2" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
+          </button>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 pt-10">
+      {/* Main content area */}
+      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 pt-10 outline-none">
         {view === 'onboarding' ? (
           <MentorOnboarding />
         ) : view === 'learner' ? (
           <LearnerOnboarding />
         ) : view === 'dashboard' ? (
-          <LearnerDashboard />
+          <MentorDashboard />
+        ) : view === 'search' ? (
+          <MentorSearch />
         ) : view === 'analytics' ? (
           <AnalyticsDashboard />
+        ) : view === 'search' ? (
+          <SearchPage />
         ) : (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-end">
@@ -102,20 +186,25 @@ function App() {
               </div>
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="px-6 py-2.5 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95"
+                aria-expanded={showForm}
+                aria-controls="review-form"
+                className="px-6 py-2.5 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-2"
               >
                 {showForm ? 'Cancel Review' : 'Write a Review'}
               </button>
             </div>
 
             {showForm && (
-              <ReviewForm
-                onSubmit={(data) => {
-                  addReview({ ...data, reviewerId: 'user-' + Date.now() });
-                  setShowForm(false);
-                }}
-                onCancel={() => setShowForm(false)}
-              />
+              <div id="review-form">
+                <ReviewForm
+                  onSubmit={(data) => {
+                    addReview({ ...data, reviewerId: 'user-' + Date.now() });
+                    setShowForm(false);
+                    setAnnouncement('Your review has been submitted.');
+                  }}
+                  onCancel={() => setShowForm(false)}
+                />
+              </div>
             )}
 
             <RatingBreakdown stats={stats} />
@@ -137,9 +226,9 @@ function App() {
         )}
       </main>
 
-      {/* Footer / Info */}
-      <footer className="fixed bottom-0 left-0 right-0 py-4 text-center text-[10px] text-gray-400 bg-white/80 backdrop-blur-sm border-t border-gray-100">
-        Demo Version 1.0 • Built with Vite, React & Tailwind CSS • Powered by Stellar
+      {/* Footer */}
+      <footer role="contentinfo" className="fixed bottom-0 left-0 right-0 py-4 text-center text-[10px] text-gray-400 bg-white/80 backdrop-blur-sm border-t border-gray-100">
+        Demo Version 1.0 • Built with Vite, React &amp; Tailwind CSS • Powered by Stellar
       </footer>
     </div>
   );
