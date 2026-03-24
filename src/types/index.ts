@@ -166,6 +166,63 @@ export interface OnboardingState {
   };
 }
 
+// ── Learning Goals ────────────────────────────────────────────────────────────
+
+export type GoalStatus = 'active' | 'completed' | 'paused' | 'overdue';
+export type GoalCategory = 'technical' | 'career' | 'project' | 'certification' | 'soft-skills';
+
+export interface Milestone {
+  id: string;
+  title: string;
+  completed: boolean;
+  dueDate?: string;
+  completedAt?: string;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  category: GoalCategory;
+  status: GoalStatus;
+  // SMART fields
+  specific: string;
+  measurable: string;
+  achievable: string;
+  relevant: string;
+  timeBound: string;
+  // Progress
+  milestones: Milestone[];
+  deadline: string;
+  createdAt: string;
+  updatedAt: string;
+  sharedWithMentor: boolean;
+  reminderEnabled: boolean;
+  badge?: string;
+  notes?: string;
+}
+
+export interface GoalTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: GoalCategory;
+  icon: string;
+  specific: string;
+  measurable: string;
+  achievable: string;
+  relevant: string;
+  milestones: Omit<Milestone, 'id' | 'completed' | 'completedAt'>[];
+}
+
+export interface GoalStats {
+  total: number;
+  completed: number;
+  active: number;
+  overdue: number;
+  completionRate: number;
+}
+
 export type SessionStatus =
   | "pending"
   | "confirmed"

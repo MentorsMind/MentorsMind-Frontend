@@ -9,6 +9,7 @@ import MetricCard from "./components/charts/MetricCard";
 import PieChart from "./components/charts/PieChart";
 import MentorOnboarding from "./components/onboarding/MentorOnboarding";
 import MentorWallet from "./pages/MentorWallet";
+import LearningGoals from './pages/LearningGoals';
 import RatingBreakdown from "./components/reviews/RatingBreakdown";
 import ReviewForm from "./components/reviews/ReviewForm";
 import ReviewList from "./components/reviews/ReviewList";
@@ -36,8 +37,9 @@ function App() {
     | "mentor-search"
     | "wallet"
     | "pricing"
+    | "goals"
   >("onboarding");
-  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'dashboard' | 'reviews' | 'analytics' | 'pricing' | 'search'>('search');
+  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'dashboard' | 'reviews' | 'analytics' | 'pricing' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -106,6 +108,14 @@ function App() {
                 Learner Onboarding
               </button>
               <button
+              onClick={() => setView('goals')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'goals' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Goals
+            </button>
+            <button
                 onClick={() => setView("dashboard")}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   view === "dashboard"
@@ -303,7 +313,9 @@ function App() {
             <MentorSearch />
           ) : view === "wallet" ? (
             <MentorWallet />
-          ) : view === "analytics" ? (
+          ) : view === 'goals' ? (
+          <LearningGoals />
+        ) : view === "analytics" ? (
             <AnalyticsDashboard />
           ) : view === "search" ? (
             <SearchPage />
