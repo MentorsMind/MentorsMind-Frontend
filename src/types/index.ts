@@ -233,3 +233,14 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+// Session History Types
+export type { 
+  SessionHistoryItem, 
+  LearningAnalytics, 
+  SkillProgress, 
+  MentorInteraction,
+  SessionFrequencyData,
+  LearningVelocityData,
+  SpendingAnalytics
+} from './session.types';

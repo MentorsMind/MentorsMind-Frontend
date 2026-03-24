@@ -3,6 +3,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   MENTORS: '/mentors',
   SESSIONS: '/sessions',
+  HISTORY: '/history',
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
   PROFILE: '/profile',
@@ -23,6 +24,7 @@ export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
   { path: ROUTES.SESSIONS, label: 'Sessions', protected: true, icon: 'Calendar' },
+  { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
 ];
 
