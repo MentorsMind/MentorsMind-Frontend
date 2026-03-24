@@ -8,6 +8,7 @@ import LineChart from "./components/charts/LineChart";
 import MetricCard from "./components/charts/MetricCard";
 import PieChart from "./components/charts/PieChart";
 import MentorOnboarding from "./components/onboarding/MentorOnboarding";
+import MentorWallet from './pages/MentorWallet';
 import RatingBreakdown from "./components/reviews/RatingBreakdown";
 import ReviewForm from "./components/reviews/ReviewForm";
 import ReviewList from "./components/reviews/ReviewList";
@@ -29,8 +30,9 @@ function App() {
     | "reviews"
     | "analytics"
     | "mentor-search"
+    | "wallet"
   >("onboarding");
-  // const [view, setView] = useState<'onboarding' | 'learner' | 'reviews' | 'analytics' | 'search'>('search');
+  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'reviews' | 'analytics' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -99,6 +101,14 @@ function App() {
                 Learner Onboarding
               </button>
               <button
+              onClick={() => setView('wallet')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'wallet' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Wallet
+            </button>
+            <button
                 onClick={() => setView("dashboard")}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   view === "dashboard"
@@ -221,7 +231,9 @@ function App() {
             <MentorDashboard />
           ) : view === "mentor-search" ? (
             <MentorSearch />
-          ) : view === "analytics" ? (
+          ) : view === 'wallet' ? (
+          <MentorWallet />
+        ) : view === "analytics" ? (
             <AnalyticsDashboard />
           ) : view === "search" ? (
             <SearchPage />

@@ -68,6 +68,67 @@ export interface LearnerOnboardingState {
   };
 }
 
+// ── Wallet ────────────────────────────────────────────────────────────────────
+
+export type AssetCode = 'XLM' | 'USDC' | 'yXLM';
+
+export interface WalletAsset {
+  code: AssetCode;
+  balance: number;
+  usdValue: number;
+}
+
+export type TxType = 'earning' | 'payout' | 'fee' | 'refund';
+export type TxStatus = 'completed' | 'pending' | 'failed';
+
+export interface Transaction {
+  id: string;
+  type: TxType;
+  status: TxStatus;
+  amount: number;
+  asset: AssetCode;
+  usdAmount: number;
+  description: string;
+  sessionId?: string;
+  date: string;
+  fee?: number;
+}
+
+export interface PayoutRequest {
+  id: string;
+  amount: number;
+  asset: AssetCode;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  requestedAt: string;
+  completedAt?: string;
+  txHash?: string;
+}
+
+export interface EarningsBySession {
+  sessionId: string;
+  studentName: string;
+  topic: string;
+  date: string;
+  duration: number; // minutes
+  grossAmount: number;
+  platformFee: number;
+  netAmount: number;
+  asset: AssetCode;
+}
+
+export interface WalletState {
+  address: string;
+  assets: WalletAsset[];
+  pendingEarnings: number;
+  availableEarnings: number;
+  totalEarned: number;
+  transactions: Transaction[];
+  payoutHistory: PayoutRequest[];
+  sessionEarnings: EarningsBySession[];
+  forecastNextMonth: number;
+  platformFeeRate: number; // e.g. 0.05 = 5%
+}
+
 export interface OnboardingState {
   currentStep: OnboardingStepId;
   completedSteps: OnboardingStepId[];
