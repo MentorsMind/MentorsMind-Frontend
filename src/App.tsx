@@ -10,9 +10,10 @@ import BarChart from './components/charts/BarChart';
 import PieChart from './components/charts/PieChart';
 import AreaChart from './components/charts/AreaChart';
 import MetricCard from './components/charts/MetricCard';
+import SearchPage from './pages/SearchPage';
 
 function App() {
-  const [view, setView] = useState<'onboarding' | 'learner' | 'reviews' | 'analytics'>('onboarding');
+  const [view, setView] = useState<'onboarding' | 'learner' | 'reviews' | 'analytics' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   
   const { 
@@ -70,6 +71,14 @@ function App() {
             >
               Ratings & Reviews
             </button>
+            <button
+              onClick={() => setView('search')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Search & Discovery
+            </button>
           </div>
           <div className="w-8 h-8 rounded-full bg-stellar/10 border border-stellar/20" />
         </div>
@@ -82,6 +91,8 @@ function App() {
           <LearnerOnboarding />
         ) : view === 'analytics' ? (
           <AnalyticsDashboard />
+        ) : view === 'search' ? (
+          <SearchPage />
         ) : (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-end">
@@ -220,28 +231,3 @@ function AnalyticsDashboard() {
 }
 
 export default App;
-# Tasks
-
-- [x] Planning Phase
-    - [x] Research existing codebase
-    - [x] Create implementation plan
-- [x] Implement `useMentorDashboard` Hook
-    - [x] Define types for dashboard data
-    - [x] Create mock data and hook logic
-- [x] Create Dashboard Components
-    - [x] `EarningsOverview.tsx` (with charts)
-    - [x] `PerformanceMetrics.tsx`
-    - [x] `UpcomingSessions.tsx` (with actions)
-    - [x] `RecentReviews.tsx`
-    - [x] `ActivityFeed.tsx`
-- [x] Create `MentorDashboard.tsx` Page
-    - [x] Integrate all components
-    - [x] Add responsiveness and premium design elements
-- [/] Integrating Dashboard into App and Cleanup
-    - [/] Update `App.tsx`
-    - [/] Cleanup misplaced files
-- [ ] Testing and Verification
-    - [ ] Dashboard render tests
-    - [ ] Session management tests
-    - [ ] Earnings display tests
-- [ ] Final Walkthrough
