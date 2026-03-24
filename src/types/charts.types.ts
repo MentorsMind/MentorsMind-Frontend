@@ -38,6 +38,9 @@ export interface MetricCardData {
 export interface UseChartDataOptions<T> {
   fetchFn: () => Promise<T>;
   deps?: unknown[];
+  // cache controls
+  staleTime?: number;
+  gcTime?: number; // v5 (cacheTime in v4)
 }
 
 export interface UseChartDataResult<T> {
