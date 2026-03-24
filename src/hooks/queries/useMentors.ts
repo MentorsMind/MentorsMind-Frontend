@@ -1,0 +1,26 @@
+import { useQuery } from "@tanstack/react-query";
+import type {
+  QueryDataOptions,
+  QueryDataResult,
+} from "../../types/query.types";
+
+export function useMentors<T>({
+  fetchFn,
+  deps = [],
+  staleTime = 1000 * 60, // 1 min default
+  gcTime = 1000 * 60 * 5, // 5 min default
+}: QueryDataOptions<T>): QueryDataResult<T> {
+  const q = useQuery({
+    queryKey: ["mentors", ...deps],
+    queryFn: fetchFn,
+    staleTime,
+    gcTime,
+  });
+
+  return {
+    data: q.data ?? null,
+    isLoading: q.isLoading,
+    error: q.error instanceof Error ? q.error.message : null,
+    refetch: q.refetch,
+  };
+}
