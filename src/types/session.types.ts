@@ -123,3 +123,110 @@ export interface BookingConfirmationDetails {
   learnerCalendarEvent: LearnerCalendarEvent;
   paymentTransactionHash?: string;
 }
+
+export interface RecommendationReason {
+  title: string;
+  detail: string;
+}
+
+export interface SuccessStory {
+  learnerName: string;
+  startingPoint: string;
+  outcome: string;
+  timeframeWeeks: number;
+}
+
+export interface RecommendedMentor {
+  id: string;
+  name: string;
+  title: string;
+  avatar?: string;
+  matchScore: number;
+  hourlyRate: number;
+  currency: string;
+  skills: string[];
+  whyRecommended: RecommendationReason[];
+  successStory: SuccessStory;
+  estimatedWeeksToGoal: number;
+  feedback?: 'helpful' | 'not-helpful';
+  bookmarked: boolean;
+}
+
+export interface LearningPathStep {
+  id: string;
+  title: string;
+  description: string;
+  durationWeeks: number;
+  status: 'recommended' | 'in-progress' | 'next';
+  resources: string[];
+}
+
+export interface SkillRoadmapItem {
+  skill: string;
+  currentLevel: 'beginner' | 'intermediate' | 'advanced';
+  targetLevel: 'intermediate' | 'advanced' | 'expert';
+  progress: number;
+  milestone: string;
+}
+
+export interface RecommendedTopic {
+  id: string;
+  title: string;
+  type: 'topic' | 'course' | 'workshop';
+  duration: string;
+  reason: string;
+}
+
+export interface LearningPathRecommendation {
+  id: string;
+  title: string;
+  goal: string;
+  estimatedWeeks: number;
+  explanation: string;
+  steps: LearningPathStep[];
+  roadmap: SkillRoadmapItem[];
+  topics: RecommendedTopic[];
+  bookmarked: boolean;
+}
+
+export interface AgendaTemplateOption {
+  id: string;
+  title: string;
+  description: string;
+  agenda: string[];
+}
+
+export interface PrepChecklistItem {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
+export interface UploadedResource {
+  id: string;
+  name: string;
+  sizeLabel: string;
+  kind: 'document' | 'image' | 'link' | 'code';
+}
+
+export interface MentorResearchProfile {
+  mentorName: string;
+  specialties: string[];
+  recentFocus: string[];
+  sessionStyle: string;
+  responseTime: string;
+}
+
+export interface SessionPrepState {
+  selectedTemplateId: string;
+  goals: string;
+  objectives: string;
+  agendaNotes: string;
+  checklist: PrepChecklistItem[];
+  uploadedResources: UploadedResource[];
+  previousSessionNotes: string[];
+  reminderSummary: string;
+  timeManagementTips: string[];
+  mentorResearch: MentorResearchProfile;
+  progress: number;
+}

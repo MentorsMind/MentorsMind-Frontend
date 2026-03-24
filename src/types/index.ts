@@ -357,7 +357,19 @@ export type {
   BookingPricingBreakdown,
   CalendarInvite,
   LearnerCalendarEvent,
-  BookingConfirmationDetails
+  BookingConfirmationDetails,
+  RecommendedMentor,
+  LearningPathRecommendation,
+  LearningPathStep,
+  RecommendationReason,
+  SuccessStory,
+  SkillRoadmapItem,
+  RecommendedTopic,
+  AgendaTemplateOption,
+  PrepChecklistItem,
+  UploadedResource,
+  MentorResearchProfile,
+  SessionPrepState
 } from "./session.types";
 
 export * from "./pricing.types";

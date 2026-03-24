@@ -2,6 +2,8 @@ import React from 'react';
 import { useReminders } from '../hooks/useReminders';
 import ReminderSettings from '../components/learner/ReminderSettings';
 import UpcomingReminders from '../components/learner/UpcomingReminders';
+import LearningRecommendations from '../components/learner/LearningRecommendations';
+import SessionPrep from '../components/learner/SessionPrep';
 import type { Session } from '../types';
 
 // Mock sessions for demonstration
@@ -88,6 +90,9 @@ const LearnerDashboard: React.FC = () => {
           />
         </div>
       </div>
+
+      <LearningRecommendations />
+      <SessionPrep />
     </div>
   );
 };
