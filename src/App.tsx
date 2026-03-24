@@ -10,20 +10,124 @@ import PieChart from "./components/charts/PieChart";
 import MentorOnboarding from "./components/onboarding/MentorOnboarding";
 import MentorWallet from "./pages/MentorWallet";
 import LearningGoals from './pages/LearningGoals';
-import RatingBreakdown from "./components/reviews/RatingBreakdown";
-import ReviewForm from "./components/reviews/ReviewForm";
-import ReviewList from "./components/reviews/ReviewList";
-import { useReviews } from "./hooks/useReviews";
-import LearnerOnboarding from "./pages/LearnerOnboarding";
-import MentorDashboard from "./pages/MentorDashboard";
-import MentorSearch from "./pages/MentorSearch";
-import SearchPage from "./pages/SearchPage";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./config/queryClient";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import LearnerDashboard from "./pages/LearnerDashboard";
+import MentorProfileSetup from './pages/MentorProfileSetup';
+import RatingBreakdown from './components/reviews/RatingBreakdown';
+import ReviewForm from './components/reviews/ReviewForm';
+import ReviewList from './components/reviews/ReviewList';
+import { useReviews } from './hooks/useReviews';
+import { usePerformance } from './hooks/usePerformance';
+import { preloadCriticalResources } from './utils/performance.utils';
+import MetricCard from './components/charts/MetricCard';
+const loadMentorOnboarding = () => import('./components/onboarding/MentorOnboarding');
+const loadLearnerOnboarding = () => import('./pages/LearnerOnboarding');
+const loadMentorWallet = () => import('./pages/MentorWallet');
+const loadMentorSearch = () => import('./pages/MentorSearch');
+const loadRatingBreakdown = () => import('./components/reviews/RatingBreakdown');
+const loadReviewForm = () => import('./components/reviews/ReviewForm');
+const loadReviewList = () => import('./components/reviews/ReviewList');
+const loadLineChart = () => import('./components/charts/LineChart');
+const loadBarChart = () => import('./components/charts/BarChart');
+const loadPieChart = () => import('./components/charts/PieChart');
+const loadAreaChart = () => import('./components/charts/AreaChart');
 
-import PricingSettings from "./components/mentor/PricingSettings";
+const MentorOnboarding = lazy(loadMentorOnboarding);
+const LearnerOnboarding = lazy(loadLearnerOnboarding);
+const MentorWallet = lazy(loadMentorWallet);
+const MentorSearch = lazy(loadMentorSearch);
+const RatingBreakdown = lazy(loadRatingBreakdown);
+const ReviewForm = lazy(loadReviewForm);
+const ReviewList = lazy(loadReviewList);
+const LineChart = lazy(loadLineChart);
+const BarChart = lazy(loadBarChart);
+const PieChart = lazy(loadPieChart);
+const AreaChart = lazy(loadAreaChart);
+
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile';
+
+const earningsData = [
+  { label: 'Jan', earnings: 1200, sessions: 8 },
+  { label: 'Feb', earnings: 1800, sessions: 12 },
+  { label: 'Mar', earnings: 1500, sessions: 10 },
+  { label: 'Apr', earnings: 2200, sessions: 15 },
+  { label: 'May', earnings: 2800, sessions: 18 },
+  { label: 'Jun', earnings: 3100, sessions: 21 },
+];
+
+const sessionsByCategory = [
+  { label: 'Web Dev', value: 42 },
+  { label: 'Blockchain', value: 28 },
+  { label: 'Design', value: 18 },
+  { label: 'DevOps', value: 12 },
+];
+
+const ratingTrend = [
+  { label: 'Jan', rating: 4.2 },
+  { label: 'Feb', rating: 4.4 },
+  { label: 'Mar', rating: 4.3 },
+  { label: 'Apr', rating: 4.6 },
+  { label: 'May', rating: 4.7 },
+  { label: 'Jun', rating: 4.8 },
+];
+
+function AnalyticsDashboard() {
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div>
+        <h2 className="text-3xl font-bold mb-1">Analytics</h2>
+        <p className="text-gray-500">Your platform metrics at a glance.</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <MetricCard title="Total Earnings" value="$12,400" change={18.2} changeLabel="vs last month" prefix="" />
+        <MetricCard title="Sessions" value={84} change={12.5} changeLabel="vs last month" />
+        <MetricCard title="Avg. Rating" value="4.8" change={2.1} changeLabel="vs last month" suffix="★" />
+        <MetricCard title="Students" value={136} change={-3.4} changeLabel="vs last month" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <AreaChart
+          data={earningsData}
+          series={[{ key: 'earnings', name: 'Earnings' }]}
+          title="Monthly Earnings"
+          description="Cumulative earnings over time"
+          xAxisKey="label"
+          valuePrefix="$"
+          exportable
+          exportFilename="earnings-chart"
+        />
+        <LineChart
+          data={ratingTrend}
+          series={[{ key: 'rating', name: 'Avg Rating' }]}
+          title="Rating Trend"
+          description="Average session rating per month"
+          xAxisKey="label"
+          zoomable
+          exportable
+          exportFilename="rating-trend"
+        />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <BarChart
+          data={earningsData}
+          series={[{ key: 'sessions', name: 'Sessions' }]}
+          title="Sessions per Month"
+          xAxisKey="label"
+          exportable
+          exportFilename="sessions-bar"
+        />
+        <PieChart
+          data={sessionsByCategory}
+          title="Sessions by Category"
+          description="Proportional breakdown of session types"
+          donut
+          exportable
+          exportFilename="sessions-pie"
+        />
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [view, setView] = useState<
@@ -39,7 +143,7 @@ function App() {
     | "pricing"
     | "goals"
   >("onboarding");
-  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'dashboard' | 'reviews' | 'analytics' | 'pricing' | 'search'>('search');
+  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'dashboard' | 'reviews' | 'analytics' | 'profile' | 'pricing' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -60,6 +164,20 @@ function App() {
   const handleViewChange = (next: typeof view, label: string) => {
     setView(next);
     setAnnouncement(`Navigated to ${label}`);
+  };
+
+  useEffect(() => {
+    preloadCriticalResources();
+  }, []);
+
+  const preloaders: Record<AppView, () => Promise<unknown>> = {
+    search: loadMentorSearch,
+    learner: loadLearnerOnboarding,
+    onboarding: loadMentorOnboarding,
+    profile: loadMentorOnboarding,
+    wallet: loadMentorWallet,
+    analytics: loadAreaChart,
+    reviews: loadReviewList,
   };
 
   return (
@@ -225,6 +343,14 @@ function App() {
                 Ratings & Reviews
               </button>
               <button
+              onClick={() => setView('profile')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                view === 'profile' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Profile Setup
+            </button>
+            <button
                 onClick={() => setView("search")}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   view === "search"
@@ -236,36 +362,30 @@ function App() {
               </button>
             </div>
 
-            {/* View switcher */}
-            <div
-              role="tablist"
-              aria-label="Application views"
-              className="flex items-center gap-4 bg-gray-50 p-1 rounded-xl"
-            >
-              {(
-                [
-                  { id: "onboarding", label: "Mentor Onboarding" },
-                  { id: "learner", label: "Learner Onboarding" },
-                  { id: "analytics", label: "Analytics" },
-                  { id: "reviews", label: "Ratings & Reviews" },
-                ] as { id: typeof view; label: string }[]
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={view === id}
-                  aria-controls="main-content"
-                  onClick={() => handleViewChange(id, label)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-1 ${
-                    view === id
-                      ? "bg-white shadow-sm text-stellar"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div className="hidden items-center gap-2 rounded-2xl bg-gray-50 p-1 md:flex">
+            {[
+              { id: 'search', label: 'Search & Booking' },
+              { id: 'learner', label: 'Learner Onboarding' },
+              { id: 'onboarding', label: 'Mentor Onboarding' },
+              { id: 'profile', label: 'Profile Setup' },
+              { id: 'wallet', label: 'Wallet' },
+              { id: 'analytics', label: 'Analytics' },
+              { id: 'reviews', label: 'Reviews' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleViewChange(item.id as AppView, item.label)}
+                onMouseEnter={() => preloaders[item.id as AppView]?.()}
+                onFocus={() => preloaders[item.id as AppView]?.()}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                  view === item.id ? 'bg-white text-stellar shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
             {/* Accessibility settings trigger */}
             <button
@@ -315,28 +435,31 @@ function App() {
             <MentorWallet />
           ) : view === 'goals' ? (
           <LearningGoals />
-        ) : view === "analytics" ? (
-            <AnalyticsDashboard />
-          ) : view === "search" ? (
-            <SearchPage />
-          ) : (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-between items-end">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2">Mentor Feedback</h2>
-                  <p className="text-gray-500">
-                    See what the community is saying about your sessions.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowForm(!showForm)}
-                  aria-expanded={showForm}
-                  aria-controls="review-form"
-                  className="px-6 py-2.5 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-2"
-                >
-                  {showForm ? "Cancel Review" : "Write a Review"}
-                </button>
+        ) : view === 'profile' ? (
+          <MentorProfileSetup />
+        ) : view === 'dashboard' ? (
+          <MentorDashboard />
+        ) : view === 'search' ? (
+          <MentorSearch />
+        ) : view === 'analytics' ? (
+          <AnalyticsDashboard />
+        ) : (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">Mentor Feedback</h2>
+                <p className="text-gray-500">See what the community is saying about your sessions.</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(!showForm)}
+                aria-expanded={showForm}
+                aria-controls="review-form"
+                className="rounded-xl bg-stellar px-6 py-2.5 font-bold text-white shadow-lg shadow-stellar/20 transition-all hover:bg-stellar-dark"
+              >
+                {showForm ? 'Cancel Review' : 'Write a Review'}
+              </button>
+            </div>
 
               {showForm && (
                 <div id="review-form">
