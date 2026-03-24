@@ -20,6 +20,7 @@ import SearchPage from "./pages/SearchPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./config/queryClient";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import LearnerDashboard from './pages/LearnerDashboard';
 
 function App() {
   const [view, setView] = useState<
@@ -32,7 +33,7 @@ function App() {
     | "mentor-search"
     | "wallet"
   >("onboarding");
-  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'reviews' | 'analytics' | 'search'>('search');
+  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'dashboard' | 'reviews' | 'analytics' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -101,6 +102,14 @@ function App() {
                 Learner Onboarding
               </button>
               <button
+              onClick={() => setView('dashboard')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                view === 'dashboard' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Learner Dashboard
+            </button>
+            <button
               onClick={() => setView('wallet')}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 view === 'wallet' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
@@ -227,6 +236,8 @@ function App() {
             <MentorOnboarding />
           ) : view === "learner" ? (
             <LearnerOnboarding />
+        ) : view === 'dashboard' ? (
+          <LearnerDashboard />
           ) : view === "dashboard" ? (
             <MentorDashboard />
           ) : view === "mentor-search" ? (
