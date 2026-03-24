@@ -1,218 +1,498 @@
-# Sample Data Output - Session History Feature
+# Mobile Components - Sample Output & Visual Guide
 
-## Mock Sessions Data
+## 🎨 Component Visual Examples
 
-```json
-[
-  {
-    "id": "sh1",
-    "mentorId": "m1",
-    "mentorName": "Sarah Chen",
-    "topic": "Stellar Smart Contracts Basics",
-    "date": "2026-03-20T14:00:00Z",
-    "duration": 60,
-    "status": "completed",
-    "rating": 5,
-    "skills": ["Stellar", "Smart Contracts"],
-    "amount": 50,
-    "currency": "XLM",
-    "outcome": "excellent"
-  },
-  {
-    "id": "sh2",
-    "mentorId": "m2",
-    "mentorName": "John Davis",
-    "topic": "Soroban Development",
-    "date": "2026-03-18T10:00:00Z",
-    "duration": 45,
-    "status": "completed",
-    "rating": 4,
-    "skills": ["Soroban", "Rust"],
-    "amount": 75,
-    "currency": "XLM",
-    "outcome": "good"
-  },
-  {
-    "id": "sh3",
-    "mentorId": "m1",
-    "mentorName": "Sarah Chen",
-    "topic": "Advanced Stellar Concepts",
-    "date": "2026-03-15T16:00:00Z",
-    "duration": 90,
-    "status": "completed",
-    "rating": 5,
-    "skills": ["Stellar", "Architecture"],
-    "amount": 100,
-    "currency": "XLM",
-    "outcome": "excellent"
-  }
-]
+### 1. MobileNavigation (Bottom Tab Bar)
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│           Page Content Here             │
+│                                         │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  🏠      🔍      🔔(3)     👤          │
+│ Home   Search   Alerts   Profile        │
+│  ━━                                     │
+└─────────────────────────────────────────┘
 ```
 
-## Calculated Analytics Output
+**Features:**
+- Active indicator (━━) under selected item
+- Badge (3) on notifications
+- Touch-optimized spacing
+- Safe area padding
 
-```json
-{
-  "totalSessions": 3,
-  "totalTimeInvested": 195,
-  "totalSpent": 225,
-  "averageSessionDuration": 65,
-  "completionRate": 100,
-  
-  "skillProgress": [
-    {
-      "skill": "Stellar",
-      "sessionsCount": 2,
-      "timeInvested": 150,
-      "level": "intermediate",
-      "progress": 20
-    },
-    {
-      "skill": "Smart Contracts",
-      "sessionsCount": 1,
-      "timeInvested": 60,
-      "level": "beginner",
-      "progress": 10
-    },
-    {
-      "skill": "Soroban",
-      "sessionsCount": 1,
-      "timeInvested": 45,
-      "level": "beginner",
-      "progress": 10
-    },
-    {
-      "skill": "Rust",
-      "sessionsCount": 1,
-      "timeInvested": 45,
-      "level": "beginner",
-      "progress": 10
-    },
-    {
-      "skill": "Architecture",
-      "sessionsCount": 1,
-      "timeInvested": 90,
-      "level": "beginner",
-      "progress": 10
-    }
-  ],
-  
-  "mentorInteractions": [
-    {
-      "mentorId": "m1",
-      "mentorName": "Sarah Chen",
-      "sessionsCount": 2,
-      "totalTime": 150,
-      "averageRating": 5.0,
-      "lastSession": "2026-03-20T14:00:00Z"
-    },
-    {
-      "mentorId": "m2",
-      "mentorName": "John Davis",
-      "sessionsCount": 1,
-      "totalTime": 45,
-      "averageRating": 4.0,
-      "lastSession": "2026-03-18T10:00:00Z"
-    }
-  ],
-  
-  "sessionFrequency": {
-    "labels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    "values": [2, 1, 3, 0, 2, 1, 0]
-  },
-  
-  "learningVelocity": {
-    "weeklyAverage": 2.5,
-    "monthlyTrend": 15,
-    "consistencyScore": 85
-  },
-  
-  "spendingAnalytics": {
-    "byMentor": [
-      { "name": "Sarah Chen", "amount": 150 },
-      { "name": "John Davis", "amount": 75 }
-    ],
-    "bySkill": [
-      { "skill": "Stellar", "amount": 150 },
-      { "skill": "Smart Contracts", "amount": 50 },
-      { "skill": "Soroban", "amount": 75 },
-      { "skill": "Rust", "amount": 75 },
-      { "skill": "Architecture", "amount": 100 }
-    ],
-    "monthlyTrend": [
-      { "month": "Jan", "amount": 150 },
-      { "month": "Feb", "amount": 200 },
-      { "month": "Mar", "amount": 225 }
-    ]
-  }
-}
+### 2. MobileHeader
+```
+┌─────────────────────────────────────────┐
+│ ← Menu    Page Title         ⚙️         │
+└─────────────────────────────────────────┘
 ```
 
-## CSV Export Sample
+**Features:**
+- Back/Menu button on left
+- Centered title with truncation
+- Custom action on right
+- Sticky positioning
 
-```csv
-Date,Mentor,Topic,Duration (min),Amount,Rating,Status
-2026-03-20T14:00:00Z,Sarah Chen,"Stellar Smart Contracts Basics",60,50,5,completed
-2026-03-18T10:00:00Z,John Davis,"Soroban Development",45,75,4,completed
-2026-03-15T16:00:00Z,Sarah Chen,"Advanced Stellar Concepts",90,100,5,completed
+### 3. MobileModal (Bottom Sheet)
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         Backdrop (blurred)              │
+│                                         │
+│  ╭─────────────────────────────────╮   │
+│  │  Modal Title              ✕     │   │
+│  ├─────────────────────────────────┤   │
+│  │                                 │   │
+│  │  Modal content goes here        │   │
+│  │                                 │   │
+│  │  [Primary Button]               │   │
+│  │                                 │   │
+│  ╰─────────────────────────────────╯   │
+└─────────────────────────────────────────┘
 ```
 
-## Visual Representation
+**Variants:**
+- Bottom: Slides up from bottom
+- Center: Fades in at center
+- Full: Takes full screen
 
-### Time Invested Card
+### 4. ActionSheet
 ```
-┌─────────────────────────────┐
-│ 🕐 Time Invested            │
-│                             │
-│ 3h 15m                      │
-│                             │
-│ Avg Session    Total        │
-│ 65 min         3            │
-└─────────────────────────────┘
-```
-
-### Session History Item
-```
-┌──────────────────────────────────────────┐
-│ Stellar Smart Contracts Basics 🌟       │
-│ with Sarah Chen                          │
-│                                          │
-│ 3/20/2026 • 60 min • 50 XLM             │
-│                                          │
-│ [Stellar] [Smart Contracts]             │
-│                                          │
-│                      [completed] ★ 5    │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│                                         │
+│         Backdrop (blurred)              │
+│                                         │
+│  ╭─────────────────────────────────╮   │
+│  │     Choose an action            │   │
+│  ├─────────────────────────────────┤   │
+│  │  📤  Share                      │   │
+│  │  ⚙️   Settings                  │   │
+│  │  🗑️   Delete (red)              │   │
+│  ├─────────────────────────────────┤   │
+│  │  Cancel                         │   │
+│  ╰─────────────────────────────────╯   │
+└─────────────────────────────────────────┘
 ```
 
-### Skill Progress Bar
+### 5. TouchGestures Visual Feedback
 ```
-Stellar                    2 sessions
-████████████░░░░░░░░░░░░░░░░░░░░ 20%
+Swipe Left:  ←←←  [Content] 
+Swipe Right: [Content]  →→→
+Swipe Up:    [Content]  ↑↑↑
+Swipe Down:  ↓↓↓  [Content]
 
-Smart Contracts            1 session
-████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 10%
-```
-
-### Mentor Interaction Card
-```
-┌─────────────────────────────┐
-│ Sarah Chen                  │
-│ 2 sessions • 2h 30m         │
-│                      ★ 5.0  │
-└─────────────────────────────┘
+Tap:         [Content] •
+Double Tap:  [Content] ••
+Long Press:  [Content] ⊙ (hold)
 ```
 
-## Metrics Summary
+### 6. PullToRefresh
+```
+State 1: Normal
+┌─────────────────────────────────────────┐
+│  Content Item 1                         │
+│  Content Item 2                         │
+│  Content Item 3                         │
+└─────────────────────────────────────────┘
 
-| Metric                    | Value      |
-|---------------------------|------------|
-| Total Sessions            | 3          |
-| Total Time Invested       | 3h 15m     |
-| Average Session Duration  | 65 min     |
-| Total Spent               | 225 XLM    |
-| Completion Rate           | 100%       |
-| Consistency Score         | 85%        |
-| Weekly Average            | 2.5        |
-| Skills Learning           | 5          |
-| Mentors Worked With       | 2          |
+State 2: Pulling
+┌─────────────────────────────────────────┐
+│         ↻ (rotating)                    │
+│  ─────────────────────                  │
+│  Content Item 1                         │
+│  Content Item 2                         │
+└─────────────────────────────────────────┘
+
+State 3: Refreshing
+┌─────────────────────────────────────────┐
+│         ⟳ (spinning)                    │
+│  ─────────────────────                  │
+│  Loading new content...                 │
+└─────────────────────────────────────────┘
+```
+
+### 7. MobileForm Components
+```
+┌─────────────────────────────────────────┐
+│  Name *                                 │
+│  ┌───────────────────────────────────┐ │
+│  │ John Doe                          │ │
+│  └───────────────────────────────────┘ │
+│                                         │
+│  Email *                                │
+│  ┌───────────────────────────────────┐ │
+│  │ 📧 john@example.com               │ │
+│  └───────────────────────────────────┘ │
+│                                         │
+│  Message *                              │
+│  ┌───────────────────────────────────┐ │
+│  │ Your message here...              │ │
+│  │                                   │ │
+│  │                                   │ │
+│  └───────────────────────────────────┘ │
+│                                         │
+│  ┌───────────────────────────────────┐ │
+│  │        Submit Form                │ │
+│  └───────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+```
+
+**With Error:**
+```
+┌─────────────────────────────────────────┐
+│  Email *                                │
+│  ┌───────────────────────────────────┐ │
+│  │ invalid-email                     │ │ (red border)
+│  └───────────────────────────────────┘ │
+│  ⚠️  Please enter a valid email        │ (red text)
+└─────────────────────────────────────────┘
+```
+
+### 8. MobileButton Variants
+```
+Primary:    ┌─────────────────┐
+            │  Primary Button │ (blue bg, white text)
+            └─────────────────┘
+
+Secondary:  ┌─────────────────┐
+            │ Secondary Button│ (gray bg, white text)
+            └─────────────────┘
+
+Outline:    ┌─────────────────┐
+            │  Outline Button │ (blue border, blue text)
+            └─────────────────┘
+
+Ghost:      ┌─────────────────┐
+            │   Ghost Button  │ (transparent, blue text)
+            └─────────────────┘
+
+Loading:    ┌─────────────────┐
+            │  ⟳ Loading...   │ (spinner + text)
+            └─────────────────┘
+```
+
+### 9. Loading States
+```
+MobileLoading:
+┌─────────────────────────────────────────┐
+│                                         │
+│              ⟳                          │
+│         Loading data...                 │
+│                                         │
+└─────────────────────────────────────────┘
+
+Skeleton:
+┌─────────────────────────────────────────┐
+│  ⚪ ▓▓▓▓▓▓▓▓▓▓▓▓                       │
+│     ▓▓▓▓▓▓▓▓                           │
+│                                         │
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   │
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             │
+└─────────────────────────────────────────┘
+
+Progress Bar:
+┌─────────────────────────────────────────┐
+│  Progress                          75%  │
+│  ████████████████████░░░░░░░░░░░░░░░░  │
+└─────────────────────────────────────────┘
+```
+
+### 10. Avatar Sizes
+```
+xs:  ⚪ (24px)
+sm:  ⚪  (32px)
+md:  ⚪   (40px)
+lg:  ⚪    (48px)
+xl:  ⚪     (64px)
+
+With Initials:
+┌────┐
+│ JD │ (if no image)
+└────┘
+```
+
+### 11. ResponsiveImage
+```
+Loading:
+┌─────────────────────────────────────────┐
+│                                         │
+│              ⟳                          │
+│                                         │
+└─────────────────────────────────────────┘
+
+Loaded:
+┌─────────────────────────────────────────┐
+│                                         │
+│         [Image Content]                 │
+│                                         │
+└─────────────────────────────────────────┘
+
+Error:
+┌─────────────────────────────────────────┐
+│                                         │
+│              🖼️                         │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### 12. MobileTabBar
+```
+┌─────────────────────────────────────────┐
+│  All (24)   Active (8)   Completed (16) │
+│  ━━━━━                                  │
+└─────────────────────────────────────────┘
+```
+
+## 📱 Responsive Breakpoints
+
+### Extra Small (xs: 320px)
+```
+┌──────────┐
+│  Mobile  │
+│  Phone   │
+│  View    │
+└──────────┘
+```
+
+### Small (sm: 640px)
+```
+┌────────────────┐
+│  Large Phone   │
+│  or Small      │
+│  Tablet View   │
+└────────────────┘
+```
+
+### Medium (md: 768px)
+```
+┌──────────────────────┐
+│   Tablet Portrait    │
+│   View               │
+└──────────────────────┘
+```
+
+### Large (lg: 1024px)
+```
+┌────────────────────────────┐
+│   Tablet Landscape or      │
+│   Small Desktop View       │
+└────────────────────────────┘
+```
+
+### Extra Large (xl: 1280px)
+```
+┌──────────────────────────────────┐
+│   Desktop View                   │
+└──────────────────────────────────┘
+```
+
+### 2XL (2xl: 1536px)
+```
+┌────────────────────────────────────────┐
+│   Large Desktop View                   │
+└────────────────────────────────────────┘
+```
+
+## 🎯 Touch Target Sizes
+
+### Minimum Touch Target (44px)
+```
+┌──────────────┐
+│              │  44px height
+│    Button    │  minimum
+│              │
+└──────────────┘
+```
+
+### Recommended Touch Target (48px)
+```
+┌──────────────┐
+│              │  48px height
+│    Button    │  recommended
+│              │
+└──────────────┘
+```
+
+## 🔄 Animation States
+
+### Slide In (Bottom Sheet)
+```
+Frame 1:  ┌─────┐
+          │     │
+          └─────┘
+          ▼▼▼▼▼
+
+Frame 2:  ┌─────┐
+          │     │
+          ▼▼▼
+          └─────┘
+
+Frame 3:  ┌─────┐
+          ▼
+          │     │
+          └─────┘
+
+Frame 4:  ┌─────┐
+          │     │
+          └─────┘
+```
+
+### Fade In (Center Modal)
+```
+Frame 1:  ░░░░░  (0% opacity)
+Frame 2:  ▒▒▒▒▒  (33% opacity)
+Frame 3:  ▓▓▓▓▓  (66% opacity)
+Frame 4:  █████  (100% opacity)
+```
+
+### Spin (Loading)
+```
+Frame 1:  ◐
+Frame 2:  ◓
+Frame 3:  ◑
+Frame 4:  ◒
+```
+
+## 📊 Component State Examples
+
+### Button States
+```
+Default:   [  Button  ]
+Hover:     [  Button  ] (darker)
+Active:    [  Button  ] (darkest)
+Disabled:  [  Button  ] (grayed, 50% opacity)
+Loading:   [ ⟳ Loading... ]
+```
+
+### Input States
+```
+Default:   ┌──────────┐
+           │          │
+           └──────────┘
+
+Focus:     ┌──────────┐ (blue border, ring)
+           │ |        │
+           └──────────┘
+
+Error:     ┌──────────┐ (red border)
+           │          │
+           └──────────┘
+           ⚠️ Error message
+
+Disabled:  ┌──────────┐ (gray, 50% opacity)
+           │          │
+           └──────────┘
+```
+
+### Modal States
+```
+Closed:    (not visible)
+
+Opening:   ░░░░░░░░░░  (animating in)
+           ░ Modal ░
+           ░░░░░░░░░░
+
+Open:      ██████████  (fully visible)
+           █ Modal █
+           ██████████
+
+Closing:   ▒▒▒▒▒▒▒▒▒▒  (animating out)
+           ▒ Modal ▒
+           ▒▒▒▒▒▒▒▒▒▒
+```
+
+## 🎨 Color Scheme
+
+### Primary Colors
+```
+50:  ░░░░░  #f0f9ff (lightest)
+100: ░░░░   #e0f2fe
+200: ░░░    #bae6fd
+300: ░░     #7dd3fc
+400: ░      #38bdf8
+500: █      #0ea5e9 (base)
+600: ██     #0284c7
+700: ███    #0369a1
+800: ████   #075985
+900: █████  #0c4a6e (darkest)
+```
+
+### Stellar Colors
+```
+Light:   ░  #7B61FF
+Default: █  #5B3FFF
+Dark:    ██ #3B1FDF
+```
+
+### Semantic Colors
+```
+Success: 🟢 Green
+Warning: 🟡 Yellow
+Danger:  🔴 Red
+Info:    🔵 Blue
+```
+
+## 📐 Spacing Scale
+
+```
+0:   •
+1:   •─
+2:   •──
+3:   •───
+4:   •────
+5:   •─────
+6:   •──────
+8:   •────────
+10:  •──────────
+12:  •────────────
+16:  •────────────────
+20:  •────────────────────
+```
+
+## 🔤 Typography Scale
+
+```
+xs:   Text (12px)
+sm:   Text (14px)
+base: Text (16px)
+lg:   Text (18px)
+xl:   Text (20px)
+2xl:  Text (24px)
+3xl:  Text (30px)
+4xl:  Text (36px)
+```
+
+## 🎭 Real-World Usage Example
+
+### Complete Mobile Page
+```
+┌─────────────────────────────────────────┐
+│ ← Menu    Dashboard         ⚙️          │ ← MobileHeader
+├─────────────────────────────────────────┤
+│  All (24)   Active (8)   Done (16)      │ ← MobileTabBar
+│  ━━━━━                                  │
+├─────────────────────────────────────────┤
+│  ↓ Pull to refresh                      │ ← PullToRefresh
+│                                         │
+│  ╭─────────────────────────────────╮   │
+│  │ ⚪ Task Title                   │   │ ← Card
+│  │    Description here...          │   │
+│  │    [View Details]               │   │
+│  ╰─────────────────────────────────╯   │
+│                                         │
+│  ╭─────────────────────────────────╮   │
+│  │ ⚪ Another Task                 │   │
+│  │    More details...              │   │
+│  │    [View Details]               │   │
+│  ╰─────────────────────────────────╯   │
+│                                         │
+├─────────────────────────────────────────┤
+│  🏠      🔍      🔔(3)     👤          │ ← MobileNavigation
+│ Home   Search   Alerts   Profile        │
+│  ━━                                     │
+└─────────────────────────────────────────┘
+```
+
+This visual guide helps developers understand what each component looks like and how they work together in a mobile interface.
