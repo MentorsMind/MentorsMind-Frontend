@@ -8,7 +8,7 @@ import LineChart from "./components/charts/LineChart";
 import MetricCard from "./components/charts/MetricCard";
 import PieChart from "./components/charts/PieChart";
 import MentorOnboarding from "./components/onboarding/MentorOnboarding";
-import MentorWallet from './pages/MentorWallet';
+import MentorWallet from "./pages/MentorWallet";
 import RatingBreakdown from "./components/reviews/RatingBreakdown";
 import ReviewForm from "./components/reviews/ReviewForm";
 import ReviewList from "./components/reviews/ReviewList";
@@ -20,20 +20,24 @@ import SearchPage from "./pages/SearchPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./config/queryClient";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import LearnerDashboard from './pages/LearnerDashboard';
+import LearnerDashboard from "./pages/LearnerDashboard";
+
+import PricingSettings from "./components/mentor/PricingSettings";
 
 function App() {
   const [view, setView] = useState<
     | "onboarding"
     | "learner"
+    | "learner-dashboard"
     | "dashboard"
     | "search"
     | "reviews"
     | "analytics"
     | "mentor-search"
     | "wallet"
+    | "pricing"
   >("onboarding");
-  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'dashboard' | 'reviews' | 'analytics' | 'search'>('search');
+  // const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'dashboard' | 'reviews' | 'analytics' | 'pricing' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -102,22 +106,75 @@ function App() {
                 Learner Onboarding
               </button>
               <button
-              onClick={() => setView('dashboard')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'dashboard' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Learner Dashboard
-            </button>
-            <button
-              onClick={() => setView('wallet')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'wallet' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Wallet
-            </button>
-            <button
+                onClick={() => setView("dashboard")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  view === "dashboard"
+                    ? "bg-white shadow-sm text-stellar"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Dashboard
+              </button>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+        {/* Dynamic Header */}
+
+        <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-stellar rounded-lg flex items-center justify-center text-white font-bold">
+                M
+              </div>
+              <span className="font-bold text-xl tracking-tight">
+                MentorMinds <span className="text-stellar">Stellar</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-4 bg-gray-50 p-1 rounded-xl overflow-x-auto">
+              <button
+                onClick={() => setView("onboarding")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                  view === "onboarding"
+                    ? "bg-white shadow-sm text-stellar"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Learner Dashboard
+              </button>
+              <button
+                onClick={() => setView("wallet")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                  view === "wallet"
+                    ? "bg-white shadow-sm text-stellar"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Wallet
+              </button>
+              <button
+                onClick={() => setView("pricing")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                  view === "pricing"
+                    ? "bg-white shadow-sm text-stellar"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Pricing Settings
+              </button>
+              <button
+                onClick={() => setView("pricing")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                  view === "pricing"
+                    ? "bg-white shadow-sm text-stellar"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Pricing Settings
+              </button>
+              <button
                 onClick={() => setView("dashboard")}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   view === "dashboard"
@@ -139,7 +196,7 @@ function App() {
               </button>
               <button
                 onClick={() => setView("analytics")}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                   view === "analytics"
                     ? "bg-white shadow-sm text-stellar"
                     : "text-gray-400 hover:text-gray-600"
@@ -149,7 +206,7 @@ function App() {
               </button>
               <button
                 onClick={() => setView("reviews")}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                   view === "reviews"
                     ? "bg-white shadow-sm text-stellar"
                     : "text-gray-400 hover:text-gray-600"
@@ -236,15 +293,17 @@ function App() {
             <MentorOnboarding />
           ) : view === "learner" ? (
             <LearnerOnboarding />
-        ) : view === 'dashboard' ? (
-          <LearnerDashboard />
+          ) : view === "pricing" ? (
+            <PricingSettings />
+          ) : view === "learner-dashboard" ? (
+            <LearnerDashboard />
           ) : view === "dashboard" ? (
             <MentorDashboard />
           ) : view === "mentor-search" ? (
             <MentorSearch />
-          ) : view === 'wallet' ? (
-          <MentorWallet />
-        ) : view === "analytics" ? (
+          ) : view === "wallet" ? (
+            <MentorWallet />
+          ) : view === "analytics" ? (
             <AnalyticsDashboard />
           ) : view === "search" ? (
             <SearchPage />
@@ -271,7 +330,10 @@ function App() {
                 <div id="review-form">
                   <ReviewForm
                     onSubmit={(data) => {
-                      addReview({ ...data, reviewerId: "user-" + Date.now() });
+                      addReview({
+                        ...data,
+                        reviewerId: "user-" + Date.now(),
+                      });
                       setShowForm(false);
                       setAnnouncement("Your review has been submitted.");
                     }}
@@ -308,6 +370,7 @@ function App() {
           by Stellar
         </footer>
       </div>
+
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
