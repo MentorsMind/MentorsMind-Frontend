@@ -1,5 +1,6 @@
 import React from 'react';
 import type { MentorProfile } from '../../types';
+import ImageOptimizer from '../performance/ImageOptimizer';
 
 interface MentorCardProps {
   mentor: MentorProfile;
@@ -47,7 +48,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
         {/* Avatar */}
         <div className="relative inline-block mb-4">
           {mentor.avatar ? (
-            <img
+            <ImageOptimizer
               src={mentor.avatar}
               alt={mentor.name}
               className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"

@@ -230,3 +230,97 @@ export interface SessionPrepState {
   mentorResearch: MentorResearchProfile;
   progress: number;
 }
+
+export interface ProgressGoal {
+  id: string;
+  title: string;
+  completedSteps: number;
+  totalSteps: number;
+  dueInWeeks: number;
+}
+
+export interface SkillProgressTrendPoint {
+  label: string;
+  stellar: number;
+  soroban: number;
+  product: number;
+}
+
+export interface AchievementBadge {
+  id: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  icon: string;
+}
+
+export interface LearningProgressData {
+  sessionsCompleted: number;
+  timeInvestedHours: number;
+  learningStreakDays: number;
+  goalCompletionRate: number;
+  peerComparison?: number;
+  skillProgression: SkillProgressTrendPoint[];
+  goals: ProgressGoal[];
+  achievements: AchievementBadge[];
+  milestoneCelebration?: string;
+}
+
+export interface NoteTemplate {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface NoteAttachment {
+  id: string;
+  name: string;
+  sizeLabel: string;
+}
+
+export interface NoteVersion {
+  id: string;
+  savedAt: string;
+  content: string;
+}
+
+export interface BookmarkedResource {
+  id: string;
+  title: string;
+  url: string;
+  tags: string[];
+}
+
+export interface LearnerNote {
+  id: string;
+  sessionId: string;
+  sessionTitle: string;
+  mentorName: string;
+  content: string;
+  tags: string[];
+  sharedWithMentor: boolean;
+  reminder?: string;
+  attachments: NoteAttachment[];
+  versions: NoteVersion[];
+  updatedAt: string;
+}
+
+export interface FeedbackCategoryRatings {
+  communication: number;
+  knowledge: number;
+  helpfulness: number;
+}
+
+export interface SessionFeedbackEntry {
+  id: string;
+  sessionId: string;
+  sessionTitle: string;
+  mentorName: string;
+  rating: number;
+  categories: FeedbackCategoryRatings;
+  review: string;
+  improvementSuggestions: string;
+  anonymous: boolean;
+  submittedAt: string;
+}

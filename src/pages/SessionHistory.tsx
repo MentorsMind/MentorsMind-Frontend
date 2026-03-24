@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useSessionHistory } from '../hooks/useSessionHistory';
+import { useFeedback } from '../hooks/useFeedback';
 import HistoryList from '../components/learner/HistoryList';
-import LearningAnalytics from '../components/learner/LearningAnalytics';
-import TimeInvested from '../components/learner/TimeInvested';
+import LearningProgress from '../components/learner/LearningProgress';
+import LearnerNotes from '../components/learner/LearnerNotes';
+import FeedbackForm from '../components/learner/FeedbackForm';
+import FeedbackHistory from '../components/learner/FeedbackHistory';
 
 const SessionHistory: React.FC = () => {
-  const { sessions, analytics, loading, exportReport } = useSessionHistory();
-  const [activeTab, setActiveTab] = useState<'history' | 'analytics'>('history');
+  const { sessions, loading, exportReport } = useSessionHistory();
+  const [activeTab, setActiveTab] = useState<'progress' | 'history' | 'notes' | 'feedback'>('progress');
+  const feedback = useFeedback();
 
   if (loading) {
     return (
@@ -24,10 +28,10 @@ const SessionHistory: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center gap-6 mb-8">
         <div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-            Your Learning <span className="text-stellar">Journey</span>
+            Learner Productivity <span className="text-stellar">Hub</span>
           </h1>
           <p className="text-gray-500 font-medium">
-            Track your progress and analyze your learning patterns
+            Track progress, manage notes, and capture session feedback in one workspace.
           </p>
         </div>
 
@@ -39,47 +43,8 @@ const SessionHistory: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        <TimeInvested
-          totalMinutes={analytics.totalTimeInvested}
-          averageSessionDuration={analytics.averageSessionDuration}
-          totalSessions={analytics.totalSessions}
-        />
-
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Consistency Score
-                </div>
-                <div className="text-3xl font-black text-gray-900">
-                  {analytics.learningVelocity.consistencyScore}%
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Skills Learning
-                </div>
-                <div className="text-3xl font-black text-gray-900">
-                  {analytics.skillProgress.length}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Mentors Worked With
-                </div>
-                <div className="text-3xl font-black text-gray-900">
-                  {analytics.mentorInteractions.length}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="flex items-center gap-4 border-b border-gray-100 pb-2 mb-6">
-        {(['history', 'analytics'] as const).map((tab) => (
+        {(['progress', 'history', 'notes', 'feedback'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -94,10 +59,14 @@ const SessionHistory: React.FC = () => {
         ))}
       </div>
 
-      {activeTab === 'history' ? (
-        <HistoryList sessions={sessions} />
-      ) : (
-        <LearningAnalytics analytics={analytics} />
+      {activeTab === 'progress' && <LearningProgress />}
+      {activeTab === 'history' && <HistoryList sessions={sessions} />}
+      {activeTab === 'notes' && <LearnerNotes />}
+      {activeTab === 'feedback' && (
+        <div className="space-y-6">
+          <FeedbackForm {...feedback} />
+          <FeedbackHistory history={feedback.history} onEdit={feedback.editFeedback} />
+        </div>
       )}
     </div>
   );

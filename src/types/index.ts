@@ -369,7 +369,18 @@ export type {
   PrepChecklistItem,
   UploadedResource,
   MentorResearchProfile,
-  SessionPrepState
+  SessionPrepState,
+  ProgressGoal,
+  SkillProgressTrendPoint,
+  AchievementBadge,
+  LearningProgressData,
+  NoteTemplate,
+  NoteAttachment,
+  NoteVersion,
+  BookmarkedResource,
+  LearnerNote,
+  FeedbackCategoryRatings,
+  SessionFeedbackEntry
 } from "./session.types";
 
 export * from "./pricing.types";
