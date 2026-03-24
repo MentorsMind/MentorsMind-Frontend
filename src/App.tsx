@@ -19,7 +19,13 @@ import SearchPage from "./pages/SearchPage";
 
 function App() {
   const [view, setView] = useState<
-    "onboarding" | "learner" | "dashboard" | "search" | "reviews" | "analytics"
+    | "onboarding"
+    | "learner"
+    | "dashboard"
+    | "search"
+    | "reviews"
+    | "analytics"
+    | "mentor-search"
   >("onboarding");
   // const [view, setView] = useState<'onboarding' | 'learner' | 'reviews' | 'analytics' | 'search'>('search');
   const [showForm, setShowForm] = useState(false);
@@ -209,7 +215,7 @@ function App() {
           <LearnerOnboarding />
         ) : view === "dashboard" ? (
           <MentorDashboard />
-        ) : view === "search" ? (
+        ) : view === "mentor-search" ? (
           <MentorSearch />
         ) : view === "analytics" ? (
           <AnalyticsDashboard />
