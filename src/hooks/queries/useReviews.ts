@@ -1,26 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
-import type {
-  QueryDataOptions,
-  QueryDataResult,
-} from "../../types/query.types";
+import { useQueryHelper, type BaseQueryArgs } from "../core/useQueryHelper";
 
 export function useReviews<T>({
   fetchFn,
-  deps = [],
+  deps = ["reviews"],
   staleTime = 1000 * 60, // 1 min default
   gcTime = 1000 * 60 * 5, // 5 min default
-}: QueryDataOptions<T>): QueryDataResult<T> {
-  const q = useQuery({
-    queryKey: ["reviews", ...deps],
-    queryFn: fetchFn,
+  isEmpty,
+  enabled = true,
+}: BaseQueryArgs<T>) {
+  return useQueryHelper<T>({
+    deps,
+    fetchFn,
     staleTime,
     gcTime,
+    enabled,
+    isEmpty,
   });
-
-  return {
-    data: q.data ?? null,
-    isLoading: q.isLoading,
-    error: q.error instanceof Error ? q.error.message : null,
-    refetch: q.refetch,
-  };
 }
