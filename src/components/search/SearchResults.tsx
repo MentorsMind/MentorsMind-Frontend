@@ -1,5 +1,5 @@
 import React from 'react';
-import { SearchResultItem, PaginatedResult } from '../../services/search.service';
+import type { SearchResultItem, PaginatedResult } from '../../services/search.service';
 import { Star, Clock, User, FileText, Video, Play, ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 
 interface SearchResultsProps {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Search, Sliders, CheckCircle2 } from 'lucide-react';
-import { SearchFilters } from '../../services/search.service';
+import type { SearchFilters } from '../../services/search.service';
 
 interface AdvancedSearchProps {
   isOpen: boolean;
