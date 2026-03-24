@@ -1,7 +1,6 @@
-import { useQuery, type QueryKey } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export type BaseQueryArgs<T> = {
-  queryKey: QueryKey;
   fetchFn: () => Promise<T>;
   deps?: unknown[];
   staleTime?: number;
