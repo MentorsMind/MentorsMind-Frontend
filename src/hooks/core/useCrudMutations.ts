@@ -54,6 +54,10 @@ export function useCrudMutations<
         queryClient.setQueryData(queryKey, ctx.previous);
       }
     },
+
+    onSuccess: async ()=> {
+      await queryClient.invalidateQueries({ queryKey: [queryKey] });
+    },
   });
 
   // UPDATE
@@ -78,6 +82,10 @@ export function useCrudMutations<
         queryClient.setQueryData(queryKey, ctx.previous);
       }
     },
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [queryKey] });
+    },
   });
 
   // DELETE
@@ -98,6 +106,10 @@ export function useCrudMutations<
         if (ctx?.previous) {
           queryClient.setQueryData(queryKey, ctx.previous);
         }
+      },
+
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: [queryKey] });
       },
     },
   );
