@@ -56,8 +56,33 @@ export function useCrudMutations<
     },
   });
 
+  // UPDATE
+  const update = useMutationHelper<
+    TEntity,
+    TUpdateInput,
+    { previous: TEntity[] }
+  >({
+    mutationFn: updateFn,
+    invalidateKeys: [queryKey],
 
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<TEntity[]>(queryKey) ?? [];
+
+      return { previous };
+    },
+
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(queryKey, ctx.previous);
+      }
+    },
+  });
+ 
+  
   return {
-    create
-  }
+    create,
+    update,
+  };
 }
