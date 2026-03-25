@@ -13,3 +13,51 @@ type CrudConfig<TCreateInput, TUpdateInput, TDeleteInput, TEntity> = {
   queryKey: readonly unknown[];
 };
 
+export function useCrudMutations<
+  TEntity,
+  TCreateInput,
+  TUpdateInput,
+  TDeleteInput,
+>({
+  createFn,
+  updateFn,
+  deleteFn,
+  queryKey,
+}: CrudConfig<TCreateInput, TUpdateInput, TDeleteInput, TEntity>) {
+  const queryClient = useQueryClient();
+
+  // CREATE
+  const create = useMutationHelper<
+    TEntity,
+    TCreateInput,
+    { previous: TEntity[] }
+  >({
+    mutationFn: createFn,
+    invalidateKeys: [queryKey],
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<TEntity[]>(queryKey) ?? [];
+
+      // optimistic insert (optional)
+      queryClient.setQueryData<TEntity[]>(queryKey, (old = []) => [
+        ...old,
+        input as unknown as TEntity, // safe fallback when structure differs
+      ]);
+
+      return { previous };
+    },
+
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(queryKey, ctx.previous);
+      }
+    },
+  });
+
+
+  return {
+    create
+  }
+}
