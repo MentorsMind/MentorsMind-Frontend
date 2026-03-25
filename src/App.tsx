@@ -18,6 +18,7 @@ import MentorSearch from "./pages/MentorSearch";
 import SearchPage from "./pages/SearchPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./config/queryClient";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 function App() {
   const [view, setView] = useState<
@@ -284,6 +285,7 @@ function App() {
           by Stellar
         </footer>
       </div>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
