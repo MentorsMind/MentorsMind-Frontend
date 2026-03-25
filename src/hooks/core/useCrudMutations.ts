@@ -79,10 +79,32 @@ export function useCrudMutations<
       }
     },
   });
- 
-  
+
+  // DELETE
+  const remove = useMutationHelper<void, TDeleteInput, { previous: TEntity[] }>(
+    {
+      mutationFn: deleteFn,
+      invalidateKeys: [queryKey],
+
+      onMutate: async () => {
+        await queryClient.cancelQueries({ queryKey });
+
+        const previous = queryClient.getQueryData<TEntity[]>(queryKey) ?? [];
+
+        return { previous };
+      },
+
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(queryKey, ctx.previous);
+        }
+      },
+    },
+  );
+
   return {
     create,
     update,
+    delete: remove,
   };
 }
