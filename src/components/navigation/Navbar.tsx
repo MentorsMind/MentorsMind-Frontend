@@ -55,7 +55,9 @@ export const Navbar: React.FC<NavbarProps> = ({ auth, onLogout }) => {
             <div className="hidden md:flex items-center gap-1">
               {MAIN_NAVIGATION.filter(item => {
                 const role = auth.user?.role as 'mentor' | 'learner' | 'admin' | undefined;
-                return !item.roles || item.roles.includes(role);
+                if (!item.roles) return true;
+                if (!role) return false;
+                return item.roles.includes(role);
               }).map((item) => {
                 const Icon = IconMap[item.icon || ''];
                 const active = isActive(item.path);

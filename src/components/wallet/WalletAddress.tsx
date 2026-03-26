@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 
 interface WalletAddressProps {
   publicKey: string;
@@ -22,7 +23,12 @@ export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    let ctx: CanvasRenderingContext2D | null = null;
+    try {
+      ctx = canvas.getContext('2d');
+    } catch {
+      return;
+    }
     if (!ctx) return;
 
     // Simple placeholder pattern
@@ -36,26 +42,26 @@ export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
     setQrCode(canvas.toDataURL());
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(publicKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(publicKey).catch((err) => {
       console.error('Failed to copy:', err);
-    }
+    });
+    flushSync(() => {
+      setCopied(true);
+    });
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (navigator.share) {
-      try {
-        await navigator.share({
+      navigator
+        .share({
           title: 'My Stellar Wallet Address',
           text: `Send Stellar assets to: ${publicKey}`
-        });
-      } catch (err) {
+        })
+        .catch((err) => {
         console.error('Share failed:', err);
-      }
+        });
     }
   };
 

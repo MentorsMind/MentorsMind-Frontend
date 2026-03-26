@@ -32,14 +32,14 @@ const MentorSearchBar: React.FC<MentorSearchBarProps> = ({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!suggestions.length) return;
-
     switch (e.key) {
       case 'ArrowDown':
+        if (!suggestions.length) return;
         e.preventDefault();
         setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
+        if (!suggestions.length) return;
         e.preventDefault();
         setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
         break;
@@ -105,6 +105,8 @@ const MentorSearchBar: React.FC<MentorSearchBarProps> = ({
               onChange('');
               setHighlightedIndex(-1);
             }}
+            title="Clear search"
+            aria-label="Clear search"
             className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

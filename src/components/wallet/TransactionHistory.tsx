@@ -73,6 +73,12 @@ export const TransactionHistory = ({
     return date.toLocaleDateString();
   };
 
+  const truncateAddress = (address: string) => {
+    const start = address.substring(0, 9);
+    const end = address.substring(Math.max(address.length - 6, 0));
+    return `${start}...${end}`;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-6 border-b border-gray-200">
@@ -150,11 +156,7 @@ export const TransactionHistory = ({
                     </div>
                     
                     <div className="flex items-center justify-between text-sm text-gray-500">
-                      <p className="truncate">
-                        {isSent ? 'To: ' : 'From: '}
-                        {(isSent ? tx.to : tx.from).substring(0, 8)}...
-                        {(isSent ? tx.to : tx.from).substring((isSent ? tx.to : tx.from).length - 8)}
-                      </p>
+                      <p className="truncate">{`${isSent ? 'To' : 'From'}: ${truncateAddress(isSent ? tx.to : tx.from)}`}</p>
                       <p>{formatDate(tx.timestamp)}</p>
                     </div>
                     

@@ -69,7 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       // Mock validation
       if (!email || !password) {
@@ -113,7 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1500;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       // Mock validation
       if (!email || !password || !name) {
@@ -155,7 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 500;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       localStorage.removeItem('user');
       localStorage.removeItem('rememberMe');
@@ -181,7 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       if (!email) {
         throw new Error('Email is required');
@@ -203,7 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       if (!token || !newPassword) {
         throw new Error('Invalid reset token or password');
@@ -225,7 +230,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       if (!token) {
         throw new Error('Invalid verification token');
@@ -254,7 +260,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const delay = import.meta.env.MODE === 'test' ? 0 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       if (!state.user?.email) {
         throw new Error('No user email found');

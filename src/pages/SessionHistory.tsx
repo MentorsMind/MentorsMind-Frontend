@@ -28,7 +28,7 @@ const SessionHistory: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center gap-6 mb-8">
         <div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-            Learner Productivity <span className="text-stellar">Hub</span>
+            Your Learning <span className="text-stellar">Hub</span>
           </h1>
           <p className="text-gray-500 font-medium">
             Track progress, manage notes, and capture session feedback in one workspace.

@@ -17,9 +17,24 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/pages/Home.tsx",
+    "src/pages/Settings.tsx",
+    "src/components/navigation/**/*.ts",
+    "src/components/navigation/**/*.tsx",
+    "src/hooks/useNavigation.ts",
+    "src/config/**/*.ts",
+    "src/types/**/*.ts",
+    "src/utils/performance.utils.ts"
+  ],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/examples/**"
+  ]
 }

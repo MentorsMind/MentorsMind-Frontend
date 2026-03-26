@@ -22,7 +22,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [canRefresh, setCanRefresh] = useState(false);
   
-  const startY = useRef(0);
+  const startY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = useCallback(
@@ -39,11 +39,11 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (disabled || isRefreshing || startY.current === 0) return;
+      if (disabled || isRefreshing || startY.current === null) return;
 
       const scrollTop = containerRef.current?.scrollTop || 0;
       if (scrollTop > 0) {
-        startY.current = 0;
+        startY.current = null;
         setPullDistance(0);
         setCanRefresh(false);
         return;
@@ -90,7 +90,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
       setCanRefresh(false);
     }
 
-    startY.current = 0;
+    startY.current = null;
   }, [disabled, isRefreshing, canRefresh, pullDistance, threshold, onRefresh]);
 
   const pullProgress = Math.min((pullDistance / threshold) * 100, 100);
