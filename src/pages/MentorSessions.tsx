@@ -4,7 +4,7 @@ import SessionList from '../components/mentor/SessionList';
 import SessionDetail from '../components/mentor/SessionDetail';
 import { Link, useNavigate } from 'react-router-dom'; // Assuming React Router setup
 
-const MentorSessions: React.FC = () => {
+const MentorSessions: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const { data, refresh } = useMentorSessions();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed'>('upcoming');
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -36,11 +36,16 @@ const MentorSessions: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={refresh}
-            className="px-6 py-3 border border-stellar text-stellar font-bold rounded-2xl hover:bg-stellar/5 transition-all shadow-sm"
-            disabled={data.loading}
+            className={`px-6 py-3 border font-bold rounded-2xl transition-all shadow-sm ${
+              !isOnline 
+                ? 'border-gray-200 text-gray-400 cursor-not-allowed' 
+                : 'border-stellar text-stellar hover:bg-stellar/5'
+            }`}
+            disabled={data.loading || !isOnline}
           >
-            {data.loading ? 'Refreshing...' : '⟳ Refresh'}
+            {data.loading ? 'Refreshing...' : !isOnline ? 'Offline' : '⟳ Refresh'}
           </button>
+
         </div>
       </div>
 

@@ -22,6 +22,7 @@ export interface RouteConfig {
 
 export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
+  { path: '/mentor/analytics', label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
 { path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
   { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },

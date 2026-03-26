@@ -65,6 +65,8 @@ const MOCK_SESSIONS: ExtendedSession[] = [
   },
 ];
 
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
+
 export const useMentorSessions = () => {
   const [data, setData] = useState<MentorSessionsData>({
     upcoming: [],
@@ -72,14 +74,50 @@ export const useMentorSessions = () => {
     loading: true,
   });
 
+  const fetchSessions = useCallback(() => {
+    const now = new Date().toISOString();
+    const upcoming = MOCK_SESSIONS.filter(s => new Date(s.startTime) > new Date(now));
+    const completed = MOCK_SESSIONS.filter(s => s.status === 'completed');
+    setData({ upcoming, completed, loading: false });
+  }, []);
+
+  // Initial load
   useEffect(() => {
-    // Mock fetch
-    setTimeout(() => {
-      const now = new Date().toISOString();
-      const upcoming = MOCK_SESSIONS.filter(s => new Date(s.startTime) > new Date(now));
-      const completed = MOCK_SESSIONS.filter(s => s.status === 'completed');
-      setData({ upcoming, completed, loading: false });
-    }, 500);
+    const timer = setTimeout(fetchSessions, 500);
+    return () => clearTimeout(timer);
+  }, [fetchSessions]);
+
+  // Poll every 30s
+  useEffect(() => {
+    const interval = setInterval(fetchSessions, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchSessions]);
+
+  // Simulate WebSocket: auto-add a new booking after 8s (demo only)
+  useEffect(() => {
+    const wsTimer = setTimeout(() => {
+      const newBooking: ExtendedSession = {
+        id: `ws-${Date.now()}`,
+        learnerId: 'u-new',
+        learnerName: 'Diana Prince',
+        learnerAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&h=48&fit=crop&crop=face',
+        topic: 'Stellar Anchor Integration (New Booking)',
+        startTime: new Date(Date.now() + 7200000).toISOString(),
+        duration: 60,
+        status: 'pending',
+        price: 60,
+        currency: 'USDC',
+        checklist: [false, false, false],
+        paymentStatus: 'pending' as const,
+      };
+      setData(prev => ({
+        ...prev,
+        upcoming: prev.upcoming.some(s => s.id === newBooking.id)
+          ? prev.upcoming
+          : [newBooking, ...prev.upcoming],
+      }));
+    }, 8000);
+    return () => clearTimeout(wsTimer);
   }, []);
 
   const updateSession = useCallback((updater: (sessions: ExtendedSession[]) => ExtendedSession[]) => {

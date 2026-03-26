@@ -1,6 +1,7 @@
 import React from 'react';
 import type { FeedbackCategoryRatings } from '../../types';
 import RatingStars from './RatingStars';
+import { SkillTagSelector } from '../mentor/SkillTagSelector';
 
 interface FeedbackFormProps {
   rating: number;
@@ -11,11 +12,13 @@ interface FeedbackFormProps {
   confirmationMessage: string;
   feedbackReminder: string;
   canSubmit: boolean;
+  skillTags?: string[];
   setRating: (value: number) => void;
   setCategoryRating: (category: keyof FeedbackCategoryRatings, value: number) => void;
   setReview: (value: string) => void;
   setImprovementSuggestions: (value: string) => void;
   setAnonymous: (value: boolean) => void;
+  setSkillTags?: (tags: string[]) => void;
   submitFeedback: () => boolean;
 }
 
@@ -34,11 +37,13 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
   confirmationMessage,
   feedbackReminder,
   canSubmit,
+  skillTags = [],
   setRating,
   setCategoryRating,
   setReview,
   setImprovementSuggestions,
   setAnonymous,
+  setSkillTags,
   submitFeedback,
 }) => {
   return (
@@ -91,6 +96,17 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
             />
           </div>
         </div>
+
+        {setSkillTags && (
+          <div className="mt-5">
+            <SkillTagSelector
+              selectedSkills={skillTags}
+              onChange={setSkillTags}
+              label="Skills you learned (optional)"
+              placeholder="Add a skill..."
+            />
+          </div>
+        )}
 
         <label className="mt-5 flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4 text-sm text-gray-600">
           <input type="checkbox" checked={anonymous} onChange={() => setAnonymous(!anonymous)} />

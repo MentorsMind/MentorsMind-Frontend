@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
-import { useMentorSearch } from '../hooks/useMentorSearch';
-import MentorSearchBar from '../components/search/MentorSearchBar';
-import MentorFilterPanel from '../components/search/MentorFilterPanel';
-import SearchSortOptions from '../components/search/SearchSortOptions';
-import MentorGrid from '../components/search/MentorGrid';
-import MentorCard from '../components/search/MentorCard';
-import BookingModal from '../components/learner/BookingModal';
-import type { MentorProfile } from '../types';
+import React, { useState } from "react";
+import { useMentorSearch } from "../hooks/useMentorSearch";
+import {
+  useSearchFilters,
+  type SearchFiltersState,
+} from "../hooks/useSearchFilters";
+import type { SearchFilters } from "../types";
+import MentorSearchBar from "../components/search/MentorSearchBar";
+import MentorFilterPanel from "../components/search/MentorFilterPanel";
+import SearchSortOptions from "../components/search/SearchSortOptions";
+import MentorGrid from "../components/search/MentorGrid";
+import MentorCard from "../components/search/MentorCard";
+import BookingModal from "../components/learner/BookingModal";
+import type { MentorProfile } from "../types";
 
-const MentorSearch: React.FC = () => {
+const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const {
     mentors,
     totalResults,
     currentPage,
     totalPages,
     hasMore,
-    filters,
     updateFilter,
     clearFilters,
     nextPage,
@@ -29,12 +33,57 @@ const MentorSearch: React.FC = () => {
     getRecentlyViewedMentors,
   } = useMentorSearch();
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(null);
+  // Use URL-synced search filters
+  const {
+    filters: urlFilters,
+    updateFilter: updateUrlFilter,
+    applyPreset,
+    clearFilters: clearUrlFilters,
+    viewMode,
+    setViewMode,
+    activeFilterCount,
+    getShareableUrl,
+    presets,
+  } = useSearchFilters();
+
+  const [searchQuery, setSearchQuery] = useState(urlFilters.searchQuery);
+  const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(
+    null,
+  );
 
   const handleSearch = (query: string) => {
-    updateFilter('searchQuery', query);
+    setSearchQuery(query);
+    updateUrlFilter("searchQuery", query);
+    // Also update the mentor search hook
+    updateFilter("searchQuery", query);
+  };
+
+  const handleFilterChange = (key: string, value: unknown) => {
+    const validKeys: (keyof SearchFilters)[] = [
+      "searchQuery",
+      "skills",
+      "minPrice",
+      "maxPrice",
+      "minRating",
+      "availabilityDays",
+      "languages",
+      "sortBy",
+    ];
+
+    if (validKeys.includes(key as keyof SearchFilters)) {
+      // Cast value to match expected type for URL filters
+      const urlValue = value as SearchFiltersState[keyof SearchFiltersState];
+      updateUrlFilter(key as keyof SearchFiltersState, urlValue);
+      // Also update the mentor search hook
+      const filterValue = value as SearchFilters[keyof SearchFilters];
+      updateFilter(key as keyof SearchFilters, filterValue);
+    }
+  };
+
+  const handleClearFilters = () => {
+    clearUrlFilters();
+    clearFilters();
+    setSearchQuery("");
   };
 
   const handleViewProfile = (mentor: MentorProfile) => {
@@ -59,7 +108,7 @@ const MentorSearch: React.FC = () => {
         </p>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar with Presets */}
       <div className="mb-8">
         <MentorSearchBar
           value={searchQuery}
@@ -67,6 +116,10 @@ const MentorSearch: React.FC = () => {
           onSearch={handleSearch}
           suggestions={suggestions}
           placeholder="Search by name, skill (e.g., Stellar, React), or expertise..."
+          presets={presets}
+          onPresetClick={applyPreset}
+          getShareableUrl={getShareableUrl}
+          activeFilterCount={activeFilterCount}
         />
       </div>
 
@@ -75,15 +128,19 @@ const MentorSearch: React.FC = () => {
         <div className="lg:col-span-1">
           <MentorFilterPanel
             filters={{
-              skills: filters.skills,
-              minPrice: filters.minPrice,
-              maxPrice: filters.maxPrice,
-              minRating: filters.minRating,
-              availabilityDays: filters.availabilityDays,
-              languages: filters.languages,
+              skills: urlFilters.skills,
+              minPrice: urlFilters.minPrice,
+              maxPrice: urlFilters.maxPrice,
+              minRating: urlFilters.minRating,
+              availability: urlFilters.availability,
+              availabilityDays: urlFilters.availabilityDays,
+              languages: urlFilters.languages,
+              timezone: urlFilters.timezone,
+              verifiedOnly: urlFilters.verifiedOnly,
             }}
-            onFilterChange={updateFilter}
-            onClearFilters={clearFilters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            activeFilterCount={activeFilterCount}
           />
         </div>
 
@@ -91,8 +148,22 @@ const MentorSearch: React.FC = () => {
         <div className="lg:col-span-3 space-y-6">
           {/* Sort & View Options */}
           <SearchSortOptions
-            sortBy={filters.sortBy}
-            onSortChange={(sort) => updateFilter('sortBy', sort)}
+            sortBy={urlFilters.sortBy}
+            onSortChange={(sort) => {
+              updateUrlFilter(
+                "sortBy",
+                sort as "rating" | "price_low" | "price_high" | "newest",
+              );
+              updateFilter(
+                "sortBy",
+                sort as
+                  | "rating"
+                  | "price_low"
+                  | "price_high"
+                  | "experience"
+                  | "sessions",
+              );
+            }}
             resultsCount={totalResults}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -101,12 +172,19 @@ const MentorSearch: React.FC = () => {
           {/* Mentor Grid/List */}
           <MentorGrid
             mentors={mentors}
-            savedMentors={new Set(mentors.filter((mentor) => isSaved(mentor.id)).map((mentor) => mentor.id))}
+            savedMentors={
+              new Set(
+                mentors
+                  .filter((mentor) => isSaved(mentor.id))
+                  .map((mentor) => mentor.id),
+              )
+            }
             onSaveToggle={toggleSaveMentor}
             onViewProfile={handleViewProfile}
-            onBookSession={setSelectedMentor}
+            onBookSession={isOnline ? setSelectedMentor : undefined}
             viewMode={viewMode}
           />
+
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -118,20 +196,22 @@ const MentorSearch: React.FC = () => {
               >
                 Previous
               </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => goToPage(page)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                    currentPage === page
-                      ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
-                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                      currentPage === page
+                        ? "bg-stellar text-white shadow-lg shadow-stellar/20"
+                        : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
 
               <button
                 onClick={nextPage}
@@ -148,7 +228,9 @@ const MentorSearch: React.FC = () => {
       {/* Recently Viewed Section */}
       {recentlyViewed.length > 0 && (
         <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recently Viewed Mentors</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Recently Viewed Mentors
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recentlyViewed.map((mentor) => (
               <div
@@ -168,11 +250,17 @@ const MentorSearch: React.FC = () => {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 truncate">{mentor.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{mentor.title}</p>
+                  <h3 className="font-bold text-gray-900 truncate">
+                    {mentor.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 truncate">
+                    {mentor.title}
+                  </p>
                   <div className="flex items-center gap-1 mt-1">
                     <span className="text-yellow-400 text-xs">★</span>
-                    <span className="text-xs font-bold text-gray-900">{mentor.rating}</span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {mentor.rating}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -184,7 +272,9 @@ const MentorSearch: React.FC = () => {
       {/* Personalized Recommendations */}
       {recommendations.length > 0 && (
         <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommended For You</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Recommended For You
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recommendations.map((mentor) => (
               <MentorCard
@@ -193,7 +283,7 @@ const MentorSearch: React.FC = () => {
                 isSaved={isSaved(mentor.id)}
                 onSave={toggleSaveMentor}
                 onViewProfile={handleViewProfile}
-                onBookSession={setSelectedMentor}
+                onBookSession={isOnline ? setSelectedMentor : undefined}
                 viewMode="grid"
               />
             ))}

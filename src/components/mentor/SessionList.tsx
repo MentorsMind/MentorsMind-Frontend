@@ -53,9 +53,7 @@ const SessionList: React.FC<SessionListProps> = ({ sessions, type, onOpenDetail 
 
       <div className="space-y-4">
         {sessions.length === 0 ? (
-          <div className="py-12 text-center text-gray-400 italic">
-            No {type} sessions.
-          </div>
+          <div className="py-12 text-center text-gray-400 italic">No {type} sessions.</div>
         ) : (
           sessions.map((session) => (
             <div 

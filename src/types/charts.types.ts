@@ -1,48 +1,30 @@
-export interface DataPoint {
-  label: string;
+import type { AssetCode } from './index';
+
+export interface ChartDatum {
+  date: string;
   value: number;
-  [key: string]: string | number;
+  asset?: AssetCode;
+  category?: string;
+  learner?: string;
 }
 
-export interface MultiSeriesDataPoint {
-  label: string;
-  [key: string]: string | number;
+export interface EarningsMetrics {
+  avgDuration: number; // minutes
+  totalSessions: number;
+  platformFees: number;
+  currentPeriodTotal: number;
+  previousPeriodTotal: number;
+  periodChange: number; // percentage
 }
 
-export interface ChartSeries {
-  key: string;
-  name: string;
-  color?: string;
+export interface AggregatedData {
+  monthlyEarnings: ChartDatum[];
+  weeklySessions: ChartDatum[];
+  topLearners: ChartDatum[];
+  skillBreakdown: ChartDatum[];
+  metrics: EarningsMetrics;
 }
+</xai:function_call >
 
-export interface ChartExportOptions {
-  format: 'png' | 'svg';
-  filename?: string;
-}
-
-export interface ChartState {
-  isLoading: boolean;
-  error: string | null;
-}
-
-export interface MetricCardData {
-  title: string;
-  value: string | number;
-  change?: number;
-  changeLabel?: string;
-  icon?: React.ReactNode;
-  prefix?: string;
-  suffix?: string;
-}
-
-export interface UseChartDataOptions<T> {
-  fetchFn: () => Promise<T>;
-  deps?: unknown[];
-}
-
-export interface UseChartDataResult<T> {
-  data: T | null;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => void;
-}
+<xai:function_call name="create_file">
+<parameter name="absolute_path">src/hooks/useEarningsData.ts

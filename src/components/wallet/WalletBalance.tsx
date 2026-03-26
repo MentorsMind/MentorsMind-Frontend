@@ -1,111 +1,134 @@
-import { useState } from 'react';
-import type { WalletBalance as WalletBalanceType } from '../../types/wallet.types';
+import React from 'react';
+import { RefreshCw, AlertTriangle, TrendingUp } from 'lucide-react';
+import type { ParsedBalance } from '../../hooks/useHorizon';
 
 interface WalletBalanceProps {
-  balances: WalletBalanceType[];
-  publicKey: string;
+  balances: ParsedBalance[];
+  totalUsd: number;
+  minimumReserve: number;
+  availableXlm: number;
+  loading: boolean;
+  error: string | null;
   onRefresh: () => void;
-  loading?: boolean;
 }
 
-export const WalletBalance = ({ balances, publicKey, onRefresh, loading }: WalletBalanceProps) => {
-  const [showAllAssets, setShowAllAssets] = useState(false);
+const ASSET_ICONS: Record<string, string> = {
+  XLM: '🚀',
+  USDC: '💵',
+  PYUSD: '🅿️',
+};
 
-  const totalValueUSD = balances.reduce((sum, balance) => {
-    // TODO: Fetch real exchange rates
-    const rate = balance.assetCode === 'XLM' ? 0.12 : 1.0;
-    return sum + parseFloat(balance.balance) * rate;
-  }, 0);
-
-  const displayedBalances = showAllAssets ? balances : balances.slice(0, 3);
+export function WalletBalance({
+  balances,
+  totalUsd,
+  minimumReserve,
+  availableXlm,
+  loading,
+  error,
+  onRefresh,
+}: WalletBalanceProps) {
+  const xlmBalance = balances.find(b => b.isNative);
+  const xlmAmount = xlmBalance ? parseFloat(xlmBalance.balance) : 0;
+  const showReserveWarning = xlmAmount > 0 && availableXlm < 2;
 
   return (
-    <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
-      <div className="flex justify-between items-start mb-6">
+    <div className="bg-gradient-to-br from-stellar to-stellar-light rounded-3xl p-6 text-white shadow-xl shadow-stellar/20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-blue-200 text-sm mb-1">Total Balance</p>
-          <h2 className="text-4xl font-bold">${totalValueUSD.toFixed(2)}</h2>
-          <p className="text-blue-200 text-xs mt-2">
-            {publicKey.substring(0, 8)}...{publicKey.substring(publicKey.length - 8)}
+          <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">
+            Total Balance
           </p>
+          {loading ? (
+            <div className="h-10 w-36 bg-white/20 rounded-xl animate-pulse" />
+          ) : (
+            <p className="text-4xl font-bold tabular-nums">
+              ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          )}
         </div>
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-2 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
-          aria-label="Refresh balance"
+          aria-label="Refresh balances"
+          className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
         >
-          <svg
-            className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
+          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="space-y-3">
-        {displayedBalances.map((balance, index) => (
-          <div
-            key={`${balance.assetCode}-${balance.assetIssuer || 'native'}`}
-            className="bg-white/10 backdrop-blur rounded-lg p-4"
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="font-bold text-sm">{balance.assetCode.substring(0, 3)}</span>
+      {/* Error */}
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-2xl bg-red-500/20 border border-red-400/30 text-sm text-red-100">
+          {error}
+        </div>
+      )}
+
+      {/* Reserve warning */}
+      {showReserveWarning && (
+        <div className="mb-4 flex items-start gap-2 px-4 py-3 rounded-2xl bg-amber-500/20 border border-amber-400/30">
+          <AlertTriangle className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-100 leading-relaxed">
+            Low available XLM. Minimum reserve is{' '}
+            <span className="font-bold">{minimumReserve} XLM</span> (base + trustlines).
+            Available to send: <span className="font-bold">{availableXlm.toFixed(2)} XLM</span>.
+          </p>
+        </div>
+      )}
+
+      {/* Asset list */}
+      <div className="space-y-2">
+        {loading && balances.length === 0
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-16 bg-white/10 rounded-2xl animate-pulse" />
+            ))
+          : balances.map(b => (
+              <div
+                key={`${b.assetCode}-${b.assetIssuer ?? 'native'}`}
+                className="flex items-center justify-between bg-white/10 backdrop-blur rounded-2xl px-4 py-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl" aria-hidden="true">
+                    {ASSET_ICONS[b.assetCode] ?? '🪙'}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-sm">{b.assetCode}</p>
+                    {!b.isNative && b.assetIssuer && (
+                      <p className="text-white/50 text-[10px] font-mono">
+                        {b.assetIssuer.slice(0, 6)}…{b.assetIssuer.slice(-4)}
+                      </p>
+                    )}
+                    {b.isNative && (
+                      <p className="text-white/50 text-[10px]">
+                        {availableXlm.toFixed(2)} available
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">{balance.assetCode}</p>
-                  {!balance.isNative && (
-                    <p className="text-xs text-blue-200">
-                      {balance.assetIssuer?.substring(0, 8)}...
+                <div className="text-right">
+                  <p className="font-bold tabular-nums">
+                    {parseFloat(b.balance).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 7,
+                    })}
+                  </p>
+                  {b.usdValue > 0 && (
+                    <p className="text-white/60 text-xs tabular-nums flex items-center gap-1 justify-end">
+                      <TrendingUp className="w-3 h-3" />
+                      ${b.totalUsd.toFixed(2)}
                     </p>
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold text-lg">
-                  {parseFloat(balance.balance).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 7
-                  })}
-                </p>
-                {balance.limit && (
-                  <p className="text-xs text-blue-200">
-                    Limit: {parseFloat(balance.limit).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
+            ))}
       </div>
 
-      {balances.length > 3 && (
-        <button
-          onClick={() => setShowAllAssets(!showAllAssets)}
-          className="w-full mt-4 py-2 text-sm text-blue-200 hover:text-white transition-colors"
-        >
-          {showAllAssets ? 'Show Less' : `Show ${balances.length - 3} More Assets`}
-        </button>
+      {/* Reserve info footer */}
+      {!loading && balances.length > 0 && (
+        <p className="mt-4 text-center text-white/40 text-[10px]">
+          Min. reserve: {minimumReserve} XLM · {balances.length - 1} trustline(s)
+        </p>
       )}
-
-      <div className="mt-6 pt-6 border-t border-white/20 flex space-x-3">
-        <button className="flex-1 bg-white text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-          Send
-        </button>
-        <button className="flex-1 bg-white/10 backdrop-blur py-3 rounded-lg font-semibold hover:bg-white/20 transition-colors">
-          Receive
-        </button>
-      </div>
     </div>
   );
-};
+}

@@ -6,7 +6,7 @@ import PayoutRequest from '../components/mentor/PayoutRequest';
 import PayoutHistory from '../components/mentor/PayoutHistory';
 import MetricCard from '../components/charts/MetricCard';
 
-const MentorWallet: React.FC = () => {
+const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const {
     wallet,
     txFilter, setTxFilter,
@@ -68,8 +68,9 @@ const MentorWallet: React.FC = () => {
             status={payoutStatus}
             onAmountChange={setPayoutAmount}
             onAssetChange={setPayoutAsset}
-            onSubmit={requestPayout}
+            onSubmit={isOnline ? requestPayout : () => alert('Payouts are disabled while offline.')}
           />
+
         </div>
         <div className="lg:col-span-2">
           <PayoutHistory

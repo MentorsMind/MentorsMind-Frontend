@@ -30,9 +30,21 @@ export interface RatingStats {
   };
 }
 
-export type OnboardingStepId = 'profile' | 'wallet' | 'availability' | 'pricing' | 'tutorial' | 'complete';
+export type OnboardingStepId =
+  | "profile"
+  | "wallet"
+  | "availability"
+  | "pricing"
+  | "tutorial"
+  | "complete";
 
-export type LearnerStepId = 'goals' | 'assessment' | 'matching' | 'wallet' | 'tutorial' | 'complete';
+export type LearnerStepId =
+  | "goals"
+  | "assessment"
+  | "matching"
+  | "wallet"
+  | "tutorial"
+  | "complete";
 
 export interface LearnerGoal {
   id: string;
@@ -42,7 +54,7 @@ export interface LearnerGoal {
 
 export interface SkillLevel {
   topic: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: "beginner" | "intermediate" | "advanced";
 }
 
 export interface MentorMatch {
@@ -70,7 +82,7 @@ export interface LearnerOnboardingState {
 
 // ── Wallet ────────────────────────────────────────────────────────────────────
 
-export type AssetCode = 'XLM' | 'USDC' | 'yXLM';
+export type AssetCode = "XLM" | "USDC" | "yXLM";
 
 export interface WalletAsset {
   code: AssetCode;
@@ -78,8 +90,8 @@ export interface WalletAsset {
   usdValue: number;
 }
 
-export type TxType = 'earning' | 'payout' | 'fee' | 'refund';
-export type TxStatus = 'completed' | 'pending' | 'failed';
+export type TxType = "earning" | "payout" | "fee" | "refund";
+export type TxStatus = "completed" | "pending" | "failed";
 
 export interface Transaction {
   id: string;
@@ -98,7 +110,7 @@ export interface PayoutRequest {
   id: string;
   amount: number;
   asset: AssetCode;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   requestedAt: string;
   completedAt?: string;
   txHash?: string;
@@ -156,8 +168,13 @@ export interface OnboardingState {
 
 // ── Learning Goals ────────────────────────────────────────────────────────────
 
-export type GoalStatus = 'active' | 'completed' | 'paused' | 'overdue';
-export type GoalCategory = 'technical' | 'career' | 'project' | 'certification' | 'soft-skills';
+export type GoalStatus = "active" | "completed" | "paused" | "overdue";
+export type GoalCategory =
+  | "technical"
+  | "career"
+  | "project"
+  | "certification"
+  | "soft-skills";
 
 export interface Milestone {
   id: string;
@@ -200,7 +217,7 @@ export interface GoalTemplate {
   measurable: string;
   achievable: string;
   relevant: string;
-  milestones: Omit<Milestone, 'id' | 'completed' | 'completedAt'>[];
+  milestones: Omit<Milestone, "id" | "completed" | "completedAt">[];
 }
 
 export interface GoalStats {
@@ -210,7 +227,12 @@ export interface GoalStats {
   overdue: number;
   completionRate: number;
 }
-export type SessionStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rescheduled';
+export type SessionStatus =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed"
+  | "rescheduled";
 
 export interface Session {
   id: string;
@@ -236,7 +258,7 @@ export interface EarningsData {
 
 export interface Activity {
   id: string;
-  type: 'booking' | 'payment' | 'review' | 'system';
+  type: "booking" | "payment" | "review" | "system";
   title: string;
   description: string;
   timestamp: string;
@@ -257,11 +279,11 @@ export interface MentorDashboardData {
   pendingMessagesCount: number;
 }
 
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
 
 export interface PaymentTransaction {
   id: string;
-  type: 'session' | 'subscription' | 'refund';
+  type: "session" | "subscription" | "refund";
   mentorId: string;
   mentorName: string;
   amount: number;
@@ -319,7 +341,7 @@ export interface SearchFilters {
   minRating?: number;
   availabilityDays: string[];
   languages: string[];
-  sortBy: 'rating' | 'price_low' | 'price_high' | 'experience' | 'sessions';
+  sortBy: "rating" | "price_low" | "price_high" | "experience" | "sessions";
 }
 
 export interface SearchResult {
@@ -336,7 +358,7 @@ export interface RecentlyViewedMentor {
   mentor: MentorProfile;
 }
 
-export type UserRole = 'mentor' | 'learner' | 'admin';
+export type UserRole = "mentor" | "learner" | "admin";
 
 export interface User {
   id: string;
@@ -347,6 +369,10 @@ export interface User {
   bio?: string;
 }
 
+export interface User {
+  stellarPublicKey?: string;
+  emailVerified: boolean;
+}
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -354,10 +380,10 @@ export interface AuthState {
 }
 
 // Session History Types
-export type { 
-  SessionHistoryItem, 
-  LearningAnalytics, 
-  SkillProgress, 
+export type {
+  SessionHistoryItem,
+  LearningAnalytics,
+  SkillProgress,
   MentorInteraction,
   SessionFrequencyData,
   LearningVelocityData,
@@ -388,8 +414,9 @@ export type {
   NoteTemplate,
   NoteAttachment,
   NoteVersion,
+  ResourceLink,
   BookmarkedResource,
   LearnerNote,
   FeedbackCategoryRatings,
-  SessionFeedbackEntry
-} from './session.types';
+  SessionFeedbackEntry,
+} from "./session.types";
