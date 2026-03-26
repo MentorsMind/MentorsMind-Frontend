@@ -9,12 +9,14 @@ import { TimezoneSelector } from '../components/mentor/TimezoneSelector';
 import { RecurringAvailability } from '../components/mentor/RecurringAvailability';
 import { CalendarSync } from '../components/mentor/CalendarSync';
 import { generateRecurringSlots } from '../utils/calendar.utils';
+import { useTimezone } from '../hooks/useTimezone';
 
 export const MentorProfileSetup = () => {
   const [currentStep, setCurrentStep] = useState<'profile' | 'availability'>('profile');
   const [showPreview, setShowPreview] = useState(false);
   const [showTimeSlotEditor, setShowTimeSlotEditor] = useState(false);
   const [syncedCalendars, setSyncedCalendars] = useState<string[]>([]);
+  const { setTimezone: setUserTimezone } = useTimezone();
 
   const {
     profile,
@@ -65,6 +67,11 @@ export const MentorProfileSetup = () => {
     setSyncedCalendars((prev: string[]) =>
       prev.includes(provider) ? prev.filter((p: string) => p !== provider) : [...prev, provider]
     );
+  };
+
+  const handleTimezoneChange = (nextTimezone: string) => {
+    setTimezone(nextTimezone);
+    setUserTimezone(nextTimezone);
   };
 
   const steps = [
@@ -161,7 +168,7 @@ export const MentorProfileSetup = () => {
               </div>
 
               <div className="mb-6">
-                <TimezoneSelector value={timezone} onChange={setTimezone} />
+                <TimezoneSelector value={timezone} onChange={handleTimezoneChange} />
               </div>
 
               <AvailabilityCalendar
@@ -169,6 +176,7 @@ export const MentorProfileSetup = () => {
                 onSlotClick={(slot: any) => console.log('Slot clicked:', slot)}
                 onDeleteSlot={deleteTimeSlot}
                 onSlotUpdate={updateTimeSlot}
+                displayTimezone={timezone}
               />
             </div>
           )}

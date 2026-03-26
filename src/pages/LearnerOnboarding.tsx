@@ -5,6 +5,7 @@ import SkillAssessment from '../components/onboarding/SkillAssessment';
 import MentorMatching from '../components/onboarding/MentorMatching';
 import PlatformTutorial from '../components/onboarding/PlatformTutorial';
 import type { LearnerStepId } from '../types';
+import { useTimezone } from '../hooks/useTimezone';
 
 const LEARNING_GOALS = [
   { id: 'web3', label: 'Learn Web3 & Blockchain', icon: '⛓️' },
@@ -14,6 +15,7 @@ const LEARNING_GOALS = [
   { id: 'career', label: 'Career Transition', icon: '🚀' },
   { id: 'startup', label: 'Launch a Startup', icon: '💡' },
 ];
+
 
 // ProgressIndicator expects OnboardingStepId — we cast since it only uses the array for display
 const STEP_LABELS: Record<LearnerStepId, string> = {
@@ -26,6 +28,8 @@ const STEP_LABELS: Record<LearnerStepId, string> = {
 };
 
 const LearnerOnboarding: React.FC = () => {
+
+  const { timezone } = useTimezone();
   const {
     currentStep,
     completedSteps,
@@ -258,6 +262,7 @@ const LearnerChecklist: React.FC<{ completedSteps: LearnerStepId[]; onResume: ()
         </div>
         <button onClick={onResume} className="text-xs font-bold text-stellar hover:underline">Resume</button>
       </div>
+      
       <div className="space-y-3">
         {CHECKLIST_ITEMS.map(item => {
           const isDone = completedSteps.includes(item.id);
@@ -274,6 +279,7 @@ const LearnerChecklist: React.FC<{ completedSteps: LearnerStepId[]; onResume: ()
           );
         })}
       </div>
+      
     </div>
   );
 };

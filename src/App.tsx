@@ -1,10 +1,7 @@
-import React, { lazy, useEffect, useState, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import OfflineBanner from './components/ui/OfflineBanner';
 import NetworkErrorToast from './components/ui/NetworkErrorToast';
-import ThemeToggle from './components/ui/ThemeToggle';          // ← NEW
-import { ThemeProvider } from './contexts/ThemeContext';         // ← NEW
-
 import SkipNavigation from './components/a11y/SkipNavigation';
 import LiveRegion from './components/a11y/LiveRegion';
 import AccessibilityPanel from './components/a11y/AccessibilityPanel';
@@ -12,44 +9,55 @@ import { useReviews } from './hooks/useReviews';
 import { usePerformance } from './hooks/usePerformance';
 import { preloadCriticalResources } from './utils/performance.utils';
 import MetricCard from './components/charts/MetricCard';
+import { TimezoneProvider } from './contexts/TimeZoneProvider';
 
-const loadMentorOnboarding   = () => import('./components/onboarding/MentorOnboarding');
-const loadLearnerOnboarding  = () => import('./pages/LearnerOnboarding');
-const loadMentorWallet       = () => import('./pages/MentorWallet');
-const loadMentorSearch       = () => import('./pages/MentorSearch');
-const loadMentorSessions     = () => import('./pages/MentorSessions');
-const loadSettings           = () => import('./pages/Settings');
+const loadMentorOnboarding = () => import('./components/onboarding/MentorOnboarding');
+const loadLearnerOnboarding = () => import('./pages/LearnerOnboarding');
+const loadMentorWallet = () => import('./pages/MentorWallet');
+const loadMentorSearch = () => import('./pages/MentorSearch');
+const loadMentorSessions = () => import('./pages/MentorSessions');
+const loadSettings = () => import('./pages/Settings');
 const loadMentorProfileSetup = () => import('./pages/MentorProfileSetup');
-const loadLearningGoals      = () => import('./pages/LearningGoals');
-const loadRatingBreakdown    = () => import('./components/reviews/RatingBreakdown');
-const loadReviewForm         = () => import('./components/reviews/ReviewForm');
-const loadReviewList         = () => import('./components/reviews/ReviewList');
-const loadLineChart          = () => import('./components/charts/LineChart');
-const loadBarChart           = () => import('./components/charts/BarChart');
-const loadPieChart           = () => import('./components/charts/PieChart');
-const loadAreaChart          = () => import('./components/charts/AreaChart');
+const loadLearningGoals = () => import('./pages/LearningGoals');
+const loadRatingBreakdown = () => import('./components/reviews/RatingBreakdown');
+const loadReviewForm = () => import('./components/reviews/ReviewForm');
+const loadReviewList = () => import('./components/reviews/ReviewList');
+const loadLineChart = () => import('./components/charts/LineChart');
+const loadBarChart = () => import('./components/charts/BarChart');
+const loadPieChart = () => import('./components/charts/PieChart');
+const loadAreaChart = () => import('./components/charts/AreaChart');
 
-const MentorOnboarding   = lazy(loadMentorOnboarding);
-const LearnerOnboarding  = lazy(loadLearnerOnboarding);
-const MentorWallet       = lazy(loadMentorWallet);
-const MentorSearch       = lazy(loadMentorSearch);
-const MentorSessions     = lazy(loadMentorSessions);
-const Settings           = lazy(loadSettings);
-const MentorProfileSetup = lazy(() => loadMentorProfileSetup().then(m => ({ default: m.MentorProfileSetup })));
-const LearningGoals      = lazy(loadLearningGoals);
-const MentorDashboard    = lazy(() => import('./pages/MentorDashboard'));
-const RatingBreakdown    = lazy(loadRatingBreakdown);
-const ReviewForm         = lazy(loadReviewForm);
-const ReviewList         = lazy(loadReviewList);
-const LineChart          = lazy(loadLineChart);
-const BarChart           = lazy(loadBarChart);
-const PieChart           = lazy(loadPieChart);
-const AreaChart          = lazy(loadAreaChart);
+const MentorOnboarding = lazy(loadMentorOnboarding);
+const LearnerOnboarding = lazy(loadLearnerOnboarding);
+const MentorWallet = lazy(loadMentorWallet);
+const MentorSearch = lazy(loadMentorSearch);
+const MentorSessions = lazy(loadMentorSessions);
+const Settings = lazy(loadSettings);
+const MentorProfileSetup = lazy(() =>
+  loadMentorProfileSetup().then((m) => ({ default: m.MentorProfileSetup }))
+);
+const LearningGoals = lazy(loadLearningGoals);
+const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
+const RatingBreakdown = lazy(loadRatingBreakdown);
+const ReviewForm = lazy(loadReviewForm);
+const ReviewList = lazy(loadReviewList);
+const LineChart = lazy(loadLineChart);
+const BarChart = lazy(loadBarChart);
+const PieChart = lazy(loadPieChart);
+const AreaChart = lazy(loadAreaChart);
 
 type AppView =
-  | 'onboarding' | 'learner' | 'wallet' | 'search'
-  | 'reviews' | 'analytics' | 'profile' | 'sessions'
-  | 'settings' | 'goals' | 'dashboard';
+  | 'onboarding'
+  | 'learner'
+  | 'wallet'
+  | 'search'
+  | 'reviews'
+  | 'analytics'
+  | 'profile'
+  | 'sessions'
+  | 'settings'
+  | 'goals'
+  | 'dashboard';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -137,14 +145,14 @@ function AnalyticsDashboard() {
   );
 }
 
-// ─── Inner app — rendered inside ThemeProvider ────────────────────────────────
-function AppInner() {
+function App() {
   const isOnline = useOnlineStatus();
   const [view, setView]               = useState<AppView>('onboarding');
   const [showForm, setShowForm]       = useState(false);
   const [a11yOpen, setA11yOpen]       = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const { dashboard, budgetStatus }   = usePerformance();
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  const { dashboard, budgetStatus } = usePerformance();
 
   const {
     reviews, stats, addReview, voteHelpful,
@@ -159,8 +167,6 @@ function AppInner() {
 
   useEffect(() => { preloadCriticalResources(); }, []);
 
-  const [networkError, setNetworkError] = useState<string | null>(null);
-
   useEffect(() => {
     const handleNetworkError = (e: any) => {
       setNetworkError(e.detail?.message || 'A network error occurred.');
@@ -170,48 +176,34 @@ function AppInner() {
   }, []);
 
   const preloaders: Record<AppView, () => Promise<unknown>> = {
-    search:     loadMentorSearch,
-    learner:    loadLearnerOnboarding,
+    search: loadMentorSearch,
+    learner: loadLearnerOnboarding,
     onboarding: loadMentorOnboarding,
-    profile:    loadMentorProfileSetup,
-    wallet:     loadMentorWallet,
-    analytics:  loadAreaChart,
-    reviews:    loadReviewList,
-    sessions:   loadMentorSessions,
-    settings:   loadSettings,
-    goals:      loadLearningGoals,
-    dashboard:  () => Promise.resolve(),
+    profile: loadMentorProfileSetup,
+    wallet: loadMentorWallet,
+    analytics: loadAreaChart,
+    reviews: loadReviewList,
+    sessions: loadMentorSessions,
+    settings: loadSettings,
+    goals: loadLearningGoals,
+    dashboard: () => Promise.resolve(),
   };
 
   return (
-    /*
-     * Root wrapper
-     *   light → bg-gray-50 / text-gray-900  (identical to original)
-     *   dark  → bg-gray-950 / text-gray-100
-     *   transition-colors gives the 300 ms smooth fade on theme switch
-     */
-    <div
-      className={[
-        'min-h-screen font-sans pb-20',
-        'bg-gray-50 text-gray-900',
-        'dark:bg-gray-950 dark:text-gray-100',
-        'transition-colors duration-300 ease-in-out',
-        !isOnline ? 'pt-10' : '',
-      ].join(' ')}
-    >
-      <OfflineBanner />
+    <TimezoneProvider>
+      <div className={`min-h-screen bg-gray-50 font-sans text-gray-900 pb-20 ${!isOnline ? 'pt-10' : ''}`}>
+        <OfflineBanner />
+        {networkError && (
+          <NetworkErrorToast
+            message={networkError}
+            onRetry={() => window.dispatchEvent(new Event('online'))}
+            onClose={() => setNetworkError(null)}
+          />
+        )}
 
-      {networkError && (
-        <NetworkErrorToast
-          message={networkError}
-          onRetry={() => window.dispatchEvent(new Event('online'))}
-          onClose={() => setNetworkError(null)}
-        />
-      )}
-
-      <SkipNavigation />
-      <LiveRegion message={announcement} />
-      <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
+        <SkipNavigation />
+        <LiveRegion message={announcement} />
+        <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
 
       {/* ── Navbar ───────────────────────────────────────────────────────── */}
       <nav
@@ -231,18 +223,67 @@ function AppInner() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stellar font-bold text-white">
               M
             </div>
-            <span className="text-xl font-bold tracking-tight">
-              MentorMinds <span className="text-stellar">Stellar</span>
-            </span>
-          </div>
 
-          {/* Right controls: a11y + ThemeToggle */}
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:hidden">
+              {[
+                { id: 'search', label: 'Search' },
+                { id: 'learner', label: 'Learner' },
+                { id: 'onboarding', label: 'Mentor' },
+                { id: 'profile', label: 'Profile' },
+                { id: 'wallet', label: 'Wallet' },
+                { id: 'sessions', label: 'Sessions' },
+                { id: 'settings', label: 'Settings' },
+                { id: 'analytics', label: 'Analytics' },
+                { id: 'reviews', label: 'Reviews' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleViewChange(item.id as AppView, item.label)}
+                  onMouseEnter={() => preloaders[item.id as AppView]?.()}
+                  onFocus={() => preloaders[item.id as AppView]?.()}
+                  className={`rounded-xl px-3 py-2 text-xs font-bold transition-all ${
+                    view === item.id ? 'bg-white text-stellar shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="hidden items-center gap-2 rounded-2xl bg-gray-50 p-1 md:flex">
+              {[
+                { id: 'search', label: 'Search & Discovery' },
+                { id: 'learner', label: 'Learner Onboarding' },
+                { id: 'onboarding', label: 'Mentor Onboarding' },
+                { id: 'goals', label: 'Goals' },
+                { id: 'sessions', label: 'Manage Sessions' },
+                { id: 'profile', label: 'Profile Setup' },
+                { id: 'wallet', label: 'Wallet' },
+                { id: 'settings', label: 'Settings' },
+                { id: 'analytics', label: 'Analytics' },
+                { id: 'reviews', label: 'Reviews' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleViewChange(item.id as AppView, item.label)}
+                  onMouseEnter={() => preloaders[item.id as AppView]?.()}
+                  onFocus={() => preloaders[item.id as AppView]?.()}
+                  className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                    view === item.id ? 'bg-white text-stellar shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               onClick={() => setA11yOpen(true)}
               aria-label="Open accessibility settings"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-stellar/20 bg-stellar/10 text-stellar transition-colors duration-300"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-stellar/20 bg-stellar/10 text-stellar"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="3" strokeWidth="2" />
@@ -254,232 +295,120 @@ function AppInner() {
                 />
               </svg>
             </button>
-
-            {/* ← ThemeToggle lives here in the navbar */}
-            <ThemeToggle />
           </div>
-        </div>
+        </nav>
 
-        {/* Mobile nav tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar md:hidden py-2 px-1">
-          {[
-            { id: 'onboarding', label: 'Mentor Onboarding' },
-            { id: 'goals',      label: 'Goals' },
-            { id: 'wallet',     label: 'Wallet' },
-            { id: 'analytics',  label: 'Analytics' },
-            { id: 'reviews',    label: 'Ratings & Reviews' },
-            { id: 'profile',    label: 'Profile Setup' },
-            { id: 'search',     label: 'Search' },
-            { id: 'sessions',   label: 'Manage Sessions' },
-            { id: 'settings',   label: 'Settings' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleViewChange(item.id as AppView, item.label)}
-              className={[
-                'px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap',
-                view === item.id
-                  ? 'bg-white dark:bg-gray-800 shadow-sm text-stellar'
-                  : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300',
-              ].join(' ')}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Desktop nav tabs */}
-        <div
-          className={[
-            'hidden items-center gap-2 rounded-2xl p-1 md:flex mx-auto max-w-7xl px-4 pb-2',
-            'bg-gray-50 dark:bg-gray-800/50',
-            'transition-colors duration-300',
-          ].join(' ')}
-        >
-          {[
-            { id: 'search',     label: 'Search & Booking' },
-            { id: 'learner',    label: 'Learner Onboarding' },
-            { id: 'onboarding', label: 'Mentor Onboarding' },
-            { id: 'sessions',   label: 'Manage Sessions' },
-            { id: 'profile',    label: 'Profile Setup' },
-            { id: 'wallet',     label: 'Wallet' },
-            { id: 'settings',   label: 'Settings' },
-            { id: 'analytics',  label: 'Analytics' },
-            { id: 'reviews',    label: 'Reviews' },
-          ].map((item: { id: string; label: string }) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleViewChange(item.id as AppView, item.label)}
-              onMouseEnter={() => preloaders[item.id as AppView]?.()}
-              onFocus={() => preloaders[item.id as AppView]?.()}
-              className={[
-                'rounded-xl px-4 py-2 text-sm font-bold transition-all',
-                view === item.id
-                  ? 'bg-white dark:bg-gray-700 text-stellar shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100',
-              ].join(' ')}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="max-w-7xl mx-auto px-4 pt-10 outline-none"
-      >
-        <Suspense
-          fallback={
-            <div className="flex h-64 items-center justify-center text-gray-400 dark:text-gray-500">
-              Loading…
-            </div>
-          }
-        >
-          {view === 'settings'   ? <Settings /> :
-           view === 'onboarding' ? <MentorOnboarding /> :
-           view === 'learner'    ? <LearnerOnboarding /> :
-           view === 'wallet'     ? <MentorWallet isOnline={isOnline} /> :
-           view === 'goals'      ? <LearningGoals /> :
-           view === 'sessions'   ? <MentorSessions isOnline={isOnline} /> :
-           view === 'profile'    ? <MentorProfileSetup /> :
-           view === 'search'     ? <MentorSearch isOnline={isOnline} /> :
-           view === 'analytics'  ? <AnalyticsDashboard /> :
-           view === 'dashboard'  ? <MentorDashboard /> : (
-
-            /* Reviews view */
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-between items-end">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-50">
-                    Mentor Feedback
-                    {!isOnline && (
-                      <span className="ml-3 inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300">
-                        <svg className="mr-1.5 h-2 w-2 text-amber-400" fill="currentColor" viewBox="0 0 8 8">
-                          <circle cx="4" cy="4" r="3" />
-                        </svg>
-                        Offline Cache
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    See what the community is saying about your sessions.
-                  </p>
+        <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 pt-10 outline-none">
+          <Suspense fallback={<div className="flex h-64 items-center justify-center">Loading...</div>}>
+            {view === 'settings' ? (
+              <Settings />
+            ) : view === 'onboarding' ? (
+              <MentorOnboarding />
+            ) : view === 'learner' ? (
+              <LearnerOnboarding />
+            ) : view === 'wallet' ? (
+              <MentorWallet isOnline={isOnline} />
+            ) : view === 'goals' ? (
+              <LearningGoals />
+            ) : view === 'sessions' ? (
+              <MentorSessions />
+            ) : view === 'profile' ? (
+              <MentorProfileSetup />
+            ) : view === 'search' ? (
+              <MentorSearch isOnline={isOnline} />
+            ) : view === 'analytics' ? (
+              <AnalyticsDashboard />
+            ) : view === 'dashboard' ? (
+              <MentorDashboard />
+            ) : (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">
+                      Mentor Feedback
+                      {!isOnline && (
+                        <span className="ml-3 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                          <svg className="mr-1.5 h-2 w-2 text-amber-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          Offline Cache
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-gray-500">See what the community is saying about your sessions.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(!showForm)}
+                    disabled={!isOnline}
+                    aria-expanded={showForm}
+                    aria-controls="review-form"
+                    className={`rounded-xl px-6 py-2.5 font-bold shadow-lg transition-all ${
+                      !isOnline
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        : 'bg-stellar text-white shadow-stellar/20 hover:bg-stellar-dark'
+                    }`}
+                  >
+                    {showForm ? 'Cancel Review' : 'Write a Review'}
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowForm(!showForm)}
-                  disabled={!isOnline}
-                  aria-expanded={showForm}
-                  aria-controls="review-form"
-                  className={[
-                    'rounded-xl px-6 py-2.5 font-bold shadow-lg transition-all',
-                    !isOnline
-                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
-                      : 'bg-stellar text-white shadow-stellar/20 hover:bg-stellar-dark',
-                  ].join(' ')}
-                >
-                  {showForm ? 'Cancel Review' : 'Write a Review'}
-                </button>
-              </div>
+                {showForm && (
+                  <div id="review-form">
+                    <ReviewForm
+                      onSubmit={(data) => {
+                        addReview({ ...data, reviewerId: `user-${Date.now()}` });
+                        setShowForm(false);
+                        setAnnouncement('Your review has been submitted.');
+                      }}
+                      onCancel={() => setShowForm(false)}
+                    />
+                  </div>
+                )}
 
-              {showForm && (
-                <div id="review-form">
-                  <ReviewForm
-                    onSubmit={(data) => {
-                      addReview({ ...data, reviewerId: `user-${Date.now()}` });
-                      setShowForm(false);
-                      setAnnouncement('Your review has been submitted.');
-                    }}
-                    onCancel={() => setShowForm(false)}
+                <RatingBreakdown stats={stats} />
+
+                <div className="rounded-[2.5rem] border border-gray-100 bg-white p-8 shadow-sm md:p-12">
+                  <ReviewList
+                    reviews={reviews}
+                    stats={stats}
+                    onVoteHelpful={voteHelpful}
+                    onFilterChange={setFilterRating}
+                    currentFilter={filterRating}
+                    onAddResponse={addMentorResponse}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={paginate}
                   />
                 </div>
-              )}
-
-              <RatingBreakdown stats={stats} />
-
-              <div
-                className={[
-                  'rounded-[2.5rem] border p-8 shadow-sm md:p-12',
-                  'border-gray-100 bg-white',
-                  'dark:border-gray-800 dark:bg-gray-900',
-                  'transition-colors duration-300',
-                ].join(' ')}
-              >
-                <ReviewList
-                  reviews={reviews}
-                  stats={stats}
-                  onVoteHelpful={voteHelpful}
-                  onFilterChange={setFilterRating}
-                  currentFilter={filterRating}
-                  onAddResponse={addMentorResponse}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={paginate}
-                />
               </div>
-            </div>
-          )}
-        </Suspense>
-      </main>
+            )}
+          </Suspense>
+        </main>
 
-      {/* ── Performance monitor sidebar ──────────────────────────────────── */}
-      <aside
-        className={[
-          'fixed bottom-16 left-4 z-40 hidden w-72 rounded-[1.5rem] border p-4 shadow-xl backdrop-blur md:block',
-          'border-gray-100 bg-white/95',
-          'dark:border-gray-800 dark:bg-gray-900/95',
-          'transition-colors duration-300',
-        ].join(' ')}
-      >
-        <div className="text-xs font-bold uppercase tracking-[0.18em] text-stellar">
-          Performance Monitor
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {dashboard.map((item: { label: string; value: number | string | null; unit?: string }) => (
-            <div
-              key={item.label}
-              className="rounded-2xl bg-gray-50 dark:bg-gray-800 p-3 text-center transition-colors duration-300"
-            >
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-                {item.label}
+        <aside className="fixed bottom-16 left-4 z-40 hidden w-72 rounded-[1.5rem] border border-gray-100 bg-white/95 p-4 shadow-xl backdrop-blur md:block">
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-stellar">Performance Monitor</div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {dashboard.map((item: { label: string; value: number | string | null; unit?: string }) => (
+              <div key={item.label} className="rounded-2xl bg-gray-50 p-3 text-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{item.label}</div>
+                <div className="mt-1 text-sm font-black text-gray-900">
+                  {item.value ?? '--'}
+                  {item.unit}
+                </div>
               </div>
-              <div className="mt-1 text-sm font-black text-gray-900 dark:text-gray-100">
-                {item.value ?? '--'}{item.unit}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 text-[11px] text-gray-500 dark:text-gray-400">
-          Budget: {budgetStatus.jsBudgetKb}KB JS / {budgetStatus.chunkBudgetKb}KB chunks / {budgetStatus.imageBudgetKb}KB images
-        </div>
-      </aside>
+            ))}
+          </div>
+          <div className="mt-3 text-[11px] text-gray-500">
+            Budget: {budgetStatus.jsBudgetKb}KB JS / {budgetStatus.chunkBudgetKb}KB chunks / {budgetStatus.imageBudgetKb}KB images
+          </div>
+        </aside>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer
-        className={[
-          'fixed bottom-0 left-0 right-0 border-t py-4 text-center text-[10px] backdrop-blur-sm',
-          'border-gray-100 bg-white/80 text-gray-400',
-          'dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-500',
-          'transition-colors duration-300',
-        ].join(' ')}
-      >
-        Demo Version 1.0 • Built with Vite, React &amp; Tailwind CSS • Powered by Stellar
-      </footer>
-    </div>
-  );
-}
-
-// ─── Root export — wraps everything in ThemeProvider ─────────────────────────
-function App() {
-  return (
-    <ThemeProvider>
-      <AppInner />
-    </ThemeProvider>
+        <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/80 py-4 text-center text-[10px] text-gray-400 backdrop-blur-sm">
+          Demo Version 1.0 • Built with Vite, React & Tailwind CSS • Powered by Stellar
+        </footer>
+      </div>
+    </TimezoneProvider>
   );
 }
 

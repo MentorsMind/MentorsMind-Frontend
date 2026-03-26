@@ -8,19 +8,24 @@ import {
 
 export type AvailabilityFilter = "all" | "today" | "this_week";
 
+type MentorSearchFilters = {
+  skills: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  availability: AvailabilityFilter;
+  availabilityDays: string[];
+  languages: string[];
+  timezone?: string;
+  verifiedOnly: boolean;
+};
+
 interface MentorFilterPanelProps {
-  filters: {
-    skills: string[];
-    minPrice?: number;
-    maxPrice?: number;
-    minRating?: number;
-    availability: AvailabilityFilter;
-    availabilityDays: string[];
-    languages: string[];
-    timezone?: string;
-    verifiedOnly: boolean;
-  };
-  onFilterChange: (key: string, value: unknown) => void;
+  filters: MentorSearchFilters;
+  onFilterChange: <K extends keyof MentorSearchFilters>(
+    key: K,
+    value: MentorSearchFilters[K]
+  ) => void;
   onClearFilters: () => void;
   activeFilterCount?: number;
 }
@@ -53,26 +58,23 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
     filters.verifiedOnly;
 
   const toggleSkill = (skill: string) => {
-    const current = filters.skills;
-    const updated = current.includes(skill)
-      ? current.filter((s: string) => s !== skill)
-      : [...current, skill];
+    const updated = filters.skills.includes(skill)
+      ? filters.skills.filter((s) => s !== skill)
+      : [...filters.skills, skill];
     onFilterChange("skills", updated);
   };
 
   const toggleLanguage = (language: string) => {
-    const current = filters.languages;
-    const updated = current.includes(language)
-      ? current.filter((l: string) => l !== language)
-      : [...current, language];
+    const updated = filters.languages.includes(language)
+      ? filters.languages.filter((l) => l !== language)
+      : [...filters.languages, language];
     onFilterChange("languages", updated);
   };
 
   const toggleDay = (day: string) => {
-    const current = filters.availabilityDays;
-    const updated = current.includes(day)
-      ? current.filter((d: string) => d !== day)
-      : [...current, day];
+    const updated = filters.availabilityDays.includes(day)
+      ? filters.availabilityDays.filter((d) => d !== day)
+      : [...filters.availabilityDays, day];
     onFilterChange("availabilityDays", updated);
   };
 
@@ -98,7 +100,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
       </div>
 
       <div className="space-y-6">
-        {/* Skills Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             Skills & Expertise
@@ -120,7 +121,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Price Range Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             Hourly Rate (XLM)
@@ -130,10 +130,7 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
               type="number"
               value={filters.minPrice || ""}
               onChange={(e) =>
-                onFilterChange(
-                  "minPrice",
-                  e.target.value ? Number(e.target.value) : undefined,
-                )
+                onFilterChange("minPrice", e.target.value ? Number(e.target.value) : undefined)
               }
               placeholder="Min"
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium outline-none focus:border-stellar focus:ring-2 focus:ring-stellar/10 transition-all"
@@ -143,10 +140,7 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
               type="number"
               value={filters.maxPrice || ""}
               onChange={(e) =>
-                onFilterChange(
-                  "maxPrice",
-                  e.target.value ? Number(e.target.value) : undefined,
-                )
+                onFilterChange("maxPrice", e.target.value ? Number(e.target.value) : undefined)
               }
               placeholder="Max"
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium outline-none focus:border-stellar focus:ring-2 focus:ring-stellar/10 transition-all"
@@ -154,7 +148,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Rating Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             Minimum Rating
@@ -164,10 +157,7 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
               <button
                 key={rating}
                 onClick={() =>
-                  onFilterChange(
-                    "minRating",
-                    filters.minRating === rating ? undefined : rating,
-                  )
+                  onFilterChange("minRating", filters.minRating === rating ? undefined : rating)
                 }
                 className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
                   filters.minRating === rating
@@ -181,7 +171,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Availability Quick Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Calendar className="w-4 h-4" /> Availability
@@ -220,7 +209,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Specific Days Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             Specific Days
@@ -242,7 +230,6 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Languages Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Globe className="w-4 h-4" /> Languages
@@ -264,16 +251,13 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Timezone Filter */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Globe className="w-4 h-4" /> Timezone
           </label>
           <select
             value={filters.timezone || ""}
-            onChange={(e) =>
-              onFilterChange("timezone", e.target.value || undefined)
-            }
+            onChange={(e) => onFilterChange("timezone", e.target.value || undefined)}
             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium outline-none focus:border-stellar focus:ring-2 focus:ring-stellar/10 transition-all cursor-pointer"
           >
             <option value="">Any timezone</option>
@@ -285,15 +269,12 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           </select>
         </div>
 
-        {/* Verified Only Toggle */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Award className="w-4 h-4" /> Verification
           </label>
           <button
-            onClick={() =>
-              onFilterChange("verifiedOnly", !filters.verifiedOnly)
-            }
+            onClick={() => onFilterChange("verifiedOnly", !filters.verifiedOnly)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               filters.verifiedOnly
                 ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
@@ -304,32 +285,10 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
               <Award className="w-4 h-4" />
               Verified only
             </span>
-            <div
-              className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                filters.verifiedOnly ? "bg-white/20" : "bg-gray-200"
-              }`}
-            >
-              {filters.verifiedOnly && (
-                <svg
-                  className="w-3 h-3 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
-            </div>
           </button>
         </div>
       </div>
 
-      {/* Clear Filters Button */}
       {hasActiveFilters && (
         <button
           onClick={onClearFilters}
