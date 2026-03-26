@@ -25,7 +25,7 @@ const SkipNavigation: React.FC<SkipNavigationProps> = ({ links = defaultLinks })
         key={href}
         href={href}
         className={[
-          'absolute left-4 top-4 z-[9999] px-4 py-2 rounded-lg',
+          'absolute left-4 top-4 z-9999 px-4 py-2 rounded-lg',
           'bg-stellar text-white font-semibold text-sm',
           'translate-y-[-200%] focus:translate-y-0',
           'transition-transform duration-150',

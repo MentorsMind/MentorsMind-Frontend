@@ -3,9 +3,8 @@ import { usePayment } from '../../hooks/usePayment';
 import type { PaymentDetails } from '../../types/payment.types';
 import PaymentMethod from './PaymentMethod';
 import PaymentBreakdown from './PaymentBreakdown';
+import PaymentStatus from './PaymentStatus';
 import PaymentReceipt from './PaymentReceipt';
-import TransactionTracker from './TransactionTracker';
-import { useStellarTransaction } from '../../hooks/useStellarTransaction';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -21,83 +20,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, details, o
     assets,
     setStep,
     selectAsset,
+    processPayment,
+    retry,
     reset
   } = usePayment(details);
-
-  const {
-    step: txStep,
-    txHash,
-    error: txError,
-    ledgerCloseCountdown,
-    escrowAddress,
-    submitTransaction,
-    reset: resetTx
-  } = useStellarTransaction();
-
-  // Sync state between usePayment and useStellarTransaction
-  const currentStep = txStep !== 'idle' ? (txStep === 'submitting' || txStep === 'pending' ? 'processing' : txStep) : state.step;
 
   // Handle ESC key to close
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && currentStep !== 'processing') {
+      if (e.key === 'Escape' && state.step !== 'processing') {
         onClose();
       }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [currentStep, onClose]);
+  }, [state.step, onClose]);
 
   // Handle success callback
   useEffect(() => {
-    if (txStep === 'confirmed' && txHash && onSuccess) {
-      onSuccess(txHash);
+    if (state.step === 'success' && state.transactionHash && onSuccess) {
+      onSuccess(state.transactionHash);
     }
-  }, [txStep, txHash, onSuccess]);
+  }, [state.step, state.transactionHash, onSuccess]);
 
   if (!isOpen) return null;
 
   const handleBack = () => {
     if (state.step === 'review') setStep('method');
-    else if (currentStep === 'error') {
-        resetTx();
-        setStep('review');
-    }
+    else if (state.step === 'error') setStep('review');
   };
 
   const handleClose = () => {
-    if (currentStep !== 'processing') {
+    if (state.step !== 'processing') {
       onClose();
       // Optional: reset after fade out
-      setTimeout(() => {
-          reset();
-          resetTx();
-      }, 300);
+      setTimeout(reset, 300);
     }
-  };
-
-  const handleProcessPayment = async () => {
-    await submitTransaction(async () => {
-      // Logic for actual transaction would go here
-      // For now we simulate the result expected by TransactionTracker
-      const mockHash = Array.from({ length: 64 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('');
-      
-      const mockEscrow = state.selectedAsset !== 'XLM' 
-        ? 'G' + Math.random().toString(36).substring(2, 58).toUpperCase() 
-        : undefined;
-
-      // Simulate network interaction
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      return { hash: mockHash, escrow: mockEscrow };
-    });
-  };
-
-  const handleRetry = () => {
-    resetTx();
-    handleProcessPayment();
   };
 
   const mockDownloadReceipt = () => {
@@ -150,14 +108,14 @@ Powered by Stellar Network
             <h2 className="text-xl font-black text-gray-900 tracking-tight">
               {state.step === 'method' && 'Select Asset'}
               {state.step === 'review' && 'Review Payment'}
-              {currentStep === 'processing' && 'Sign Transaction'}
-              {currentStep === 'success' && 'Confirmed'}
-              {currentStep === 'error' && 'Retry Payment'}
+              {state.step === 'processing' && 'Sign Transaction'}
+              {state.step === 'success' && 'Confirmed'}
+              {state.step === 'error' && 'Retry Payment'}
             </h2>
           </div>
           <button 
             onClick={handleClose}
-            disabled={currentStep === 'processing'}
+            disabled={state.step === 'processing'}
             className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all disabled:opacity-0"
             aria-label="Close modal"
           >
@@ -189,23 +147,19 @@ Powered by Stellar Network
               />
             )}
 
-            {(currentStep === 'processing' || currentStep === 'success' || currentStep === 'error') && (
-              <TransactionTracker 
-                step={txStep}
-                error={txError}
-                txHash={txHash}
-                ledgerCloseCountdown={ledgerCloseCountdown}
-                escrowAddress={escrowAddress}
-                breakdown={breakdown}
-                priceInUSD={assets.find(a => a.code === state.selectedAsset)?.priceInUSD || 1}
+            {(state.step === 'processing' || state.step === 'success' || state.step === 'error') && (
+              <PaymentStatus 
+                step={state.step}
+                error={state.error}
+                transactionHash={state.transactionHash}
               />
             )}
 
-            {currentStep === 'success' && (
+            {state.step === 'success' && (
               <PaymentReceipt 
                 details={details}
                 breakdown={breakdown}
-                transactionHash={txHash}
+                transactionHash={state.transactionHash}
                 onDownload={mockDownloadReceipt}
               />
             )}
@@ -215,17 +169,17 @@ Powered by Stellar Network
           <div className="mt-8">
             {state.step === 'review' && (
               <button
-                onClick={handleProcessPayment}
+                onClick={processPayment}
                 className="w-full py-4 px-6 bg-stellar text-white rounded-[1.25rem] font-black text-base shadow-xl shadow-stellar/25 hover:bg-stellar-dark hover:scale-[1.01] active:scale-95 transition-all"
               >
                 Confirm & Pay {breakdown.totalAmount.toFixed(4)} {breakdown.assetCode}
               </button>
             )}
 
-            {currentStep === 'error' && (
+            {state.step === 'error' && (
               <div className="space-y-3">
                 <button
-                  onClick={handleRetry}
+                  onClick={retry}
                   className="w-full py-4 px-6 bg-stellar text-white rounded-[1.25rem] font-black text-base shadow-xl shadow-stellar/25 hover:bg-stellar-dark transition-all"
                 >
                   Try Again

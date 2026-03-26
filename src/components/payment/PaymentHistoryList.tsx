@@ -114,9 +114,9 @@ const PaymentHistoryList: React.FC<PaymentHistoryListProps> = ({
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Table header / sort row */}
         <div className="flex items-center gap-4 px-5 py-3 border-b border-gray-50 bg-gray-50/70">
-          <div className="w-11 flex-shrink-0" />
+          <div className="w-11 shrink-0" />
           <div className="flex-1" />
-          <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-shrink-0">
+          <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
             <button
               id="sort-by-date"
               className="flex items-center hover:text-stellar transition-colors"
@@ -139,7 +139,7 @@ const PaymentHistoryList: React.FC<PaymentHistoryListProps> = ({
               Status <SortIcon field="status" current={sortField} direction={sortDirection} />
             </button>
           </div>
-          <div className="w-4 flex-shrink-0" />
+          <div className="w-4 shrink-0" />
         </div>
 
         {/* Transaction rows */}

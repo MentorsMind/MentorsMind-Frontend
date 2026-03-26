@@ -37,7 +37,7 @@ const MentorProfileSetup = lazy(() =>
   loadMentorProfileSetup().then((m) => ({ default: m.MentorProfileSetup }))
 );
 const LearningGoals = lazy(loadLearningGoals);
-const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
+const MentorDashboard = lazy(() => import("./pages/MentorDashboard"));
 const RatingBreakdown = lazy(loadRatingBreakdown);
 const ReviewForm = lazy(loadReviewForm);
 const ReviewList = lazy(loadReviewList);
@@ -60,12 +60,12 @@ type AppView =
   | 'dashboard';
 
 const earningsData = [
-  { label: 'Jan', earnings: 1200, sessions: 8 },
-  { label: 'Feb', earnings: 1800, sessions: 12 },
-  { label: 'Mar', earnings: 1500, sessions: 10 },
-  { label: 'Apr', earnings: 2200, sessions: 15 },
-  { label: 'May', earnings: 2800, sessions: 18 },
-  { label: 'Jun', earnings: 3100, sessions: 21 },
+  { label: "Jan", earnings: 1200, sessions: 8 },
+  { label: "Feb", earnings: 1800, sessions: 12 },
+  { label: "Mar", earnings: 1500, sessions: 10 },
+  { label: "Apr", earnings: 2200, sessions: 15 },
+  { label: "May", earnings: 2800, sessions: 18 },
+  { label: "Jun", earnings: 3100, sessions: 21 },
 ];
 
 const sessionsByCategory = [
@@ -76,12 +76,12 @@ const sessionsByCategory = [
 ];
 
 const ratingTrend = [
-  { label: 'Jan', rating: 4.2 },
-  { label: 'Feb', rating: 4.4 },
-  { label: 'Mar', rating: 4.3 },
-  { label: 'Apr', rating: 4.6 },
-  { label: 'May', rating: 4.7 },
-  { label: 'Jun', rating: 4.8 },
+  { label: "Jan", rating: 4.2 },
+  { label: "Feb", rating: 4.4 },
+  { label: "Mar", rating: 4.3 },
+  { label: "Apr", rating: 4.6 },
+  { label: "May", rating: 4.7 },
+  { label: "Jun", rating: 4.8 },
 ];
 
 // ─── Analytics dashboard sub-page ────────────────────────────────────────────
@@ -103,7 +103,7 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <AreaChart
           data={earningsData}
-          series={[{ key: 'earnings', name: 'Earnings' }]}
+          series={[{ key: "earnings", name: "Earnings" }]}
           title="Monthly Earnings"
           description="Cumulative earnings over time"
           xAxisKey="label"
@@ -113,7 +113,7 @@ function AnalyticsDashboard() {
         />
         <LineChart
           data={ratingTrend}
-          series={[{ key: 'rating', name: 'Avg Rating' }]}
+          series={[{ key: "rating", name: "Avg Rating" }]}
           title="Rating Trend"
           description="Average session rating per month"
           xAxisKey="label"
@@ -126,7 +126,7 @@ function AnalyticsDashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <BarChart
           data={earningsData}
-          series={[{ key: 'sessions', name: 'Sessions' }]}
+          series={[{ key: "sessions", name: "Sessions" }]}
           title="Sessions per Month"
           xAxisKey="label"
           exportable
@@ -160,7 +160,7 @@ function App() {
     currentPage, totalPages, paginate,
   } = useReviews('m1');
 
-  const handleViewChange = (next: AppView, label: string) => {
+  const handleViewChange = (next: typeof view, label: string) => {
     setView(next);
     setAnnouncement(`Navigated to ${label}`);
   };
@@ -169,17 +169,18 @@ function App() {
 
   useEffect(() => {
     const handleNetworkError = (e: any) => {
-      setNetworkError(e.detail?.message || 'A network error occurred.');
+      setNetworkError(e.detail?.message || "A network error occurred.");
     };
-    window.addEventListener('api-network-error', handleNetworkError);
-    return () => window.removeEventListener('api-network-error', handleNetworkError);
+    window.addEventListener("api-network-error", handleNetworkError);
+    return () =>
+      window.removeEventListener("api-network-error", handleNetworkError);
   }, []);
 
   const preloaders: Record<AppView, () => Promise<unknown>> = {
     search: loadMentorSearch,
     learner: loadLearnerOnboarding,
     onboarding: loadMentorOnboarding,
-    profile: loadMentorProfileSetup,
+    profile: loadMentorOnboarding,
     wallet: loadMentorWallet,
     analytics: loadAreaChart,
     reviews: loadReviewList,
@@ -285,7 +286,13 @@ function App() {
               aria-label="Open accessibility settings"
               className="flex h-9 w-9 items-center justify-center rounded-full border border-stellar/20 bg-stellar/10 text-stellar"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <circle cx="12" cy="12" r="3" strokeWidth="2" />
                 <path
                   strokeLinecap="round"

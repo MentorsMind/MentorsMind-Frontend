@@ -44,7 +44,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
         </svg>
       </button>
 
-      <div className={`${!isGridView ? 'flex-shrink-0' : ''}`}>
+      <div className={`${!isGridView ? 'shrink-0' : ''}`}>
         {/* Avatar */}
         <div className="relative inline-block mb-4">
           {mentor.avatar ? (
@@ -54,7 +54,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
               className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
             />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-2xl border-2 border-white shadow-md">
+            <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-2xl border-2 border-white shadow-md">
               {mentor.name[0]}
             </div>
           )}

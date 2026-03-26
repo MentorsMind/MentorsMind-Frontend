@@ -17,14 +17,27 @@ export interface EarningsMetrics {
   periodChange: number; // percentage
 }
 
-export interface AggregatedData {
-  monthlyEarnings: ChartDatum[];
-  weeklySessions: ChartDatum[];
-  topLearners: ChartDatum[];
-  skillBreakdown: ChartDatum[];
-  metrics: EarningsMetrics;
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  icon?: React.ReactNode;
+  prefix?: string;
+  suffix?: string;
 }
-</xai:function_call >
 
-<xai:function_call name="create_file">
-<parameter name="absolute_path">src/hooks/useEarningsData.ts
+export interface UseChartDataOptions<T> {
+  fetchFn: () => Promise<T>;
+  deps?: unknown[];
+  // cache controls
+  staleTime?: number;
+  gcTime?: number; // v5 (cacheTime in v4)
+}
+
+export interface UseChartDataResult<T> {
+  data: T | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}

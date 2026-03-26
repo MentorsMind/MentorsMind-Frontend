@@ -30,9 +30,21 @@ export interface RatingStats {
   };
 }
 
-export type OnboardingStepId = 'profile' | 'wallet' | 'availability' | 'pricing' | 'tutorial' | 'complete';
+export type OnboardingStepId =
+  | "profile"
+  | "wallet"
+  | "availability"
+  | "pricing"
+  | "tutorial"
+  | "complete";
 
-export type LearnerStepId = 'goals' | 'assessment' | 'matching' | 'wallet' | 'tutorial' | 'complete';
+export type LearnerStepId =
+  | "goals"
+  | "assessment"
+  | "matching"
+  | "wallet"
+  | "tutorial"
+  | "complete";
 
 export interface LearnerGoal {
   id: string;
@@ -42,7 +54,7 @@ export interface LearnerGoal {
 
 export interface SkillLevel {
   topic: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: "beginner" | "intermediate" | "advanced";
 }
 
 export interface MentorMatch {
@@ -70,7 +82,7 @@ export interface LearnerOnboardingState {
 
 // ── Wallet ────────────────────────────────────────────────────────────────────
 
-export type AssetCode = 'XLM' | 'USDC' | 'yXLM';
+export type AssetCode = "XLM" | "USDC" | "yXLM";
 
 export interface WalletAsset {
   code: AssetCode;
@@ -78,8 +90,8 @@ export interface WalletAsset {
   usdValue: number;
 }
 
-export type TxType = 'earning' | 'payout' | 'fee' | 'refund';
-export type TxStatus = 'completed' | 'pending' | 'failed';
+export type TxType = "earning" | "payout" | "fee" | "refund";
+export type TxStatus = "completed" | "pending" | "failed";
 
 export interface Transaction {
   id: string;
@@ -98,7 +110,7 @@ export interface PayoutRequest {
   id: string;
   amount: number;
   asset: AssetCode;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   requestedAt: string;
   completedAt?: string;
   txHash?: string;
@@ -210,7 +222,14 @@ export interface GoalStats {
   overdue: number;
   completionRate: number;
 }
-export type SessionStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rescheduled';
+
+
+export type SessionStatus =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed"
+  | "rescheduled";
 
 export interface Session {
   id: string;
@@ -236,7 +255,7 @@ export interface EarningsData {
 
 export interface Activity {
   id: string;
-  type: 'booking' | 'payment' | 'review' | 'system';
+  type: "booking" | "payment" | "review" | "system";
   title: string;
   description: string;
   timestamp: string;
@@ -257,11 +276,11 @@ export interface MentorDashboardData {
   pendingMessagesCount: number;
 }
 
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
 
 export interface PaymentTransaction {
   id: string;
-  type: 'session' | 'subscription' | 'refund';
+  type: "session" | "subscription" | "refund";
   mentorId: string;
   mentorName: string;
   amount: number;
@@ -281,6 +300,34 @@ export interface PaymentAnalytics {
   totalRefunded: number;
   totalFailed: number;
   transactionCount: number;
+}
+
+export type ReminderType = "email" | "sms" | "in-app" | "prep" | "calendar";
+export type ReminderStatus = "pending" | "sent" | "snoozed" | "cancelled";
+
+export interface ReminderSettings {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  inAppEnabled: boolean;
+  customTimes: number[]; // minutes before session (e.g., 60, 1440)
+  sessionPrepReminders: boolean;
+  calendarSyncReminders: boolean;
+  mentorSpecificPreferences: Record<string, Partial<ReminderSettings>>;
+}
+
+export interface Reminder {
+  id: string;
+  sessionId: string;
+  type: ReminderType;
+  scheduledTime: string; // ISO date string
+  status: ReminderStatus;
+  snoozeCount: number;
+  lastSnoozedAt?: string;
+  message: string;
+}
+
+export interface ReminderHistoryItem extends Reminder {
+  sentAt: string;
 }
 
 // Mentor Search & Discovery Types
@@ -319,7 +366,7 @@ export interface SearchFilters {
   minRating?: number;
   availabilityDays: string[];
   languages: string[];
-  sortBy: 'rating' | 'price_low' | 'price_high' | 'experience' | 'sessions';
+  sortBy: "rating" | "price_low" | "price_high" | "experience" | "sessions";
 }
 
 export interface SearchResult {
@@ -354,10 +401,10 @@ export interface AuthState {
 }
 
 // Session History Types
-export type { 
-  SessionHistoryItem, 
-  LearningAnalytics, 
-  SkillProgress, 
+export type {
+  SessionHistoryItem,
+  LearningAnalytics,
+  SkillProgress,
   MentorInteraction,
   SessionFrequencyData,
   LearningVelocityData,
@@ -388,9 +435,10 @@ export type {
   NoteTemplate,
   NoteAttachment,
   NoteVersion,
-  ResourceLink,
   BookmarkedResource,
   LearnerNote,
   FeedbackCategoryRatings,
   SessionFeedbackEntry
-} from './session.types';
+} from "./session.types";
+
+export * from "./pricing.types";
