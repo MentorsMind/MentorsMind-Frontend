@@ -200,11 +200,15 @@ function App() {
       <LiveRegion message={announcement} />
       <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
 
-      <nav id="main-nav" aria-label="Main navigation" className="sticky top-0 z-50 border-b border-gray-100 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stellar font-bold text-white">
-              M
+        <nav id="main-nav" aria-label="Main navigation" className="sticky top-0 z-50 border-b border-gray-100 bg-white">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stellar font-bold text-white">
+                M
+              </div>
+              <span className="text-xl font-bold tracking-tight">
+                MentorMinds <span className="text-stellar">Stellar</span>
+              </span>
             </div>
             <span className="text-xl font-bold tracking-tight">
               MentorMinds <span className="text-stellar">Stellar</span>
@@ -266,7 +270,15 @@ function App() {
                 view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              Search & Discovery
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                />
+              </svg>
             </button>
             <button
               onClick={() => handleViewChange('sessions', 'Manage Sessions')}
@@ -285,6 +297,7 @@ function App() {
               Settings
             </button>
           </div>
+        </nav>
 
           <div className="hidden items-center gap-2 rounded-2xl bg-gray-50 p-1 md:flex">
             {[
@@ -443,7 +456,8 @@ function App() {
       <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/80 py-4 text-center text-[10px] text-gray-400 backdrop-blur-sm">
         Demo Version 1.0 • Built with Vite, React & Tailwind CSS • Powered by Stellar
       </footer>
-    </div>
+      </div>
+    </NotificationProvider>
   );
 }
 

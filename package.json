@@ -11,10 +11,14 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "axios": "^1.13.6",
     "lucide-react": "^0.471.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^2.15.3",
+    "ws": "^8.20.0"
     "react-router-dom": "^7.13.2",
     "recharts": "^2.15.3"
   },
