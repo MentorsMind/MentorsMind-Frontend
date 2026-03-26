@@ -9,6 +9,7 @@ export interface ExtendedSession extends Session {
   paymentStatus: 'pending' | 'paid' | 'refunded';
   learnerAvatar?: string;
   learnerBio?: string;
+    mentorTimezone?: string; 
 }
 
 export interface MentorSessionsData {
@@ -31,6 +32,7 @@ const MOCK_SESSIONS: ExtendedSession[] = [
     currency: 'XLM',
     checklist: [false, true, false],
     paymentStatus: 'pending' as const,
+    mentorTimezone: 'America/New_York',
   },
   {
     id: 's2',
@@ -47,6 +49,7 @@ const MOCK_SESSIONS: ExtendedSession[] = [
     checklist: [true, true, false],
     paymentStatus: 'paid' as const,
     notes: 'Learner struggled with Rust syntax - recommended additional resources.',
+    mentorTimezone: 'America/New_York',
   },
   {
     id: 's3',
@@ -62,6 +65,7 @@ const MOCK_SESSIONS: ExtendedSession[] = [
     paymentStatus: 'paid' as const,
     feedback: 'Great session! Mentor was very knowledgeable.',
     notes: 'Covered custom Soroban contracts and testing.',
+    mentorTimezone: 'America/New_York',
   },
 ];
 

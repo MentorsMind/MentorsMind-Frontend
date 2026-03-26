@@ -1,7 +1,21 @@
-export const formatTimeSlot = (start: Date, end: Date): string => {
+export const formatTimeSlot = (
+  start: Date | string,
+  end: Date | string,
+  timeZone?: string,
+  use24h = false
+): string => {
+  const startDate = typeof start === 'string' ? new Date(start) : start;
+  const endDate = typeof end === 'string' ? new Date(end) : end;
+
   const formatTime = (date: Date) =>
-    date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return `${formatTime(start)} - ${formatTime(end)}`;
+    new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: !use24h,
+      timeZone,
+    }).format(date);
+
+  return `${formatTime(startDate)} - ${formatTime(endDate)}`;
 };
 
 export const convertTimezone = (date: Date, fromTz: string, toTz: string): Date => {
