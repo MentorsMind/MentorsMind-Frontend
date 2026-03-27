@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useMentorWallet } from '../hooks/useMentorWallet';
+import { useEscrow } from '../hooks/useEscrow';
 import WalletDashboard from '../components/mentor/WalletDashboard';
 import EarningsBreakdown from '../components/mentor/EarningsBreakdown';
 import PayoutRequest from '../components/mentor/PayoutRequest';
 import PayoutHistory from '../components/mentor/PayoutHistory';
 import MetricCard from '../components/charts/MetricCard';
+import EscrowStatus from '../components/payment/EscrowStatus';
+import EscrowTimeline from '../components/payment/EscrowTimeline';
 
 const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const {
@@ -18,6 +21,20 @@ const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
     copied, copyAddress,
     exportEarnings,
   } = useMentorWallet();
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'escrow'>('overview');
+  const [selectedEscrowId, setSelectedEscrowId] = useState<string | null>(null);
+
+  // Escrow hook for mentor view
+  const {
+    escrows,
+    loading: escrowLoading,
+    releaseEscrow,
+    getCountdown,
+    canRelease,
+    canDispute,
+    isWithinDisputeWindow
+  } = useEscrow({ userRole: 'mentor', userId: 'mentor-001' });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
@@ -82,12 +99,88 @@ const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
         </div>
       </div>
 
-      {/* Session earnings breakdown */}
-      <EarningsBreakdown
-        sessions={wallet.sessionEarnings}
-        platformFeeRate={wallet.platformFeeRate}
-        onExport={exportEarnings}
-      />
+      {/* Tabs */}
+      <div className="flex items-center gap-4 border-b border-gray-100 pb-2">
+        {(['overview', 'escrow'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              activeTab === tab
+                ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <EarningsBreakdown
+          sessions={wallet.sessionEarnings}
+          platformFeeRate={wallet.platformFeeRate}
+          onExport={exportEarnings}
+        />
+      )}
+
+      {activeTab === 'escrow' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Escrow Contracts</h2>
+              <p className="text-sm text-gray-500">Manage session payment escrows and releases</p>
+            </div>
+            <select
+              value={selectedEscrowId || ''}
+              onChange={(e) => setSelectedEscrowId(e.target.value || null)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-stellar"
+            >
+              <option value="">All Escrows</option>
+              {escrows.map((escrow) => (
+                <option key={escrow.id} value={escrow.id}>
+                  Session {escrow.sessionId} - {escrow.amount} {escrow.asset} ({escrow.status})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {escrowLoading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="h-48 bg-gray-200 rounded-2xl" />
+              <div className="h-64 bg-gray-200 rounded-2xl" />
+            </div>
+          ) : escrows.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl">
+              <p className="text-gray-500">No escrow contracts found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {(selectedEscrowId 
+                ? escrows.filter(e => e.id === selectedEscrowId)
+                : escrows
+              ).map((escrow) => (
+                <div key={escrow.id} className="space-y-4">
+                  <EscrowStatus
+                    escrow={escrow}
+                    userRole="mentor"
+                    onRelease={() => {
+                      if (window.confirm('Are you sure you want to release these funds? This action cannot be undone.')) {
+                        releaseEscrow(escrow.id);
+                      }
+                    }}
+                    getCountdown={getCountdown}
+                    canRelease={canRelease(escrow)}
+                    canDispute={canDispute(escrow)}
+                    isWithinDisputeWindow={isWithinDisputeWindow(escrow)}
+                  />
+                  <EscrowTimeline escrow={escrow} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
