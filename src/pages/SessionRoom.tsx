@@ -8,6 +8,9 @@ interface SessionRoomProps {
   sessionId: string;
   meetingLink?: string;
   sessionTopic?: string;
+  /** Who you are meeting (mentor name for learners, learner name for mentors). */
+  counterpartyName?: string;
+  /** @deprecated Use counterpartyName */
   mentorName?: string;
 }
 
@@ -15,8 +18,10 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
   sessionId,
   meetingLink,
   sessionTopic = 'Mentoring Session',
-  mentorName = 'Mentor',
+  counterpartyName,
+  mentorName,
 }) => {
+  const displayName = counterpartyName ?? mentorName ?? 'Participant';
   const {
     isConnected,
     isConnecting,
@@ -101,9 +106,7 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Ready to join?</h2>
-          <p className="text-gray-500 mb-6">
-            You're about to join a session with {mentorName}.
-          </p>
+          <p className="text-gray-500 mb-6">You&apos;re about to join a session with {displayName}.</p>
           <button
             onClick={connect}
             className="w-full px-6 py-3 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark transition-all"
@@ -131,7 +134,7 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
           </button>
           <div>
             <h1 className="text-white font-bold">{sessionTopic}</h1>
-            <p className="text-white/60 text-sm">with {mentorName}</p>
+            <p className="text-white/60 text-sm">with {displayName}</p>
           </div>
         </div>
 

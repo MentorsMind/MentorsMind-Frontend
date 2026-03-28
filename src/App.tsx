@@ -31,7 +31,7 @@ const loadPieChart = () => import('./components/charts/PieChart');
 const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
 const loadLearnerProfile = () => import('./pages/LearnerProfile');
-const loadWaitingRoom = () => import('./pages/WaitingRoom');
+const loadSessionRoomPage = () => import('./pages/SessionRoomPage');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
@@ -53,6 +53,8 @@ const LineChart = lazy(loadLineChart);
 const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
+const WaitingRoomPage = lazy(() => import('./pages/WaitingRoom'));
+const SessionRoomPage = lazy(loadSessionRoomPage);
 
 type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
 
@@ -322,6 +324,14 @@ function App() {
             element={
               <Suspense fallback={fallback}>
                 <WaitingRoomPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions/:id"
+            element={
+              <Suspense fallback={fallback}>
+                <SessionRoomPage />
               </Suspense>
             }
           />

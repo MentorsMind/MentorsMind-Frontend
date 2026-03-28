@@ -6,6 +6,8 @@ export const ROUTES = {
   SESSIONS: '/sessions',
   /** Pre-session waiting area before video room */
   SESSION_WAITING: '/sessions/:id/waiting',
+  /** Live video session (after waiting room) */
+  SESSION_ROOM: '/sessions/:id',
   HISTORY: '/history',
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',

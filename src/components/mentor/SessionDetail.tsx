@@ -1,4 +1,5 @@
-import React, { useState, MouseEvent, ChangeEvent, FormEvent } from 'react';
+import React, { useState, MouseEvent } from 'react';
+import { Link } from 'react-router-dom';
 import type { ExtendedSession } from '../../hooks/useMentorSessions';
 import SessionNotes from './SessionNotes';
 import RescheduleModal from './RescheduleModal';
@@ -11,7 +12,7 @@ interface SessionDetailProps {
 }
 
 const SessionDetail: React.FC<SessionDetailProps> = ({ session, isOpen, onClose }) => {
-  const { completeSession, toggleChecklist, updateNotes } = useMentorSessions();
+  const { completeSession, toggleChecklist } = useMentorSessions();
   const [showReschedule, setShowReschedule] = useState<boolean>(false);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [feedbackText, setFeedbackText] = useState<string>('');
@@ -90,14 +91,29 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, isOpen, onClose 
               <img src={session.learnerAvatar || '/default-avatar.png'} alt={session.learnerName} className="w-16 h-16 rounded-2xl border-4 border-gray-100" />
               <div>
                 <p className="text-gray-600 mb-2">{session.learnerBio || 'No bio available.'}</p>
-                {session.meetingLink && (
-                  <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-xl hover:bg-green-600 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Join Meeting
-                  </a>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {session.status !== 'completed' && session.status !== 'cancelled' && (
+                    <Link
+                      to={`/sessions/${session.id}/waiting?role=mentor`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-stellar text-white text-sm font-bold rounded-xl hover:opacity-95 transition-all"
+                    >
+                      Waiting room
+                    </Link>
+                  )}
+                  {session.meetingLink && (
+                    <a
+                      href={session.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-xl hover:bg-green-600 transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Join Meeting
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   Clock,
@@ -12,87 +12,31 @@ import {
 } from 'lucide-react';
 import { ConnectionTest } from '../components/session/ConnectionTest';
 import { ParticipantStatus } from '../components/session/ParticipantStatus';
+import { sessionToWaitingRoomDetails } from '../data/mentorSessionFixtures';
+import { useSessionDetails } from '../hooks/useSessionDetails';
+import { useWaitingRoomPresence } from '../hooks/useWaitingRoomPresence';
+import { ROUTES } from '../config/routes.config';
 
-export interface WaitingRoomNotePreview {
-  id: string;
-  sessionDate: string;
-  excerpt: string;
+export type { WaitingRoomNotePreview } from '../data/mentorSessionFixtures';
+
+type WaitingRoomDetailsVM = ReturnType<typeof sessionToWaitingRoomDetails>;
+
+interface WaitingRoomLoadedProps {
+  sessionId: string;
+  role: 'mentor' | 'learner';
+  details: WaitingRoomDetailsVM;
 }
 
-export interface WaitingRoomSessionDetails {
-  topic: string;
-  scheduledAt: string;
-  durationMinutes: number;
-  mentor: { id: string; name: string; avatarUrl?: string };
-  learner: { id: string; name: string; avatarUrl?: string };
-  previousNotes: WaitingRoomNotePreview[];
-}
-
-/** Replace with GET /sessions/:id/waiting when API exists. */
-function getMockWaitingDetails(sessionId: string): WaitingRoomSessionDetails {
-  return {
-    topic: `Soroban smart contracts and escrow${sessionId ? ` (#${sessionId.slice(0, 8)})` : ''}`,
-    scheduledAt: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
-    durationMinutes: 60,
-    mentor: {
-      id: 'mentor-1',
-      name: 'Dr. Amina Okonkwo',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=facearea&facepad=2&w=128&h=128&q=80',
-    },
-    learner: {
-      id: 'learner-1',
-      name: 'John Doe',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=128&h=128&q=80',
-    },
-    previousNotes: [
-      {
-        id: 'n1',
-        sessionDate: '2025-10-12',
-        excerpt: 'Covered trustlines and asset issuance. Homework: read CAP-0029 draft.',
-      },
-      {
-        id: 'n2',
-        sessionDate: '2025-09-28',
-        excerpt: 'Debugging contract errors with soroban-cli. Next: multi-party escrow pattern.',
-      },
-    ],
-  };
-}
-
-/**
- * Simulates the other party joining (WebSocket / presence in production).
- * Random delay between 4s and 12s for a realistic demo.
- */
-function useSimulatedOtherJoined(enabled: boolean) {
-  const [joined, setJoined] = useState(false);
-
-  useEffect(() => {
-    if (!enabled || joined) return;
-    const delay = 4000 + Math.random() * 8000;
-    const t = window.setTimeout(() => setJoined(true), delay);
-    return () => window.clearTimeout(t);
-  }, [enabled, joined]);
-
-  return { joined };
-}
-
-export const WaitingRoomPage: React.FC = () => {
-  const { id: sessionId = '' } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
+/** Isolated so `key={sessionId}` resets connection + simulated presence state without effects. */
+const WaitingRoomLoaded: React.FC<WaitingRoomLoadedProps> = ({ sessionId, role, details }) => {
   const navigate = useNavigate();
-
-  const role = searchParams.get('role') === 'mentor' ? 'mentor' : 'learner';
-
-  const details = useMemo(() => getMockWaitingDetails(sessionId), [sessionId]);
+  const { otherJoined } = useWaitingRoomPresence(sessionId, { enabled: true });
 
   const otherParty = role === 'mentor' ? details.learner : details.mentor;
   const selfLabel = role === 'mentor' ? 'Mentor' : 'Learner';
   const otherLabel = role === 'mentor' ? 'Learner' : 'Mentor';
 
   const [connectionReady, setConnectionReady] = useState(false);
-  const { joined: otherJoined } = useSimulatedOtherJoined(true);
 
   const handleConnectionPass = useCallback(() => {
     setConnectionReady(true);
@@ -101,10 +45,11 @@ export const WaitingRoomPage: React.FC = () => {
   useEffect(() => {
     if (!connectionReady || !otherJoined || !sessionId) return;
     const t = window.setTimeout(() => {
-      navigate(`/sessions/${sessionId}`, { replace: true });
+      const roleQs = role === 'mentor' ? '?role=mentor' : '';
+      navigate(`/sessions/${sessionId}${roleQs}`, { replace: true });
     }, 600);
     return () => window.clearTimeout(t);
-  }, [connectionReady, otherJoined, navigate, sessionId]);
+  }, [connectionReady, otherJoined, navigate, sessionId, role]);
 
   const scheduledLabel = useMemo(() => {
     try {
@@ -233,17 +178,21 @@ export const WaitingRoomPage: React.FC = () => {
               Notes from previous sessions
             </h2>
             <p className="mt-1 text-xs text-gray-500">With this {otherLabel.toLowerCase()} (preview)</p>
-            <ul className="mt-4 space-y-3">
-              {details.previousNotes.map((note) => (
-                <li
-                  key={note.id}
-                  className="rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-sm text-gray-800"
-                >
-                  <span className="text-xs font-semibold text-gray-500">{note.sessionDate}</span>
-                  <p className="mt-1 leading-snug">{note.excerpt}</p>
-                </li>
-              ))}
-            </ul>
+            {details.previousNotes.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-500">No prior notes for this pair yet.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {details.previousNotes.map((note) => (
+                  <li
+                    key={note.id}
+                    className="rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 text-sm text-gray-800"
+                  >
+                    <span className="text-xs font-semibold text-gray-500">{note.sessionDate}</span>
+                    <p className="mt-1 leading-snug">{note.excerpt}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
 
@@ -259,6 +208,63 @@ export const WaitingRoomPage: React.FC = () => {
       </div>
     </div>
   );
+};
+
+export const WaitingRoomPage: React.FC = () => {
+  const { id: sessionId = '' } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+
+  const role = searchParams.get('role') === 'mentor' ? 'mentor' : 'learner';
+
+  const { session, loading, error, refetch } = useSessionDetails(sessionId || undefined);
+  const details = useMemo(() => (session ? sessionToWaitingRoomDetails(session) : null), [session]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-4">
+        <div
+          className="h-10 w-10 animate-spin rounded-full border-2 border-stellar border-t-transparent"
+          aria-hidden
+        />
+        <p className="text-sm text-gray-600">Loading session…</p>
+      </div>
+    );
+  }
+
+  if (error === 'network') {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-gray-900 font-semibold">Could not load session</p>
+        <p className="mt-2 text-sm text-gray-600">Check your connection and try again.</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="mt-6 rounded-xl bg-stellar px-4 py-2 text-sm font-semibold text-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (error === 'not_found' || !details) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-gray-900 font-semibold">Session not found</p>
+        <p className="mt-2 text-sm text-gray-600">
+          This link may be invalid or the session was removed. Open it from your sessions list.
+        </p>
+        <Link
+          to={ROUTES.DASHBOARD}
+          className="mt-6 inline-block rounded-xl bg-stellar px-4 py-2 text-sm font-semibold text-white"
+        >
+          Go to dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  return <WaitingRoomLoaded key={sessionId} sessionId={sessionId} role={role} details={details} />;
 };
 
 export default WaitingRoomPage;
