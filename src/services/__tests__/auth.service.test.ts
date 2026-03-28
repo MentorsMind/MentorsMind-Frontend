@@ -25,16 +25,18 @@ describe("authService", () => {
       .spyOn(requestModule, "request")
       .mockResolvedValue({ accessToken: "t", refreshToken: "w" });
 
-    await authService.signup("me@mail.com", "abc2346789");
+    await authService.signup("me@mail.com", "abc2346789", "John Doe", "learner");
 
     expect(spy).toHaveBeenCalled();
     expect(spy).toHaveBeenCalledWith({
       data: {
         email: "me@mail.com",
         password: "abc2346789",
+        name: "John Doe",
+        role: "learner",
       },
       method: "POST",
-      url: "/auth/signup",
-    });
+      url: "auth/signup",
+    }, undefined);
   });
 });

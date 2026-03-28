@@ -43,6 +43,14 @@ export const usePayment = (details: PaymentDetails) => {
   );
 
   const breakdown = useMemo((): PaymentBreakdown => {
+    if (!selectedAssetData) {
+      return {
+        baseAmount: 0,
+        platformFee: 0,
+        totalAmount: 0,
+        assetCode: state.selectedAsset,
+      };
+    }
     const baseInAsset = details.amount / selectedAssetData.priceInUSD;
     const feeInAsset = baseInAsset * PLATFORM_FEE_PERCENT;
     return {
