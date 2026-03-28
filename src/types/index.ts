@@ -361,10 +361,10 @@ export interface RecentlyViewedMentor {
 export type UserRole = "mentor" | "learner" | "admin";
 
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: UserRole;
   avatar?: string;
   bio?: string;
   stellarPublicKey?: string;

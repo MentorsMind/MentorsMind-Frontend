@@ -18,14 +18,16 @@ interface Props {
   yLabel?: string;
 }
 
-export const AreaChartComponent: React.FC<Props> = ({
+type GroupedDatum = { date: string; USDC: number; XLM: number };
+
+const AreaChartComponent: React.FC<Props> = ({
   data,
   height = 300,
   title,
   yLabel = 'Earnings ($)',
 }) => {
   // Group by date and sum values by asset
-  const groupedData = data.reduce((acc, item) => {
+  const groupedData = data.reduce<GroupedDatum[]>((acc, item) => {
     const existing = acc.find(d => d.date === item.date);
     if (existing) {
       existing.USDC = (existing.USDC || 0) + (item.asset === 'USDC' ? item.value : 0);
@@ -38,7 +40,7 @@ export const AreaChartComponent: React.FC<Props> = ({
       });
     }
     return acc;
-  }, [] as any[]);
+  }, []);
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
@@ -98,3 +100,5 @@ export const AreaChartComponent: React.FC<Props> = ({
   );
 };
 
+export { AreaChartComponent };
+export default AreaChartComponent;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { AssetCode } from './index';
 
 export interface ChartDatum {
@@ -24,7 +25,33 @@ export interface AggregatedData {
   skillBreakdown: ChartDatum[];
   metrics: EarningsMetrics;
 }
-</xai:function_call >
 
-<xai:function_call name="create_file">
-<parameter name="absolute_path">src/hooks/useEarningsData.ts
+export interface ChartExportOptions {
+  format: 'svg' | 'png';
+  filename?: string;
+}
+
+/** Row for multi-series Recharts (label + arbitrary numeric series keys). */
+export type MultiSeriesDataPoint = Record<string, string | number>;
+
+export interface ChartSeries {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+export interface DataPoint {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  icon?: ReactNode;
+  prefix?: string;
+  suffix?: string;
+}
