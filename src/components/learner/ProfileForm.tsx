@@ -174,7 +174,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 label="Preferred Learning Style"
                 name="preferredLearningStyle"
                 value={formData.preferredLearningStyle}
-                onChange={(e) => handleChange('preferredLearningStyle', e.target.value)}
+                onChange={(val) => handleChange('preferredLearningStyle', val)}
                 options={learningStyleOptions}
               />
             </div>
@@ -184,7 +184,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 label="Timezone"
                 name="timezone"
                 value={formData.timezone}
-                onChange={(e) => handleChange('timezone', e.target.value)}
+                onChange={(val) => handleChange('timezone', val)}
                 options={[
                   { value: 'UTC-8', label: 'Pacific Time (PT)' },
                   { value: 'UTC-5', label: 'Eastern Time (ET)' },
@@ -208,7 +208,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 label="Profile Visibility"
                 name="visibility"
                 value={formData.visibility}
-                onChange={(e) => handleChange('visibility', e.target.value)}
+                onChange={(val) => handleChange('visibility', val)}
                 options={visibilityOptions}
               />
             </div>

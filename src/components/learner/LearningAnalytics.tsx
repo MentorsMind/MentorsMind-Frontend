@@ -91,27 +91,20 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ analytics }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BarChart
           title="Session Frequency"
-          data={{
-            labels: analytics.sessionFrequency.labels,
-            datasets: [{
-              label: 'Sessions',
-              data: analytics.sessionFrequency.values,
-              backgroundColor: '#6366f1',
-            }],
-          }}
+          data={analytics.sessionFrequency.labels.map((label, i) => ({
+            label,
+            sessions: analytics.sessionFrequency.values[i]
+          }))}
+          series={[{ key: 'sessions', name: 'Sessions', color: '#6366f1' }]}
         />
 
         <LineChart
           title="Spending Trend"
-          data={{
-            labels: analytics.spendingAnalytics.monthlyTrend.map(m => m.month),
-            datasets: [{
-              label: 'Amount (XLM)',
-              data: analytics.spendingAnalytics.monthlyTrend.map(m => m.amount),
-              borderColor: '#6366f1',
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            }],
-          }}
+          data={analytics.spendingAnalytics.monthlyTrend.map(m => ({
+            label: m.month,
+            amount: m.amount
+          }))}
+          series={[{ key: 'amount', name: 'Amount (XLM)', color: '#6366f1' }]}
         />
       </div>
     </div>

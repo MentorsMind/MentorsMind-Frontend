@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { freighterService } from '../../services/freighter.service';
 
 interface FreighterConnectProps {
-  onConnect: (walletInfo: { publicKey: string; network: string }) => void;
+  onConnect?: (walletInfo: { publicKey: string; network: string }) => void;
   onDisconnect?: () => void;
   compact?: boolean;
   showNetworkIndicator?: boolean;

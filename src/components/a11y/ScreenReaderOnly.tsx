@@ -3,7 +3,7 @@ import React from 'react';
 interface ScreenReaderOnlyProps {
   children: React.ReactNode;
   /** Render as a different element (default: span) */
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   /** Make focusable — useful for skip links or announcements */
   focusable?: boolean;
 }
@@ -16,12 +16,15 @@ const ScreenReaderOnly: React.FC<ScreenReaderOnlyProps> = ({
   children,
   as: Tag = 'span',
   focusable = false,
-}) => (
-  <Tag
-    className={focusable ? 'sr-only focus:not-sr-only focus:absolute focus:z-50' : 'sr-only'}
-  >
-    {children}
-  </Tag>
-);
+}) => {
+  const Component = Tag as any;
+  return (
+    <Component
+      className={focusable ? 'sr-only focus:not-sr-only focus:absolute focus:z-50' : 'sr-only'}
+    >
+      {children}
+    </Component>
+  );
+};
 
 export default ScreenReaderOnly;

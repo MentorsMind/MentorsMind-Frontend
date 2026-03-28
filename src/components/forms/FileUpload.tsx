@@ -4,29 +4,37 @@ import { formatFileSize } from '../../utils/validation.utils';
 
 type FileUploadProps = {
   onChange?: (files: File[]) => void;
+  onFileSelect?: (files: File[]) => void;
   config?: FileUploadConfig;
   multiple?: boolean;
   disabled?: boolean;
   className?: string;
   id?: string;
   name?: string;
+  accept?: string;
+  maxSize?: number;
 };
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onChange,
+  onFileSelect,
   config = {},
   multiple = false,
   disabled = false,
   className = '',
   id,
-  name
+  name,
+  accept,
+  maxSize: directMaxSize
 }) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { maxSize = 5 * 1024 * 1024, maxFiles = 5, acceptedTypes = [] } = config;
+  const effectiveOnChange = onFileSelect || onChange;
+
+  const { maxSize = directMaxSize || 5 * 1024 * 1024, maxFiles = 5, acceptedTypes = accept ? [accept] : [] } = config;
 
   const validateFile = (file: File): string | null => {
     if (maxSize && file.size > maxSize) {
@@ -71,7 +79,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (validFiles.length > 0) {
       const updatedFiles = multiple ? [...files, ...validFiles] : validFiles;
       setFiles(updatedFiles);
-      onChange?.(updatedFiles);
+      effectiveOnChange?.(updatedFiles);
     }
   };
 
@@ -109,7 +117,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const removeFile = (index: number) => {
     const updatedFiles = files.filter((_, i) => i !== index);
     setFiles(updatedFiles);
-    onChange?.(updatedFiles);
+    effectiveOnChange?.(updatedFiles);
   };
 
   const openFileDialog = () => {
@@ -126,11 +134,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={openFileDialog}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-300 hover:shadow-inner ${
           isDragging
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            ? 'border-blue-500 bg-blue-50 scale-[0.98]'
+            : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+        } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
       >
         <input
           ref={fileInputRef}
@@ -145,23 +153,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           aria-label="File upload"
         />
         
-        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
+        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-500 transition-transform group-hover:scale-110">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+        </div>
         
-        <p className="mt-2 text-sm text-gray-600">
-          Drag and drop files here, or click to select
+        <p className="text-sm font-bold text-gray-900 mb-1">
+          {isDragging ? 'Drop it here!' : 'Click or drag photo here'}
         </p>
-        <p className="mt-1 text-xs text-gray-500">
-          {acceptedTypes.length > 0 && `Accepted: ${acceptedTypes.join(', ')} • `}
-          Max size: {formatFileSize(maxSize)}
+        <p className="text-xs text-gray-400">
+          JPG, PNG or WEBP (Max {formatFileSize(maxSize)})
         </p>
       </div>
 
       {errors.length > 0 && (
         <div className="mt-2 space-y-1">
           {errors.map((error, index) => (
-            <p key={index} className="text-sm text-red-600" role="alert">
+            <p key={index} className="text-sm text-red-600 font-medium" role="alert">
               {error}
             </p>
           ))}
@@ -171,14 +180,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {files.length > 0 && (
         <ul className="mt-4 space-y-2">
           {files.map((file, index) => (
-            <li key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <li key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-1 duration-200">
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+                   {file.type.startsWith('image/') ? (
+                      <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                   ) : (
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                   )}
+                </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                  <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  <p className="text-sm font-bold text-gray-900 truncate max-w-[150px]">{file.name}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">{formatFileSize(file.size)}</p>
                 </div>
               </div>
               <button
@@ -187,7 +202,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   e.stopPropagation();
                   removeFile(index);
                 }}
-                className="text-red-600 hover:text-red-800"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                 aria-label={`Remove ${file.name}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

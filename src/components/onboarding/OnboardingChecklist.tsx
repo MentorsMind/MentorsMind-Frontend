@@ -1,23 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, X, RotateCcw, ExternalLink } from 'lucide-react';
 import { OnboardingItem } from '../../hooks/useOnboardingProgress';
 import OnboardingProgressBar from './OnboardingProgressBar';
 import './OnboardingChecklist.css';
 
 interface OnboardingChecklistProps {
-  items: OnboardingItem[];
-  progressPercentage: number;
-  completedCount: number;
-  totalCount: number;
-  isDismissed: boolean;
-  isCompleted: boolean;
-  shouldDisplay: boolean;
-  onMarkItemComplete: (itemId: string) => void;
-  onDismiss: () => void;
-  onResume: () => void;
+  items?: OnboardingItem[];
+  progressPercentage?: number;
+  completedCount?: number;
+  totalCount?: number;
+  isDismissed?: boolean;
+  isCompleted?: boolean;
+  shouldDisplay?: boolean;
+  onMarkItemComplete?: (itemId: string) => void;
+  onDismiss?: () => void;
+  onResume?: () => void;
+  onStepClick?: () => void;
   onReset?: () => void;
   completedSteps?: string[];
-  role: 'mentor' | 'learner';
+  role?: 'mentor' | 'learner';
   userEmail?: string;
 }
 
@@ -27,10 +28,8 @@ interface IconProps {
   className?: string;
 }
 
-// Icon mapping for checklist items
 const IconComponent: React.FC<IconProps> = ({ name, size = 20, className = '' }) => {
   const iconProps = { size, className };
-  
   const icons: Record<string, React.ReactNode> = {
     User: <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>,
     Calendar: <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
@@ -40,7 +39,6 @@ const IconComponent: React.FC<IconProps> = ({ name, size = 20, className = '' })
     CheckCircle: <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
     AlertCircle: <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
   };
-
   return <>{icons[name] || icons.AlertCircle}</>;
 };
 
@@ -67,7 +65,6 @@ const OnboardingChecklistItem: React.FC<{
         }
       }}
     >
-      {/* Checkbox */}
       <div
         className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
           ${item.isCompleted
@@ -83,7 +80,6 @@ const OnboardingChecklistItem: React.FC<{
         )}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h4 className={`text-sm font-semibold transition-all ${
@@ -102,7 +98,6 @@ const OnboardingChecklistItem: React.FC<{
         </p>
       </div>
 
-      {/* Deep-link button */}
       {item.route && !item.isCompleted && (
         <a
           href={item.route}
@@ -119,29 +114,28 @@ const OnboardingChecklistItem: React.FC<{
 };
 
 const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
-  items,
-  progressPercentage,
-  completedCount,
-  totalCount,
-  isDismissed,
-  isCompleted,
-  shouldDisplay,
-  onMarkItemComplete,
-  onDismiss,
-  onResume,
+  items = [],
+  progressPercentage = 0,
+  completedCount = 0,
+  totalCount = 0,
+  isDismissed = false,
+  isCompleted = false,
+  shouldDisplay = true,
+  onMarkItemComplete = () => {},
+  onDismiss = () => {},
+  onResume = () => {},
+  onStepClick = () => {},
   onReset,
-  role,
+  role = 'learner',
   userEmail,
 }) => {
   const [isExpanded, setIsExpanded] = useState(!isDismissed && !isCompleted);
   const [completingItemId, setCompletingItemId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Show celebration when all items are completed
   useEffect(() => {
     if (isCompleted && !showCelebration) {
       setShowCelebration(true);
-      // Auto-hide after 4 seconds
       const timer = setTimeout(() => setShowCelebration(false), 4000);
       return () => clearTimeout(timer);
     }
@@ -149,7 +143,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
 
   const handleMarkComplete = async (itemId: string) => {
     setCompletingItemId(itemId);
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 300));
     onMarkItemComplete(itemId);
     setCompletingItemId(null);
@@ -161,19 +154,17 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
       ? 'Complete these steps to get started as a mentor'
       : 'Let\'s get you set up and ready to learn';
 
-  // Don't render if shouldn't display
   if (!shouldDisplay && !isCompleted) {
     return null;
   }
 
   return (
     <div className="animate-in fade-in duration-300">
-      {/* Celebration toast */}
       {showCelebration && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce">
           <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
             <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <div>
               <p className="font-bold text-sm">🎉 All set!</p>
@@ -183,13 +174,11 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
         </div>
       )}
 
-      {/* Main card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-5">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-1">{title}</h3>
+              <h3 className="text-lg font-bold text-white mb-1" onClick={onStepClick} style={{ cursor: 'pointer' }}>{title}</h3>
               <p className="text-sm text-blue-100">{subtitle}</p>
             </div>
             <button
@@ -203,9 +192,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
           </div>
         </div>
 
-        {/* Content */}
         <div className="px-6 py-5 space-y-4">
-          {/* Progress section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-gray-700">
@@ -216,7 +203,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
             <OnboardingProgressBar percentage={progressPercentage} />
           </div>
 
-          {/* Items list */}
           <div className={`space-y-2 max-h-96 overflow-y-auto transition-all duration-300 ${
             isExpanded ? 'block' : 'hidden'
           }`}>
@@ -230,7 +216,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
             ))}
           </div>
 
-          {/* Footer actions */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <div className="flex items-center gap-2">
               {onReset && (
@@ -266,7 +251,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
         </div>
       </div>
 
-      {/* Dismissed state - show recovery banner */}
       {isDismissed && !isCompleted && (
         <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -286,7 +270,6 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
         </div>
       )}
 
-      {/* Completed state - show completion banner */}
       {isCompleted && (
         <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 flex items-center gap-2">
           <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

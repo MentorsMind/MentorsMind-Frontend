@@ -7,6 +7,8 @@ type TextAreaProps = {
   rows?: number;
   maxLength?: number;
   className?: string;
+  label?: string;
+  description?: string;
   hasError?: boolean;
   showCharCount?: boolean;
 } & React.TextareaHTMLAttributes<HTMLTextAreaElement>;

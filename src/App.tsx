@@ -31,6 +31,7 @@ const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
 const loadLearnerProfile = () => import('./pages/LearnerProfile');
 const loadTreasuryDashboard = () => import('./pages/TreasuryDashboard');
+const loadGovernanceDashboard = () => import('./pages/GovernanceDashboard');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
@@ -46,6 +47,7 @@ const MentorProfileSetup = lazy(() => loadMentorProfileSetup().then(m => ({ defa
 const LearningGoals = lazy(loadLearningGoals);
 const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
 const TreasuryDashboard = lazy(loadTreasuryDashboard);
+const GovernanceDashboard = lazy(loadGovernanceDashboard);
 const RatingBreakdown = lazy(loadRatingBreakdown);
 const ReviewForm = lazy(loadReviewForm);
 const ReviewList = lazy(loadReviewList);
@@ -54,7 +56,7 @@ const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'treasury';
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'treasury' | 'governance';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -82,6 +84,11 @@ const ratingTrend = [
 ];
 
 function AnalyticsDashboard() {
+  const AnyAreaChart = AreaChart as any;
+  const AnyLineChart = LineChart as any;
+  const AnyBarChart = BarChart as any;
+  const AnyPieChart = PieChart as any;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
       <div>
@@ -95,7 +102,7 @@ function AnalyticsDashboard() {
         <MetricCard title="Students" value={136} change={-3.4} changeLabel="vs last month" />
       </div>
       <div className="grid md:grid-cols-2 gap-6">
-        <AreaChart
+        <AnyAreaChart
           data={earningsData}
           series={[{ key: 'earnings', name: 'Earnings' }]}
           title="Monthly Earnings"
@@ -105,27 +112,14 @@ function AnalyticsDashboard() {
           exportable
           exportFilename="earnings-chart"
         />
-        <LineChart
+        <AnyLineChart
           data={ratingTrend}
           series={[{ key: 'rating', name: 'Avg Rating' }]}
-          title="Rating Trend"
-          description="Average session rating per month"
+          title="Rating Progress"
+          description="Average rating across sessions"
           xAxisKey="label"
-          zoomable
-          exportable
-          exportFilename="rating-trend"
         />
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        <BarChart
-          data={earningsData}
-          series={[{ key: 'sessions', name: 'Sessions' }]}
-          title="Sessions per Month"
-          xAxisKey="label"
-          exportable
-          exportFilename="sessions-bar"
-        />
-        <PieChart
+        <AnyPieChart
           data={sessionsByCategory}
           title="Sessions by Category"
           description="Proportional breakdown of session types"
@@ -192,6 +186,7 @@ function App() {
     dashboard: () => Promise.resolve(),
     treasury: loadTreasuryDashboard,
     'learner-profile': loadLearnerProfile,
+    governance: loadGovernanceDashboard,
   };
 
   const fallback = <div className="flex h-64 items-center justify-center">Loading...</div>;
@@ -232,6 +227,7 @@ function App() {
             { id: 'profile', label: 'Profile Setup' },
             { id: 'search', label: 'Search' },
             { id: 'sessions', label: 'Manage Sessions' },
+            { id: 'governance', label: 'Governance' },
             { id: 'settings', label: 'Settings' },
           ].map((item) => (
             <button
@@ -258,6 +254,7 @@ function App() {
             { id: 'analytics', label: 'Analytics' },
             { id: 'reviews', label: 'Reviews' },
             { id: 'treasury', label: 'Treasury' },
+            { id: 'governance', label: 'Governance' },
             { id: 'learner-profile', label: 'Learner Profile' },
           ].map((item: { id: string; label: string }) => (
             <button
@@ -313,7 +310,7 @@ function App() {
             path="/governance"
             element={
               <Suspense fallback={fallback}>
-                <Governance />
+                <GovernanceDashboard />
               </Suspense>
             }
           />
@@ -346,6 +343,8 @@ function App() {
                     <LearnerProfile />
                   ) : view === 'treasury' ? (
                     <TreasuryDashboard />
+                  ) : view === 'governance' ? (
+                    <GovernanceDashboard />
                   ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex justify-between items-end">

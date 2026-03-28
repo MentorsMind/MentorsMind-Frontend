@@ -8,6 +8,8 @@ type TextInputProps = {
   autoComplete?: string;
   maxLength?: number;
   className?: string;
+  label?: string;
+  description?: string;
   hasError?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;

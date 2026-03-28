@@ -6,6 +6,8 @@ type SelectProps = {
   value?: string | number;
   onChange?: (value: string | number) => void;
   placeholder?: string;
+  label?: string;
+  description?: string;
   searchable?: boolean;
   disabled?: boolean;
   className?: string;

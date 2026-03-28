@@ -55,3 +55,22 @@ export interface MetricCardData {
   prefix?: string;
   suffix?: string;
 }
+
+// Added for chart components
+export interface DataPoint {
+  label: string;
+  value: number;
+  color?: string;
+  tooltip?: string;
+}
+
+export interface ChartSeries {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+export interface MultiSeriesDataPoint {
+  label: string;
+  [key: string]: string | number;
+}

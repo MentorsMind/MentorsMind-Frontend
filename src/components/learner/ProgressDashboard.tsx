@@ -30,7 +30,7 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
         <LineChart
           title="Skill Progression Over Time"
           description="Track how your core skills have grown across recent learning cycles."
-          data={chartData}
+          data={chartData as any}
           series={[
             { key: 'stellar', name: 'Stellar' },
             { key: 'soroban', name: 'Soroban' },
@@ -46,7 +46,7 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
             label: goal.title,
             completed: goal.completedSteps,
             remaining: goal.totalSteps - goal.completedSteps,
-          }))}
+          })) as any}
           series={[
             { key: 'completed', name: 'Completed' },
             { key: 'remaining', name: 'Remaining' },

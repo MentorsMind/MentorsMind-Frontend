@@ -3,25 +3,28 @@ import { FieldError } from '../../types/forms.types';
 
 type FormFieldProps = {
   label: string;
-  name: string;
+  name?: string;
   error?: FieldError;
   required?: boolean;
   hint?: string;
+  description?: string;
   children: React.ReactNode;
   className?: string;
 };
 
 export const FormField: React.FC<FormFieldProps> = ({
   label,
-  name,
+  name = '',
   error,
   required,
   hint,
+  description,
   children,
   className = ''
 }) => {
-  const errorId = `${name}-error`;
-  const hintId = `${name}-hint`;
+  const displayHint = hint || description;
+  const errorId = name ? `${name}-error` : undefined;
+  const hintId = name ? `${name}-hint` : undefined;
 
   return (
     <div className={`form-field ${className}`}>
@@ -33,9 +36,9 @@ export const FormField: React.FC<FormFieldProps> = ({
         {required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
       </label>
       
-      {hint && (
+      {displayHint && (
         <p id={hintId} className="text-sm text-gray-500 mb-2">
-          {hint}
+          {displayHint}
         </p>
       )}
 
@@ -47,9 +50,9 @@ export const FormField: React.FC<FormFieldProps> = ({
               'aria-invalid': error ? 'true' : 'false',
               'aria-describedby': [
                 error ? errorId : null,
-                hint ? hintId : null
+                displayHint ? hintId : null
               ].filter(Boolean).join(' ') || undefined,
-              ...child.props
+              ...(child.props as any),
             } as any);
           }
           return child;
