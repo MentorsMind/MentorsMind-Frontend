@@ -1,4 +1,5 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { Routes, Route } from 'react-router-dom';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import OfflineBanner from './components/ui/OfflineBanner';
@@ -169,8 +170,9 @@ function App() {
   const [networkError, setNetworkError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleNetworkError = (e: any) => {
-      setNetworkError(e.detail?.message || 'A network error occurred.');
+    const handleNetworkError = (e: Event) => {
+      const detail = (e as CustomEvent<{ message?: string }>).detail;
+      setNetworkError(detail?.message || 'A network error occurred.');
     };
     window.addEventListener('api-network-error', handleNetworkError);
     return () => window.removeEventListener('api-network-error', handleNetworkError);
@@ -188,12 +190,14 @@ function App() {
     settings: loadSettings,
     goals: loadLearningGoals,
     dashboard: () => Promise.resolve(),
+    'learner-profile': loadLearnerProfile,
   };
 
   const fallback = <div className="flex h-64 items-center justify-center">Loading...</div>;
 
   return (
     <div className={`min-h-screen bg-gray-50 font-sans text-gray-900 pb-20 ${!isOnline ? 'pt-10' : ''}`}>
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       <OfflineBanner />
       {networkError && (
         <NetworkErrorToast
@@ -432,3 +436,5 @@ function App() {
     </div>
   );
 }
+
+export default App;

@@ -19,6 +19,7 @@
     "@types/ws": "^8.18.1",
     "axios": "^1.13.6",
     "lucide-react": "^0.471.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
