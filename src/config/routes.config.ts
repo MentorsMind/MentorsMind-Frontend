@@ -4,6 +4,8 @@ export const ROUTES = {
   MENTORS: '/mentors',
   MENTOR_PROFILE: '/mentors/:id',
   SESSIONS: '/sessions',
+  /** Pre-session waiting area before video room */
+  SESSION_WAITING: '/sessions/:id/waiting',
   HISTORY: '/history',
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',

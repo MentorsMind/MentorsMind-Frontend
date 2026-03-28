@@ -31,6 +31,7 @@ const loadPieChart = () => import('./components/charts/PieChart');
 const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
 const loadLearnerProfile = () => import('./pages/LearnerProfile');
+const loadWaitingRoom = () => import('./pages/WaitingRoom');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
@@ -313,6 +314,14 @@ function App() {
             element={
               <Suspense fallback={fallback}>
                 <Governance />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions/:id/waiting"
+            element={
+              <Suspense fallback={fallback}>
+                <WaitingRoomPage />
               </Suspense>
             }
           />
