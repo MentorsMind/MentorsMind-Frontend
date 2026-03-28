@@ -30,6 +30,7 @@ const loadPieChart = () => import('./components/charts/PieChart');
 const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
 const loadLearnerProfile = () => import('./pages/LearnerProfile');
+const loadCreditScore = () => import('./pages/CreditScore');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
@@ -51,6 +52,7 @@ const LineChart = lazy(loadLineChart);
 const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
+const CreditScore = lazy(loadCreditScore);
 
 type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
 
@@ -188,6 +190,7 @@ function App() {
     settings: loadSettings,
     goals: loadLearningGoals,
     dashboard: () => Promise.resolve(),
+    'learner-profile': loadLearnerProfile,
   };
 
   const fallback = <div className="flex h-64 items-center justify-center">Loading...</div>;
@@ -313,6 +316,14 @@ function App() {
             }
           />
           <Route
+            path="/credit-score"
+            element={
+              <Suspense fallback={fallback}>
+                <CreditScore />
+              </Suspense>
+            }
+          />
+          <Route
             path="*"
             element={
               <Suspense fallback={fallback}>
@@ -432,3 +443,5 @@ function App() {
     </div>
   );
 }
+
+export default App;

@@ -13,6 +13,7 @@ export const ROUTES = {
   SIGNUP: '/signup',
   GOVERNANCE: '/governance',
   PROPOSAL_DETAIL: '/governance/proposals/:id',
+  CREDIT_SCORE: '/credit-score',
 } as const;
 
 export interface RouteConfig {
@@ -27,10 +28,11 @@ export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
   { path: '/mentor/analytics', label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
-{ path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
+  { path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
   { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },
   { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
+  { path: ROUTES.CREDIT_SCORE, label: 'Credit Score', protected: true, roles: ['learner'], icon: 'CreditCard' },
   { path: ROUTES.GOVERNANCE, label: 'Governance', protected: true, icon: 'Shield' },
 ];
 
