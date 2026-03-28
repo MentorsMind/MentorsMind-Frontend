@@ -99,7 +99,7 @@ export const useMentorDashboard = () => {
     updateSessionStatus(sessionId, 'cancelled');
   }, [updateSessionStatus]);
 
-  const rescheduleSession = useCallback((sessionId: string, newTime: string) => {
+  const rescheduleSession = useCallback((sessionId: string, newTime: string = new Date().toISOString()) => {
     setData(prev => ({
       ...prev,
       upcomingSessions: prev.upcomingSessions.map(s => 

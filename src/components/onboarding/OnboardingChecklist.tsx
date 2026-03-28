@@ -16,6 +16,7 @@ interface OnboardingChecklistProps {
   onDismiss: () => void;
   onResume: () => void;
   onReset?: () => void;
+  completedSteps?: string[];
   role: 'mentor' | 'learner';
   userEmail?: string;
 }

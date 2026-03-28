@@ -31,3 +31,5 @@ export const sessionStore = {
     sessionStorage.removeItem(key);
   },
 };
+
+export const storage = clientStorage;

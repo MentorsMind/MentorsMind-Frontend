@@ -12,28 +12,20 @@ export default class AuthService {
       data: { email, password },
     } as const;
 
-    return opts ? request<{ accessToken: string; refreshToken: string }>(config, opts) : request(config);
+    return request<{ accessToken: string; refreshToken: string }>(config, opts);
   }
 
-  async signup(email: string, password: string, opts?: RequestOptions) {
+  async signup(email: string, password: string, name: string, role: string, opts?: RequestOptions) {
     const config = {
       method: "POST",
       url: apiConfig.url.auth.signup,
-      data: { email, password },
+      data: { email, password, name, role },
     } as const;
 
-    return opts ? request<{ accessToken: string; refreshToken: string }>(config, opts) : request(config);
+    return request<{ accessToken: string; refreshToken: string }>(config, opts);
   }
 
   async me(opts?: RequestOptions) {
-<<<<<<< fix/89-email-notification-preferences-ui
-    const config = {
-      method: "GET",
-      url: apiConfig.url.auth.me,
-    } as const;
-
-    return opts ? request<{ id: string; email: string }>(config, opts) : request(config);
-=======
     return request<User>(
       {
         method: "GET",
@@ -41,7 +33,6 @@ export default class AuthService {
       },
       opts,
     );
->>>>>>> main
   }
 
   async logout(opts?: RequestOptions) {

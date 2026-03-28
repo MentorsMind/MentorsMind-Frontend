@@ -1,20 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Clock, CheckCircle2, Plus } from 'lucide-react';
 import DelegationPanel from '../components/governance/DelegationPanel';
+import ProposalForm from '../components/governance/ProposalForm';
 
 const Governance = () => {
-  const proposals = [
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [proposals, setProposals] = useState([
     { id: '1', title: 'Implement Decentralized Identity Verification', status: 'Queued', votes: '1.7M VP' },
     { id: '2', title: 'Update Mentor Reward Multiplier', status: 'Active', votes: '850K VP' },
     { id: '3', title: 'DAO Treasury Allocation for Q2 2024', status: 'Passed', votes: '2.1M VP' },
-  ];
+  ]);
+
+  const handleCreateProposal = (newProposal: any) => {
+    setProposals([newProposal, ...proposals]);
+    setShowCreateForm(false);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-      <div>
-        <h2 className="text-3xl font-bold mb-1">DAO Governance</h2>
-        <p className="text-gray-500">Manage your voting delegation and track governance participation in one place.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold mb-1">DAO Governance</h2>
+          <p className="text-gray-500">Manage your voting delegation and track governance participation in one place.</p>
+        </div>
+        {!showCreateForm && (
+          <button 
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-stellar px-6 py-3 font-bold text-white shadow-lg shadow-stellar/20 transition-all hover:bg-stellar-dark active:scale-[0.98]"
+          >
+            <Plus className="h-5 w-5" />
+            New Proposal
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -23,39 +41,46 @@ const Governance = () => {
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold">Active Proposals</h3>
-              <button className="text-sm font-bold text-stellar hover:underline">View All</button>
-            </div>
-            
-            <div className="space-y-3">
-              {proposals.map((proposal) => (
-                <Link 
-                  key={proposal.id} 
-                  to={`/governance/proposals/${proposal.id}`}
-                  className="group flex items-center justify-between rounded-xl border border-gray-100 p-4 transition-all hover:border-stellar/30 hover:bg-stellar/5 hover:shadow-md active:scale-[0.98]"
-                >
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Proposal #{proposal.id}</span>
-                    <span className="text-base font-bold text-gray-900 group-hover:text-stellar">{proposal.title}</span>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
-                        proposal.status === 'Active' ? 'bg-blue-100 text-blue-800' :
-                        proposal.status === 'Passed' ? 'bg-green-100 text-green-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {proposal.status === 'Active' ? <Clock className="mr-1 h-3 w-3" /> : <CheckCircle2 className="mr-1 h-3 w-3" />}
-                        {proposal.status}
-                      </span>
-                      <span className="text-xs text-gray-500">{proposal.votes}</span>
+          {showCreateForm ? (
+            <ProposalForm 
+              onSubmit={handleCreateProposal} 
+              onCancel={() => setShowCreateForm(false)} 
+            />
+          ) : (
+            <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">Active Proposals</h3>
+                <button className="text-sm font-bold text-stellar hover:underline">View All</button>
+              </div>
+              
+              <div className="space-y-3">
+                {proposals.map((proposal) => (
+                  <Link 
+                    key={proposal.id} 
+                    to={`/governance/proposals/${proposal.id}`}
+                    className="group flex items-center justify-between rounded-xl border border-gray-100 p-4 transition-all hover:border-stellar/30 hover:bg-stellar/5 hover:shadow-md active:scale-[0.98]"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Proposal #{proposal.id}</span>
+                      <span className="text-base font-bold text-gray-900 group-hover:text-stellar">{proposal.title}</span>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                          proposal.status === 'Active' ? 'bg-blue-100 text-blue-800' :
+                          proposal.status === 'Passed' ? 'bg-green-100 text-green-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {proposal.status === 'Active' ? <Clock className="mr-1 h-3 w-3" /> : <CheckCircle2 className="mr-1 h-3 w-3" />}
+                          {proposal.status}
+                        </span>
+                        <span className="text-xs text-gray-500">{proposal.votes}</span>
+                      </div>
                     </div>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-stellar" />
-                </Link>
-              ))}
-            </div>
-          </section>
+                    <ArrowRight className="h-5 w-5 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-stellar" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold mb-2">Governance status</h3>
@@ -68,3 +93,4 @@ const Governance = () => {
 };
 
 export default Governance;
+

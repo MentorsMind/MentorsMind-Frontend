@@ -133,11 +133,11 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.onOpen(undefined);
-        socketRef.current.onClose(undefined);
-        socketRef.current.onMessage(undefined);
-        socketRef.current.onError(undefined);
-        socketRef.current.onReconnect(undefined);
+        socketRef.current.onOpen(() => {});
+        socketRef.current.onClose(() => {});
+        socketRef.current.onMessage(() => {});
+        socketRef.current.onError(() => {});
+        socketRef.current.onReconnect(() => {});
       }
     };
   }, [onConnect, onDisconnect, onMessage, onError, onReconnect, updateConnectionState]);

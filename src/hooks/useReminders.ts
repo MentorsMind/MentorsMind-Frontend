@@ -61,7 +61,7 @@ export const useReminders = (sessions: Session[] = []) => {
       
       // Only generate for upcoming sessions
       if (sessionStart > now) {
-        settings.customTimes.forEach(minutes => {
+        settings.customTimes.forEach((minutes: number) => {
           const reminderTime = new Date(sessionStart.getTime() - minutes * 60000);
           
           // Only if reminder time is in the future
@@ -104,11 +104,11 @@ export const useReminders = (sessions: Session[] = []) => {
   }, [sessions, settings]);
 
   const updateSettings = useCallback((newSettings: Partial<ReminderSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings((prev: ReminderSettings) => ({ ...prev, ...newSettings }));
   }, []);
 
   const updateMentorPreference = useCallback((mentorId: string, pref: Partial<ReminderSettings>) => {
-    setSettings(prev => ({
+    setSettings((prev: ReminderSettings) => ({
       ...prev,
       mentorSpecificPreferences: {
         ...prev.mentorSpecificPreferences,

@@ -46,6 +46,37 @@ export type LearnerStepId =
   | "tutorial"
   | "complete";
 
+// ── Treasury ──────────────────────────────────────────────────────────────────
+
+export interface TreasuryAsset {
+  code: string;
+  issuer?: string;
+  balance: number;
+  usdValue: number;
+  change24h: number;
+}
+
+export interface TreasuryTransaction {
+  id: string;
+  type: "inbound" | "outbound" | "internal";
+  amount: number;
+  asset: string;
+  from: string;
+  to: string;
+  timestamp: string;
+  status: "completed" | "pending" | "failed";
+  memo?: string;
+}
+
+export interface TreasuryDashboardData {
+  totalValueUsd: number;
+  assets: TreasuryAsset[];
+  recentTransactions: TreasuryTransaction[];
+  revenueData: { date: string; amount: number }[];
+  expenseData: { date: string; amount: number }[];
+  allocation: { name: string; value: number; color: string }[];
+}
+
 export interface LearnerGoal {
   id: string;
   label: string;
@@ -115,6 +146,40 @@ export interface PayoutRequest {
   completedAt?: string;
   txHash?: string;
 }
+
+export interface Reminder {
+  id: string;
+  sessionId: string;
+  type: string;
+  scheduledTime: string;
+  status: 'pending' | 'sent' | 'cancelled' | 'snoozed';
+  snoozeCount: number;
+  message: string;
+  lastSnoozedAt?: string;
+}
+
+export interface ReminderSettings {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  inAppEnabled: boolean;
+  customTimes: number[];
+  sessionPrepReminders: boolean;
+  calendarSyncReminders: boolean;
+  mentorSpecificPreferences: Record<string, Partial<ReminderSettings>>;
+}
+
+export interface ReminderHistoryItem {
+  id: string;
+  sessionId: string;
+  type: string;
+  scheduledTime: string;
+  status: string;
+  sentAt?: string;
+  snoozeCount: number;
+  message: string;
+}
+
+export type ReminderType = 'session' | 'payment' | 'onboarding' | 'review';
 
 export interface EarningsBySession {
   sessionId: string;

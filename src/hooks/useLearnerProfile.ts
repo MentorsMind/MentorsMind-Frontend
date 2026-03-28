@@ -1,6 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { LearnerProfile } from '../types/learner.types';
-import { storage } from '../utils/client.storage.utils';
+// storage helper — inline to avoid missing-export bundle error
+const storage = {
+  get: <T>(key: string): T | null => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set: <T>(key: string, value: T): void => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* noop */ } },
+};
 
 const STORAGE_KEY = 'learner_profile';
 

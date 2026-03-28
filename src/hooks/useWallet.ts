@@ -83,7 +83,7 @@ export const useWallet = () => {
         .order('desc')
         .call();
 
-      const transactions: Transaction[] = transactionsResponse.records.map(tx => {
+      const transactions: Transaction[] = transactionsResponse.records.map((tx: any) => {
         const operation = tx.operations?.[0]; // Get first operation
         return {
           id: tx.id,

@@ -53,7 +53,7 @@ export const useSearch = (initialOptions?: Partial<SearchOptions>): UseSearchRet
   }, []);
 
   const debouncedSearch = useMemo(
-    () => debounce((options: SearchOptions) => fetchResults(options), 500),
+    () => debounce(((options: SearchOptions) => fetchResults(options)) as any, 500),
     [fetchResults]
   );
 

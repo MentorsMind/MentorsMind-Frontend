@@ -1,11 +1,25 @@
+import React from 'react';
 import type { AssetCode } from './index';
 
 export interface ChartDatum {
   date: string;
   value: number;
+  value2?: number;
   asset?: AssetCode;
   category?: string;
   learner?: string;
+}
+
+export interface UseChartDataOptions<T> {
+  fetchFn: () => Promise<T>;
+  deps?: any[];
+}
+
+export interface UseChartDataResult<T> {
+  data: T | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }
 
 export interface EarningsMetrics {
@@ -24,7 +38,20 @@ export interface AggregatedData {
   skillBreakdown: ChartDatum[];
   metrics: EarningsMetrics;
 }
-</xai:function_call >
 
-<xai:function_call name="create_file">
-<parameter name="absolute_path">src/hooks/useEarningsData.ts
+export interface ChartExportOptions {
+  format: 'png' | 'svg';
+  filename?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  icon?: React.ReactNode;
+  prefix?: string;
+  suffix?: string;
+}

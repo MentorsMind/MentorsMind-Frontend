@@ -1,4 +1,4 @@
-export type UserRole = 'mentor' | 'learner';
+export type UserRole = 'mentor' | 'learner' | 'admin';
 
 export interface NavItem {
   id: string;

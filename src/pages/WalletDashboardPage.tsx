@@ -10,6 +10,18 @@ interface WalletDashboardPageProps {
   nickname?: string;
 }
 
+interface Transaction {
+  id: string;
+  type: string;
+  amount: string;
+  asset: string;
+  from: string;
+  to: string;
+  timestamp: string;
+  status: string;
+  memo?: string;
+}
+
 export default function WalletDashboardPage({ publicKey, nickname }: WalletDashboardPageProps) {
   const {
     balances, transactions, totalUsd, minimumReserve, availableXlm,
@@ -46,7 +58,7 @@ export default function WalletDashboardPage({ publicKey, nickname }: WalletDashb
         <div className="space-y-6">
           <TrustlineManager balances={balances} onAddTrustline={addTrustline} />
           <TransactionHistory
-            transactions={transactions}
+            transactions={transactions as any[]}
             walletAddress={publicKey}
             loading={loading}
           />
