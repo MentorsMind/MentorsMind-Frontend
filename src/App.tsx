@@ -20,6 +20,7 @@ const loadSettings = () => import('./pages/Settings');
 const loadMentorProfileSetup = () => import('./pages/MentorProfileSetup');
 const loadLearningGoals = () => import('./pages/LearningGoals');
 const loadGovernance = () => import('./pages/Governance');
+const loadProposalDetail = () => import('./pages/ProposalDetail');
 const loadRatingBreakdown = () => import('./components/reviews/RatingBreakdown');
 const loadReviewForm = () => import('./components/reviews/ReviewForm');
 const loadReviewList = () => import('./components/reviews/ReviewList');
@@ -28,14 +29,18 @@ const loadBarChart = () => import('./components/charts/BarChart');
 const loadPieChart = () => import('./components/charts/PieChart');
 const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
+const loadLearnerProfile = () => import('./pages/LearnerProfile');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
+const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
 const MentorOnboarding = lazy(loadMentorOnboarding);
 const LearnerOnboarding = lazy(loadLearnerOnboarding);
 const MentorWallet = lazy(loadMentorWallet);
 const MentorSearch = lazy(loadMentorSearch);
 const MentorSessions = lazy(loadMentorSessions);
 const Settings = lazy(loadSettings);
+const Governance = lazy(loadGovernance);
+const ProposalDetail = lazy(loadProposalDetail);
 const MentorProfileSetup = lazy(() => loadMentorProfileSetup().then(m => ({ default: m.MentorProfileSetup })));
 const LearningGoals = lazy(loadLearningGoals);
 const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
@@ -47,7 +52,7 @@ const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard';
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -248,6 +253,7 @@ function App() {
             { id: 'settings', label: 'Settings' },
             { id: 'analytics', label: 'Analytics' },
             { id: 'reviews', label: 'Reviews' },
+            { id: 'learner-profile', label: 'Learner Profile' },
           ].map((item: { id: string; label: string }) => (
             <button
               key={item.id}
@@ -291,6 +297,22 @@ function App() {
             }
           />
           <Route
+            path="/governance/proposals/:id"
+            element={
+              <Suspense fallback={fallback}>
+                <ProposalDetail />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/governance"
+            element={
+              <Suspense fallback={fallback}>
+                <Governance />
+              </Suspense>
+            }
+          />
+          <Route
             path="*"
             element={
               <Suspense fallback={fallback}>
@@ -315,6 +337,8 @@ function App() {
                     <AnalyticsDashboard />
                   ) : view === 'dashboard' ? (
                     <MentorDashboard />
+                  ) : view === 'learner-profile' ? (
+                    <LearnerProfile />
                   ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex justify-between items-end">

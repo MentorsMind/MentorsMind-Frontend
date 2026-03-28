@@ -15,6 +15,7 @@ import {
 import { MAIN_NAVIGATION, USER_NAVIGATION, ROUTES } from '../../config/routes.config';
 import { useNavigation } from '../../hooks/useNavigation';
 import { MobileNav } from './MobileNav';
+import { FreighterConnect } from '../wallet/FreighterConnect';
 import type { AuthState } from '../../types';
 
 const IconMap: Record<string, React.ElementType> = {
@@ -80,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({ auth, onLogout }) => {
             </div>
           </div>
 
-          {/* Right Side: Search, Notifications, User */}
+          {/* Right Side: Search, Notifications, Wallet, User */}
           <div className="flex items-center gap-2 md:gap-4">
             <button className="p-2 text-gray-400 hover:text-stellar hover:bg-stellar/5 rounded-full transition-colors hidden sm:block">
               <Search size={20} />
@@ -89,6 +90,17 @@ export const Navbar: React.FC<NavbarProps> = ({ auth, onLogout }) => {
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
             </button>
+
+            {/* Wallet Connection - Only show for mentors */}
+            {auth.user?.role === 'mentor' && (
+              <div className="hidden lg:block">
+                <FreighterConnect 
+                  compact={true}
+                  showNetworkIndicator={true}
+                  className="max-w-xs"
+                />
+              </div>
+            )}
 
             {/* User Dropdown */}
             <div className="relative">

@@ -5,6 +5,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../hooks/useAuth';
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { usePostSessionReview } from '../hooks/usePostSessionReview';
+import { useAchievements } from '../hooks/useAchievements';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { DashboardGrid } from '../components/dashboard/DashboardGrid';
 import { Widget } from '../components/dashboard/Widget';
@@ -14,6 +15,10 @@ import UpcomingReminders from '../components/learner/UpcomingReminders';
 import LearningRecommendations from '../components/learner/LearningRecommendations';
 import SessionPrep from '../components/learner/SessionPrep';
 import RecommendedMentors from '../components/learner/RecommendedMentors';
+import LearningStreak from '../components/learner/LearningStreak';
+import AchievementBadges from '../components/learner/AchievementBadges';
+import ProgressRing from '../components/learner/ProgressRing';
+import MilestoneModal from '../components/learner/MilestoneModal';
 import PostSessionReview from '../components/session/PostSessionReview';
 import type { Session, SessionHistoryItem } from '../types';
 
@@ -90,6 +95,24 @@ const LearnerDashboardContent: React.FC = () => {
     userCreatedAt: user?.createdAt,
   });
 
+  const {
+    progress,
+    streakDays,
+    streakWeeks,
+    totalHours,
+    unlockedAchievements,
+    achievementPercent,
+    nextAchievement,
+    isLeaderboardOptIn,
+    toggleLeaderboardOptIn,
+    isMilestoneModalVisible,
+    milestoneCelebration,
+    unlockAchievement,
+    exportProgressCard,
+    exportProgressReport,
+    closeMilestoneModal,
+  } = useAchievements();
+
   const { pendingSession, submitted, updatedRating, submitReview, dismissForNow, close } =
     usePostSessionReview(MOCK_COMPLETED_SESSIONS);
 
@@ -135,24 +158,66 @@ const LearnerDashboardContent: React.FC = () => {
         </div>
       </header>
 
-      {/* Onboarding Checklist Widget */}
-      {onboarding.shouldDisplay && (
-        <OnboardingChecklist
-          items={onboarding.items}
-          progressPercentage={onboarding.progressPercentage}
-          completedCount={onboarding.completedCount}
-          totalCount={onboarding.totalCount}
-          isDismissed={onboarding.isDismissed}
-          isCompleted={onboarding.isCompleted}
-          shouldDisplay={onboarding.shouldDisplay}
-          onMarkItemComplete={onboarding.markItemComplete}
-          onDismiss={onboarding.dismissWidget}
-          onResume={onboarding.resumeWidget}
-          onReset={onboarding.resetOnboarding}
-          role="learner"
-          userEmail={user?.email}
+      <MilestoneModal
+        visible={isMilestoneModalVisible}
+        message={milestoneCelebration}
+        onClose={closeMilestoneModal}
+      />
+
+      <section className="grid gap-6 md:grid-cols-3">
+        <LearningStreak
+          streakDays={streakDays}
+          streakWeeks={streakWeeks}
+          totalHours={totalHours}
+          nextGoal={nextAchievement?.title}
         />
-      )}
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900">Goal Progress</h3>
+          <p className="text-sm text-gray-500">Weekly goal and achievement completion.</p>
+          <div className="mt-4 flex items-center justify-center">
+            <ProgressRing value={achievementPercent} />
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              onClick={exportProgressCard}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              Export Progress Card
+            </button>
+            <button
+              onClick={exportProgressReport}
+              className="rounded-xl border border-blue-600 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50"
+            >
+              Download Progress Report
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Leaderboard</h3>
+            <span className="text-xs text-slate-400">Opt-in</span>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-sm font-semibold">
+            <span>{isLeaderboardOptIn ? 'Enabled' : 'Disabled'}</span>
+            <button
+              onClick={toggleLeaderboardOptIn}
+              className={`rounded-lg px-3 py-1 text-xs font-bold ${
+                isLeaderboardOptIn
+                  ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {isLeaderboardOptIn ? 'Opt Out' : 'Opt In'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <AchievementBadges achievements={progress.achievements} onUnlock={unlockAchievement} />
+      </section>
 
       <DashboardGrid>
         {widgets

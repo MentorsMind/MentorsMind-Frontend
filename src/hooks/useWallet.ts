@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { isConnected, getAddress, signTransaction } from '@stellar/freighter-api';
+import { TransactionBuilder, Asset, Operation, Memo } from '@stellar/stellar-sdk';
+import { getHorizonServer, STELLAR_CONFIG } from '../config/stellar.config';
 import type { 
   StellarWallet, 
   Transaction, 
@@ -14,55 +17,32 @@ export const useWallet = () => {
   const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<WalletNotification[]>([]);
 
-  const createWallet = useCallback(async (nickname?: string) => {
+  const connectWallet = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // TODO: Integrate with Stellar SDK
-      const mockWallet: StellarWallet = {
-        publicKey: 'G' + Math.random().toString(36).substring(2, 58).toUpperCase(),
-        balance: [{
-          assetCode: 'XLM',
-          balance: '0',
-          isNative: true
-        }],
-        createdAt: new Date(),
-        lastSynced: new Date(),
-        isBackedUp: false,
-        nickname
-      };
-      setWallet(mockWallet);
-      return mockWallet;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create wallet');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const connected = await isConnected();
+      if (!connected) {
+        throw new Error('Freighter wallet not found. Please install Freighter extension.');
+      }
 
-  const importWallet = useCallback(async (secretKey: string, nickname?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // TODO: Integrate with Stellar SDK to validate and import
-      const mockWallet: StellarWallet = {
-        publicKey: 'G' + Math.random().toString(36).substring(2, 58).toUpperCase(),
-        secretKey,
-        balance: [{
-          assetCode: 'XLM',
-          balance: '100.5000000',
-          isNative: true
-        }],
+      const addressResult = await getAddress();
+      if (addressResult.error) {
+        throw new Error(addressResult.error.message || 'Failed to get wallet address');
+      }
+
+      const publicKey = addressResult.address;
+      const walletData: StellarWallet = {
+        publicKey,
+        balance: [],
         createdAt: new Date(),
         lastSynced: new Date(),
-        isBackedUp: true,
-        nickname
+        isBackedUp: true, // Assume Freighter handles backup
       };
-      setWallet(mockWallet);
-      return mockWallet;
+      setWallet(walletData);
+      return walletData;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import wallet');
+      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
       throw err;
     } finally {
       setLoading(false);
@@ -73,12 +53,18 @@ export const useWallet = () => {
     if (!wallet) return;
     setLoading(true);
     try {
-      // TODO: Fetch real balance from Stellar network
-      const mockBalances: WalletBalance[] = [
-        { assetCode: 'XLM', balance: '1000.5000000', isNative: true },
-        { assetCode: 'USDC', balance: '500.00', assetIssuer: 'GA...', isNative: false }
-      ];
-      setWallet(prev => prev ? { ...prev, balance: mockBalances, lastSynced: new Date() } : null);
+      const server = getHorizonServer();
+      const account = await server.loadAccount(wallet.publicKey);
+      
+      const balances: WalletBalance[] = account.balances.map(balance => ({
+        assetCode: balance.asset_type === 'native' ? 'XLM' : (balance as any).asset_code!,
+        assetIssuer: (balance as any).asset_issuer,
+        balance: balance.balance,
+        limit: (balance as any).limit,
+        isNative: balance.asset_type === 'native',
+      }));
+
+      setWallet(prev => prev ? { ...prev, balance: balances, lastSynced: new Date() } : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch balance');
     } finally {
@@ -90,20 +76,32 @@ export const useWallet = () => {
     if (!wallet) return;
     setLoading(true);
     try {
-      // TODO: Fetch real transactions from Stellar Horizon
-      const mockTransactions: Transaction[] = Array.from({ length: 5 }, (_, i) => ({
-        id: `tx-${i}`,
-        hash: Math.random().toString(36).substring(2, 66),
-        type: 'payment' as const,
-        amount: (Math.random() * 100).toFixed(7),
-        assetCode: 'XLM',
-        from: 'G' + Math.random().toString(36).substring(2, 58).toUpperCase(),
-        to: wallet.publicKey,
-        timestamp: new Date(Date.now() - i * 86400000),
-        status: 'completed' as const,
-        fee: '0.00001'
-      }));
-      setTransactions(mockTransactions);
+      const server = getHorizonServer();
+      const transactionsResponse = await server.transactions()
+        .forAccount(wallet.publicKey)
+        .limit(limit)
+        .order('desc')
+        .call();
+
+      const transactions: Transaction[] = transactionsResponse.records.map(tx => {
+        const operation = tx.operations?.[0]; // Get first operation
+        return {
+          id: tx.id,
+          hash: tx.hash,
+          type: operation?.type || 'payment',
+          amount: operation?.amount || '0',
+          assetCode: operation?.asset_type === 'native' ? 'XLM' : operation?.asset_code || 'XLM',
+          assetIssuer: operation?.asset_issuer,
+          from: operation?.from || '',
+          to: operation?.to || '',
+          memo: tx.memo,
+          timestamp: new Date(tx.created_at),
+          status: tx.successful ? 'completed' : 'failed',
+          fee: tx.fee_charged.toString(),
+        };
+      });
+
+      setTransactions(transactions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
     } finally {
@@ -121,10 +119,40 @@ export const useWallet = () => {
     setLoading(true);
     setError(null);
     try {
-      // TODO: Implement actual Stellar payment
+      const server = getHorizonServer();
+      const account = await server.loadAccount(wallet.publicKey);
+      
+      const asset = assetCode === 'XLM' 
+        ? Asset.native() 
+        : new Asset(assetCode, STELLAR_CONFIG.assets[assetCode as keyof typeof STELLAR_CONFIG.assets]?.issuer);
+
+      const transaction = new TransactionBuilder(account, {
+        fee: '100',
+        networkPassphrase: STELLAR_CONFIG.network,
+      })
+        .addOperation(Operation.payment({
+          destination,
+          asset,
+          amount,
+        }))
+        .addMemo(memo ? Memo.text(memo) : Memo.none())
+        .setTimeout(30)
+        .build();
+
+      const signedResult = await signTransaction(transaction.toXDR(), {
+        networkPassphrase: STELLAR_CONFIG.network,
+      });
+
+      if (signedResult.error) {
+        throw new Error(signedResult.error.message || 'Transaction signing failed');
+      }
+
+      const signedTransaction = TransactionBuilder.fromXDR(signedResult.signedTxXdr, STELLAR_CONFIG.network);
+      const result = await server.submitTransaction(signedTransaction);
+
       const newTransaction: Transaction = {
-        id: `tx-${Date.now()}`,
-        hash: Math.random().toString(36).substring(2, 66),
+        id: result.hash,
+        hash: result.hash,
         type: 'payment',
         amount,
         assetCode,
@@ -133,8 +161,9 @@ export const useWallet = () => {
         memo,
         timestamp: new Date(),
         status: 'completed',
-        fee: '0.00001'
+        fee: (result as any).fee_charged || '0.00001',
       };
+
       setTransactions(prev => [newTransaction, ...prev]);
       return newTransaction;
     } catch (err) {
@@ -167,7 +196,7 @@ export const useWallet = () => {
       fetchBalance();
       fetchTransactions();
     }
-  }, [wallet?.publicKey]);
+  }, [wallet, fetchBalance, fetchTransactions]);
 
   return {
     wallet,
@@ -175,8 +204,7 @@ export const useWallet = () => {
     loading,
     error,
     notifications,
-    createWallet,
-    importWallet,
+    connectWallet,
     fetchBalance,
     fetchTransactions,
     sendPayment,

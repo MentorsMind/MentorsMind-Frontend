@@ -11,6 +11,8 @@ export const ROUTES = {
   SETTINGS: '/settings',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  GOVERNANCE: '/governance',
+  PROPOSAL_DETAIL: '/governance/proposals/:id',
 } as const;
 
 export interface RouteConfig {
@@ -29,6 +31,7 @@ export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },
   { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
+  { path: ROUTES.GOVERNANCE, label: 'Governance', protected: true, icon: 'Shield' },
 ];
 
 export const USER_NAVIGATION: RouteConfig[] = [

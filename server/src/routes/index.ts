@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
+import paymentRoutes from './payments.routes.js';
 import { apiConfig } from '../config/api.config.js';
 
 const router = Router();
@@ -12,11 +13,7 @@ router.use('/health', healthRoutes);
 
 // Versioned API routes
 router.use(`/${apiVersion}/health`, healthRoutes);
-
-// Add more route modules here
-// router.use(`/${apiVersion}/users`, userRoutes);
-// router.use(`/${apiVersion}/mentors`, mentorRoutes);
-// router.use(`/${apiVersion}/sessions`, sessionRoutes);
+router.use(`/${apiVersion}/payments`, paymentRoutes);
 
 // API info endpoint
 router.get('/', (req, res) => {

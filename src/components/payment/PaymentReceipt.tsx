@@ -1,4 +1,5 @@
 import React from 'react';
+import { getExplorerUrl } from '../../config/stellar.config';
 import type { PaymentBreakdown, PaymentDetails } from '../../types/payment.types';
 
 interface PaymentReceiptProps {
@@ -70,9 +71,15 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
           {transactionHash && (
             <div className="pt-2">
               <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">Transaction Verified on Stellar</p>
-              <p className="text-[9px] font-mono text-gray-400 break-all bg-gray-50 p-2 rounded border border-gray-100">
+              <a 
+                href={getExplorerUrl(transactionHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-mono text-blue-500 hover:text-blue-700 break-all bg-gray-50 p-2 rounded border border-gray-100 hover:bg-blue-50 transition-colors block"
+              >
                 {transactionHash}
-              </p>
+                <span className="ml-1 text-xs">↗</span>
+              </a>
             </div>
           )}
         </div>
