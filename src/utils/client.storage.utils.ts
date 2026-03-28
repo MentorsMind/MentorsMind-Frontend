@@ -1,5 +1,20 @@
 import { User } from "../types";
 
+/** Generic JSON localStorage helpers (learner profile, etc.). */
+export const storage = {
+  get<T>(key: string): T | null {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as T) : null;
+    } catch {
+      return null;
+    }
+  },
+  set<T>(key: string, value: T): void {
+    localStorage.setItem(key, JSON.stringify(value));
+  },
+};
+
 export const clientStorage = {
   setUser(key: string, user: User) {
     localStorage.setItem(key, JSON.stringify(user));
