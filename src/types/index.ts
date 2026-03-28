@@ -420,3 +420,31 @@ export type {
   FeedbackCategoryRatings,
   SessionFeedbackEntry,
 } from "./session.types";
+
+export type ReminderType = 'email' | 'in-app' | 'sms' | 'prep';
+
+export interface Reminder {
+  id: string;
+  sessionId: string;
+  type: ReminderType;
+  scheduledTime: string;
+  status: 'pending' | 'sent' | 'snoozed' | 'cancelled';
+  snoozeCount: number;
+  message: string;
+  lastSnoozedAt?: string;
+  sentAt?: string;
+}
+
+export interface ReminderSettings {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  inAppEnabled: boolean;
+  customTimes: number[];
+  sessionPrepReminders: boolean;
+  calendarSyncReminders: boolean;
+  mentorSpecificPreferences: Record<string, Partial<ReminderSettings>>;
+}
+
+export interface ReminderHistoryItem extends Reminder {
+  sentAt: string;
+}

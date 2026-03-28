@@ -5,7 +5,7 @@ import { PERFORMANCE_BUDGETS } from './src/utils/performance.utils';
 const performanceBudgetPlugin = (): Plugin => ({
   name: 'performance-budget-plugin',
   generateBundle(_, bundle) {
-    Object.entries(bundle).forEach(([fileName, output]) => {
+    Object.entries(bundle).forEach(([fileName, output]: [string, any]) => {
       if (output.type !== 'chunk') return;
       const sizeKb = Buffer.byteLength(output.code, 'utf8') / 1024;
       if (sizeKb > PERFORMANCE_BUDGETS.maxChunkKb) {
@@ -26,7 +26,7 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('node_modules')) {
             if (id.includes('recharts')) return 'charts';
             if (id.includes('lucide-react')) return 'icons';

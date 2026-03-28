@@ -3,7 +3,7 @@ import { useHorizon } from '../hooks/useHorizon';
 import { WalletBalance } from '../components/wallet/WalletBalance';
 import { TrustlineManager } from '../components/wallet/TrustlineManager';
 import { WalletQRCode } from '../components/wallet/WalletQRCode';
-import { TransactionHistory } from '../components/wallet/TransactionHistory';
+import TransactionHistory from '../components/wallet/TransactionHistory';
 
 interface WalletDashboardPageProps {
   publicKey: string;

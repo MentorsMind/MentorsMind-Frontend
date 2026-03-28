@@ -1,100 +1,85 @@
 import React from 'react';
 import {
-  AreaChart,
+  AreaChart as ReAreaChart,
   Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Legend,
+  ResponsiveContainer,
 } from 'recharts';
-import type { ChartDatum } from '../../types/charts.types';
+import ChartContainer from './ChartContainer';
+import { CHART_COLORS } from '../../utils/chart.utils';
+import type { MultiSeriesDataPoint, ChartSeries } from '../../types/charts.types';
 
-interface Props {
-  data: ChartDatum[];
-  height?: number;
-  title: string;
-  yLabel?: string;
+interface AreaChartProps {
+  data: any[];
+  series: ChartSeries[];
+  title?: string;
+  description?: string;
+  isLoading?: boolean;
+  error?: string | null;
+  exportable?: boolean;
+  exportFilename?: string;
+  xAxisKey?: string;
+  valuePrefix?: string;
+  valueSuffix?: string;
+  className?: string;
 }
 
-export const AreaChartComponent: React.FC<Props> = ({
+const AreaChartComponent: React.FC<AreaChartProps> = ({
   data,
-  height = 300,
+  series,
   title,
-  yLabel = 'Earnings ($)',
+  description,
+  isLoading,
+  error,
+  exportable,
+  exportFilename,
+  xAxisKey = 'label',
+  valuePrefix = '',
+  valueSuffix = '',
+  className,
 }) => {
-  // Group by date and sum values by asset
-  const groupedData = data.reduce((acc, item) => {
-    const existing = acc.find(d => d.date === item.date);
-    if (existing) {
-      existing.USDC = (existing.USDC || 0) + (item.asset === 'USDC' ? item.value : 0);
-      existing.XLM = (existing.XLM || 0) + (item.asset === 'XLM' ? item.value : 0);
-    } else {
-      acc.push({
-        date: item.date,
-        USDC: item.asset === 'USDC' ? item.value : 0,
-        XLM: item.asset === 'XLM' ? item.value : 0,
-      });
-    }
-    return acc;
-  }, [] as any[]);
-
   return (
-    <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>
-      <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={groupedData}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.3} />
-          <XAxis 
-            dataKey="date" 
-            tickLine={false}
-            axisLine={false}
-            tickMargin={12}
-            height={60}
-            tick={{ fontSize: 12, fill: '#6B7280' }}
+    <ChartContainer
+      title={title}
+      description={description}
+      isLoading={isLoading}
+      error={error}
+      exportable={exportable}
+      exportFilename={exportFilename}
+      className={className}
+    >
+      <ResponsiveContainer width="100%" height={300}>
+        <ReAreaChart
+          data={data}
+          margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey={xAxisKey} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${valuePrefix}${v}${valueSuffix}`} />
+          <Tooltip
+            contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: 12 }}
+            formatter={(value: number) => [`${valuePrefix}${value}${valueSuffix}`]}
           />
-          <YAxis 
-            tickLine={false}
-            axisLine={false}
-            tickMargin={12}
-            tick={{ fontSize: 12, fill: '#6B7280' }}
-            label={{ 
-              value: yLabel, 
-              angle: -90, 
-              position: 'insideLeft',
-              fill: '#6B7280',
-              fontSize: 12 
-            }}
-          />
-          <Tooltip 
-            contentStyle={{
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-            }}
-          />
-          <Legend />
-          <Area 
-            type="monotone" 
-            dataKey="USDC" 
-            stackId="1"
-            stroke="#3B82F6" 
-            fill="#3B82F6"
-            fillOpacity={0.6}
-          />
-          <Area 
-            type="monotone" 
-            dataKey="XLM" 
-            stackId="1"
-            stroke="#10B981" 
-            fill="#10B981"
-            fillOpacity={0.6}
-          />
-        </AreaChart>
+          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+          {series.map((s, i) => (
+            <Area
+              key={s.key}
+              type="monotone"
+              dataKey={s.key}
+              name={s.name}
+              stroke={s.color ?? CHART_COLORS[i % CHART_COLORS.length]}
+              fill={s.color ?? CHART_COLORS[i % CHART_COLORS.length]}
+              fillOpacity={0.3}
+            />
+          ))}
+        </ReAreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartContainer>
   );
 };
 
+export default AreaChartComponent;

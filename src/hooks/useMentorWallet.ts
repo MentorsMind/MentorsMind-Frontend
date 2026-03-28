@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { WalletState, AssetCode, TxType, TxStatus } from '../types';
+import { useFreighter } from './useFreighter';
+import { TransactionBuilder, Networks, Operation } from '@stellar/stellar-sdk';
 
 const MOCK_STATE: WalletState = {
   address: 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGZWM9CQJKR3BSQNEWVZOR',
@@ -46,6 +48,7 @@ export function useMentorWallet() {
   const [payoutAsset, setPayoutAsset] = useState<AssetCode>('USDC');
   const [payoutStatus, setPayoutStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [copied, setCopied] = useState(false);
+  const { isConnected, signTransaction } = useFreighter();
 
   const filteredTx = wallet.transactions.filter((tx: WalletState['transactions'][number]) => {
     if (txFilter === 'all') return true;
@@ -62,11 +65,33 @@ export function useMentorWallet() {
   const requestPayout = useCallback(async () => {
     const amount = parseFloat(payoutAmount);
     if (!amount || amount <= 0 || amount > wallet.availableEarnings) return;
+    
     setPayoutStatus('loading');
-    await new Promise(r => setTimeout(r, 1500));
-    setPayoutStatus('success');
-    setTimeout(() => { setPayoutStatus('idle'); setPayoutAmount(''); }, 3000);
-  }, [payoutAmount, wallet.availableEarnings]);
+    
+    try {
+      if (!isConnected) {
+        throw new Error('Please connect your Freighter wallet to request a payout.');
+      }
+      
+      const mockAccount = { accountId: () => wallet.address, sequenceNumber: () => '1', incrementSequenceNumber: () => {} } as any;
+      const tx = new TransactionBuilder(mockAccount, { fee: '100', networkPassphrase: Networks.TESTNET })
+        .addOperation(Operation.manageData({ name: 'action', value: `payout_${amount}_${payoutAsset}` }))
+        .setTimeout(30)
+        .build();
+
+      const signedTx = await signTransaction(tx, wallet.address);
+      if (!signedTx) throw new Error('Transaction was rejected or failed');
+
+      await new Promise(r => setTimeout(r, 500));
+      setPayoutStatus('success');
+      setTimeout(() => { setPayoutStatus('idle'); setPayoutAmount(''); }, 3000);
+    } catch (error) {
+      console.error(error);
+      setPayoutStatus('error');
+      alert(error instanceof Error ? error.message : 'Transaction failed');
+      setTimeout(() => { setPayoutStatus('idle'); }, 3000);
+    }
+  }, [payoutAmount, payoutAsset, wallet.availableEarnings, wallet.address, isConnected, signTransaction]);
 
   const exportEarnings = useCallback(() => {
     const rows = [

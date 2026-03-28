@@ -1,12 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ProfileHeader from '../components/mentor/ProfileHeader';
 import RatingBreakdown from '../components/mentor/RatingBreakdown';
 import PublicAvailability from '../components/mentor/PublicAvailability';
 import ReviewsList from '../components/mentor/ReviewsList';
+import BookingModal from '../components/learner/BookingModal';
+import { MentorProfile } from '../types';
 
 const mentor = {
+  id: 'mentor-1',
   name: 'John Doe',
+  title: 'Senior Software Engineer',
+  avatar: 'https://i.pravatar.cc/150?u=1',
   bio: 'Senior software engineer with 8+ years of experience in frontend development. Passionate about React, TypeScript, and helping developers level up their skills.',
   joinDate: 'January 2023',
   sessionCount: 142,
@@ -21,7 +26,29 @@ const mentor = {
   ],
 };
 
+const mentorProfile: MentorProfile = {
+  ...mentor,
+  expertise: mentor.skills,
+  rating: 4.8,
+  reviewCount: 34,
+  hourlyRate: 20,
+  skills: mentor.skills,
+  responseTime: 'Within 2 hours',
+  currency: 'XLM',
+  totalSessions: mentor.sessionCount,
+  completionRate: 98,
+  availability: {
+    days: ['Monday', 'Wednesday'],
+    timeSlots: ['10:00', '14:00'],
+    timezone: 'UTC'
+  },
+  experienceYears: 8,
+  isAvailable: true,
+  joinedDate: mentor.joinDate,
+};
+
 export default function MentorPublicProfile() {
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -51,6 +78,7 @@ export default function MentorPublicProfile() {
         sessionCount={mentor.sessionCount}
         learnerCount={mentor.learnerCount}
         verified={mentor.verified}
+        onBookClick={() => setIsBookingOpen(true)}
       />
 
       <RatingBreakdown />
@@ -97,6 +125,11 @@ export default function MentorPublicProfile() {
         </ul>
       </div>
 
+      <BookingModal 
+        isOpen={isBookingOpen} 
+        onClose={() => setIsBookingOpen(false)} 
+        mentor={mentorProfile} 
+      />
     </div>
   );
 }

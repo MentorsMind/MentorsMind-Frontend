@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { ElementType } from 'react';
 
 interface ScreenReaderOnlyProps {
   children: React.ReactNode;
   /** Render as a different element (default: span) */
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
   /** Make focusable — useful for skip links or announcements */
   focusable?: boolean;
 }

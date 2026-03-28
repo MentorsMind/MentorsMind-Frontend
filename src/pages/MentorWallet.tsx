@@ -6,13 +6,9 @@ import EarningsBreakdown from '../components/mentor/EarningsBreakdown';
 import PayoutRequest from '../components/mentor/PayoutRequest';
 import PayoutHistory from '../components/mentor/PayoutHistory';
 import MetricCard from '../components/charts/MetricCard';
- feature/freighter-wallet-integration
-import { FreighterConnect } from '../components/wallet/FreighterConnect';
-import { FreighterConnect } from '../components/wallet/FreighterConnect';
-=======
+import FreighterConnect from '../components/wallet/FreighterConnect';
 import EscrowStatus from '../components/payment/EscrowStatus';
 import EscrowTimeline from '../components/payment/EscrowTimeline';
- main
 
 const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const {
@@ -52,7 +48,7 @@ const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
       <div className="mb-6">
         <FreighterConnect 
           showNetworkIndicator={true}
-          onConnect={(walletInfo) => {
+          onConnect={(walletInfo: any) => {
             console.log('Wallet connected:', walletInfo);
             // You can add additional logic here when wallet connects
           }}

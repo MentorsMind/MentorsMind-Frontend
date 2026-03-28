@@ -1,0 +1,68 @@
+﻿src/App.tsx(54,24): error TS2345: Argument of type '() => Promise<typeof import("C:/Users/User/Desktop/MentorsMind-Frontend/src/components/charts/AreaChart")>' is not assignable to parameter of type '() => Promise<{ default: ComponentType<any>; }>'.
+  Type 'Promise<typeof import("C:/Users/User/Desktop/MentorsMind-Frontend/src/components/charts/AreaChart")>' is not assignable to type 'Promise<{ default: ComponentType<any>; }>'.
+    Property 'default' is missing in type 'typeof import("C:/Users/User/Desktop/MentorsMind-Frontend/src/components/charts/AreaChart")' but required in type '{ default: ComponentType<any>; }'.
+src/components/a11y/AccessibilityPanel.tsx(47,9): error TS2322: Type 'RefObject<HTMLButtonElement | null>' is not assignable to type 'RefObject<HTMLElement>'.
+  Type 'HTMLButtonElement | null' is not assignable to type 'HTMLElement'.
+    Type 'null' is not assignable to type 'HTMLElement'.
+src/components/a11y/ScreenReaderOnly.tsx(6,14): error TS2503: Cannot find namespace 'JSX'.
+src/components/a11y/ScreenReaderOnly.tsx(20,4): error TS2604: JSX element type 'Tag' does not have any construct or call signatures.
+src/components/a11y/ScreenReaderOnly.tsx(20,4): error TS2786: 'Tag' cannot be used as a JSX component.
+  Its type 'string | number | symbol' is not a valid JSX element type.
+    Type 'number' is not assignable to type 'ElementType'.
+src/components/charts/ChartContainer.tsx(48,45): error TS2345: Argument of type '"png"' is not assignable to parameter of type '"json" | "csv" | undefined'.
+src/components/charts/ChartContainer.tsx(55,45): error TS2345: Argument of type '"svg"' is not assignable to parameter of type '"json" | "csv" | undefined'.
+src/components/forms/FormField.tsx(52,15): error TS2698: Spread types may only be created from object types.
+src/components/learner/LearningAnalytics.tsx(95,13): error TS2353: Object literal may only specify known properties, and 'labels' does not exist in type 'MultiSeriesDataPoint[]'.
+src/components/learner/LearningAnalytics.tsx(107,13): error TS2353: Object literal may only specify known properties, and 'labels' does not exist in type 'MultiSeriesDataPoint[]'.
+src/components/learner/ProgressDashboard.tsx(33,11): error TS2322: Type 'SkillProgressTrendPoint[]' is not assignable to type 'MultiSeriesDataPoint[]'.
+  Type 'SkillProgressTrendPoint' is not assignable to type 'MultiSeriesDataPoint'.
+    Index signature for type 'string' is missing in type 'SkillProgressTrendPoint'.
+src/components/mentor/SessionDetail.tsx(208,10): error TS2741: Property 'isOpen' is missing in type '{ sessionId: string; currentTime: string; onClose: () => void; }' but required in type 'RescheduleModalProps'.
+src/components/navigation/Navbar.tsx(18,10): error TS2305: Module '"../wallet/FreighterConnect"' has no exported member 'FreighterConnect'.
+src/components/notifications/Toast.tsx(143,14): error TS2322: Type '{ children: string; jsx: true; }' is not assignable to type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.
+  Property 'jsx' does not exist on type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.
+src/components/wallet/WalletAddress.tsx(138,10): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+src/contexts/AuthContext.tsx(116,30): error TS18046: 'res' is of type 'unknown'.
+src/contexts/AuthContext.tsx(116,47): error TS18046: 'res' is of type 'unknown'.
+src/contexts/AuthContext.tsx(184,67): error TS2554: Expected 2-3 arguments, but got 4.
+src/contexts/AuthContext.tsx(187,30): error TS18046: 'res' is of type 'unknown'.
+src/contexts/AuthContext.tsx(187,47): error TS18046: 'res' is of type 'unknown'.
+src/hooks/useChartData.ts(4,57): error TS2315: Type 'UseChartDataOptions' is not generic.
+src/hooks/useChartData.ts(4,82): error TS2315: Type 'UseChartDataResult' is not generic.
+src/hooks/useDelegation.ts(74,35): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(74,59): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(86,39): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(91,9): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(93,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(115,12): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useDelegation.ts(130,82): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'alice.eth': string; 'bob.eth': string; 'carol.eth': string; }'.
+src/hooks/useEarningsData.ts(60,100): error TS2561: Object literal may only specify known properties, but 'value2' does not exist in type 'ChartDatum'. Did you mean to write 'value'?
+src/hooks/useGoals.ts(125,7): error TS2353: Object literal may only specify known properties, and 'createdAt' does not exist in type 'Omit<Goal, "id" | "createdAt" | "updatedAt">'.
+src/hooks/useLearnerProfile.ts(3,10): error TS2305: Module '"../utils/client.storage.utils"' has no exported member 'storage'.
+src/hooks/usePerformance.ts(43,60): error TS2353: Object literal may only specify known properties, and 'durationThreshold' does not exist in type 'PerformanceObserverInit'.
+src/hooks/useSearch.ts(56,20): error TS2345: Argument of type '(options: SearchOptions) => Promise<void>' is not assignable to parameter of type '(...args: unknown[]) => unknown'.
+  Types of parameters 'options' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'SearchOptions'.
+src/hooks/useWallet.ts(87,27): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'CallCollectionFunction<OperationRecord>'.
+  Property '0' does not exist on type 'CallCollectionFunction<OperationRecord>'.
+src/hooks/useWebSocket.ts(136,34): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '() => void'.
+src/hooks/useWebSocket.ts(137,35): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '(event: CloseEvent) => void'.
+src/hooks/useWebSocket.ts(138,37): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '(message: WebSocketMessage) => void'.
+src/hooks/useWebSocket.ts(139,35): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '(error: ErrorEvent) => void'.
+src/hooks/useWebSocket.ts(140,39): error TS2345: Argument of type 'undefined' is not assignable to parameter of type '(attempt: number) => void'.
+src/main.tsx(5,8): error TS1192: Module '"C:/Users/User/Desktop/MentorsMind-Frontend/src/App"' has no default export.
+src/pages/LearnerProfile.tsx(4,10): error TS2614: Module '"../components/learner/AchievementBadges"' has no exported member 'AchievementBadges'. Did you mean to use 'import AchievementBadges from "../components/learner/AchievementBadges"' instead?
+src/pages/LearnerProfile.tsx(25,10): error TS2739: Type '{}' is missing the following properties from type 'NavbarProps': auth, onLogout
+src/pages/MentorDashboard.tsx(95,145): error TS2322: Type '(sessionId: string, newTime: string) => void' is not assignable to type '(id: string) => void'.
+  Target signature provides too few arguments. Expected 2 or more, but got 1.
+src/pages/MentorWallet.tsx(9,10): error TS2305: Module '"../components/wallet/FreighterConnect"' has no exported member 'FreighterConnect'.
+src/pages/MentorWallet.tsx(51,23): error TS7006: Parameter 'walletInfo' implicitly has an 'any' type.
+src/pages/WalletDashboardPage.tsx(6,10): error TS2305: Module '"../components/wallet/TransactionHistory"' has no exported member 'TransactionHistory'.
+src/utils/chart.utils.ts(31,7): error TS2367: This comparison appears to be unintentional because the types '"json" | "csv" | undefined' and '"svg"' have no overlap.

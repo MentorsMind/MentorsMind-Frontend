@@ -24,7 +24,45 @@ export interface AggregatedData {
   skillBreakdown: ChartDatum[];
   metrics: EarningsMetrics;
 }
-</xai:function_call >
 
-<xai:function_call name="create_file">
-<parameter name="absolute_path">src/hooks/useEarningsData.ts
+export interface DataPoint {
+  label: string;
+  value: number;
+}
+
+export interface MultiSeriesDataPoint {
+  [key: string]: string | number;
+}
+
+export interface ChartSeries {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+export interface ChartExportOptions {
+  filename?: string;
+  format?: 'csv' | 'json' | 'png' | 'svg';
+}
+
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  prefix?: string;
+  suffix?: string;
+  icon?: any;
+}
+
+export interface UseChartDataOptions {
+  interval?: 'day' | 'week' | 'month';
+  limit?: number;
+}
+
+export interface UseChartDataResult {
+  data: any[];
+  isLoading: boolean;
+  error: Error | null;
+  exportData: (format: 'csv' | 'json') => void;
+}

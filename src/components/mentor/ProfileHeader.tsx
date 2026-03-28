@@ -5,6 +5,7 @@ interface ProfileHeaderProps {
   sessionCount: number;
   learnerCount: number;
   verified: boolean;
+  onBookClick?: () => void;
 }
 
 export default function ProfileHeader({
@@ -14,6 +15,7 @@ export default function ProfileHeader({
   sessionCount,
   learnerCount,
   verified,
+  onBookClick,
 }: ProfileHeaderProps) {
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 flex flex-col items-center text-center gap-4">
@@ -52,7 +54,10 @@ export default function ProfileHeader({
 
       {/* Actions */}
       <div className="flex gap-3 mt-2">
-        <button className="rounded-xl bg-stellar px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-stellar-dark transition-all">
+        <button 
+          onClick={onBookClick}
+          className="rounded-xl bg-stellar px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-stellar-dark transition-all"
+        >
           Book a Session
         </button>
         <button className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all">

@@ -1,5 +1,5 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import OfflineBanner from './components/ui/OfflineBanner';
 import NetworkErrorToast from './components/ui/NetworkErrorToast';
@@ -30,6 +30,7 @@ const loadPieChart = () => import('./components/charts/PieChart');
 const loadAreaChart = () => import('./components/charts/AreaChart');
 const loadMentorPublicProfile = () => import('./pages/MentorPublicProfile');
 const loadLearnerProfile = () => import('./pages/LearnerProfile');
+const loadLendingPool = () => import('./pages/LendingPool');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
@@ -51,8 +52,9 @@ const LineChart = lazy(loadLineChart);
 const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
+const LendingPool = lazy(loadLendingPool);
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'lending';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -143,6 +145,7 @@ function App() {
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const { dashboard, budgetStatus } = usePerformance();
+  const navigate = useNavigate();
 
   const {
     reviews,
@@ -160,6 +163,7 @@ function App() {
   const handleViewChange = (next: AppView, label: string) => {
     setView(next);
     setAnnouncement(`Navigated to ${label}`);
+    navigate('/');
   };
 
   useEffect(() => {
@@ -188,6 +192,8 @@ function App() {
     settings: loadSettings,
     goals: loadLearningGoals,
     dashboard: () => Promise.resolve(),
+    lending: loadLendingPool,
+    'learner-profile': loadLearnerProfile,
   };
 
   const fallback = <div className="flex h-64 items-center justify-center">Loading...</div>;
@@ -220,6 +226,7 @@ function App() {
 
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar md:hidden py-2 px-1">
           {[
+            { id: 'lending', label: 'Lending Pool' },
             { id: 'onboarding', label: 'Mentor Onboarding' },
             { id: 'goals', label: 'Goals' },
             { id: 'wallet', label: 'Wallet' },
@@ -244,6 +251,7 @@ function App() {
 
         <div className="hidden items-center gap-2 rounded-2xl bg-gray-50 p-1 md:flex">
           {[
+            { id: 'lending', label: 'Lending Pool' },
             { id: 'search', label: 'Search & Booking' },
             { id: 'learner', label: 'Learner Onboarding' },
             { id: 'onboarding', label: 'Mentor Onboarding' },
@@ -339,6 +347,8 @@ function App() {
                     <MentorDashboard />
                   ) : view === 'learner-profile' ? (
                     <LearnerProfile />
+                  ) : view === 'lending' ? (
+                    <LendingPool />
                   ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="flex justify-between items-end">
@@ -432,3 +442,5 @@ function App() {
     </div>
   );
 }
+
+export default App;

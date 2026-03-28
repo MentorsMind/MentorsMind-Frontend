@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMentorSearch } from "../hooks/useMentorSearch";
 import {
   useSearchFilters,
@@ -50,6 +51,7 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
   const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(
     null,
   );
+  const navigate = useNavigate();
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -88,8 +90,7 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
 
   const handleViewProfile = (mentor: MentorProfile) => {
     addRecentlyViewed(mentor.id);
-    // In a real app, this would navigate to the mentor's profile page
-    alert(`Viewing profile of ${mentor.name}`);
+    navigate(`/mentors/${mentor.id}`);
   };
 
   const suggestions = getSuggestions(searchQuery);

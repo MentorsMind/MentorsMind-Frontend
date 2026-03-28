@@ -25,8 +25,8 @@ export const STELLAR_CONFIG = {
       icon: '🅿️',
     },
   },
-  contractId: process.env.STELLAR_CONTRACT_ID || 'CA...', // Escrow contract ID
-  platformFeeAccount: process.env.PLATFORM_FEE_ACCOUNT || 'GA...', // Platform fee collection account
+  contractId: import.meta.env.VITE_STELLAR_CONTRACT_ID || 'CA...', // Escrow contract ID
+  platformFeeAccount: import.meta.env.VITE_PLATFORM_FEE_ACCOUNT || 'GA...', // Platform fee collection account
   escrowTimeout: 30 * 1000, // 30 seconds for ledger close
   pollingInterval: 2000, // Poll every 2 seconds
   maxPollingAttempts: 30, // Max 60 seconds polling

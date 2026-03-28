@@ -5,6 +5,8 @@ import type {
   EscrowDisputeRequest,
   EscrowTimelineEvent 
 } from '../types/payment.types';
+import { useFreighter } from './useFreighter';
+import { TransactionBuilder, Networks, Operation } from '@stellar/stellar-sdk';
 
 interface UseEscrowOptions {
   userRole: 'learner' | 'mentor';
@@ -200,6 +202,7 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { isConnected, signTransaction } = useFreighter();
 
   // Fetch escrows (mock implementation)
   const fetchEscrows = useCallback(async () => {
@@ -282,8 +285,24 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
     setLoading(true);
     
     try {
+      if (userRole === 'mentor' && !isConnected) {
+        throw new Error('Please connect your Freighter wallet to sign the release transaction.');
+      }
+
+      if (userRole === 'mentor') {
+        const mockAccount = { accountId: () => 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGZWM9CQJKR3BSQNEWVZOR', sequenceNumber: () => '1', incrementSequenceNumber: () => {} } as any;
+        const tx = new TransactionBuilder(mockAccount, { fee: '100', networkPassphrase: Networks.TESTNET })
+          .addOperation(Operation.manageData({ name: 'action', value: 'releaseEscrow' }))
+          .addOperation(Operation.manageData({ name: 'escrowId', value: escrowId }))
+          .setTimeout(30)
+          .build();
+
+        const signedTx = await signTransaction(tx);
+        if (!signedTx) throw new Error('Transaction was rejected or failed');
+      }
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       setEscrows(prev => prev.map(escrow => {
         if (escrow.id !== escrowId) return escrow;

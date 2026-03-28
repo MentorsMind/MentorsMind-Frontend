@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useLearnerProfile } from '../hooks/useLearnerProfile';
 import { ProfileForm } from '../components/learner/ProfileForm';
-import { AchievementBadges } from '../components/learner/AchievementBadges';
-import { Sidebar } from '../components/dashboard/Sidebar';
-import { Navbar } from '../components/navigation/Navbar';
+import AchievementBadges from '../components/learner/AchievementBadges';
 import { Edit2, User, Target, Award, Settings } from 'lucide-react';
 
 export const LearnerProfilePage: React.FC = () => {
@@ -19,13 +17,8 @@ export const LearnerProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto focus:outline-none">
-          <div className="py-6 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="max-w-4xl mx-auto">
               {/* Header section */}
               <div className="md:flex md:items-center md:justify-between md:space-x-5 mb-8">
                 <div className="flex items-start space-x-5">
@@ -117,7 +110,7 @@ export const LearnerProfilePage: React.FC = () => {
                         <Award className="h-5 w-5 mr-2 text-blue-500" />
                         Achievements
                       </h2>
-                      <AchievementBadges />
+                      <AchievementBadges achievements={profile.achievements} />
                     </section>
                   </div>
 
@@ -147,9 +140,6 @@ export const LearnerProfilePage: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-        </main>
-      </div>
     </div>
   );
 };
