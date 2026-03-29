@@ -1,205 +1,170 @@
-import React, { useState } from 'react';
-import { useVideoSession } from '../hooks/useVideoSession';
-import VideoPlayer from '../components/session/VideoPlayer';
-import SessionTimer from '../components/session/SessionTimer';
-import SessionControls from '../components/session/SessionControls';
+import React from 'react';
+import { Mic, MicOff, Video, VideoOff, Maximize2, Minimize2, PhoneOff } from 'lucide-react';
+import { useSessionRoom } from '../hooks/useSessionRoom';
+import SessionSidebar from '../components/session/SessionSidebar';
+import EndSessionModal from '../components/session/EndSessionModal';
 
-interface SessionRoomProps {
-  sessionId: string;
-  meetingLink?: string;
-  sessionTopic?: string;
-  mentorName?: string;
+function fmt(s: number) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return h > 0 ? `${h}:${m}:${sec}` : `${m}:${sec}`;
 }
 
-const SessionRoom: React.FC<SessionRoomProps> = ({
-  sessionId,
-  meetingLink,
-  sessionTopic = 'Mentoring Session',
-  mentorName = 'Mentor',
-}) => {
+const SessionRoom: React.FC = () => {
   const {
-    isConnected,
-    isConnecting,
-    error,
-    participants,
-    isScreenSharing,
-    isMuted,
-    isVideoOff,
-    sessionDuration,
-    connect,
-    disconnect,
-    toggleMute,
-    toggleVideo,
-    toggleScreenShare,
+    session,
+    canJoin,
+    isConnected, isConnecting,
+    isMuted, setIsMuted,
+    isVideoOff, setIsVideoOff,
+    isFullscreen, toggleFullscreen,
+    elapsed,
+    sidebarTab, setSidebarTab,
+    notes, setNotes,
+    showEndModal, setShowEndModal,
+    escrowStatus,
+    join,
     endSession,
-    retry,
-  } = useVideoSession({
-    sessionId,
-    meetingLink,
-    onSessionEnd: () => {
-      console.log('Session ended');
-    },
-    onEscrowRelease: () => {
-      console.log('Escrow release triggered');
-    },
-  });
+  } = useSessionRoom();
 
-  const [showNotes, setShowNotes] = useState(false);
-  const [notes, setNotes] = useState('');
+  const limitPct = Math.min((elapsed / session.durationLimit) * 100, 100);
+  const nearLimit = elapsed >= session.durationLimit * 0.9;
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Connection Error</h2>
-          <p className="text-gray-500 mb-6">{error}</p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={retry}
-              className="px-6 py-3 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark transition-all"
-            >
-              Retry
-            </button>
-            <button
-              onClick={disconnect}
-              className="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-all"
-            >
-              Leave
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isConnecting) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stellar/10 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-stellar border-t-transparent rounded-full animate-spin" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Connecting to session...</h2>
-          <p className="text-gray-500">Please wait while we connect you to the video call.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Pre-join screen
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stellar/10 flex items-center justify-center">
-            <svg className="w-8 h-8 text-stellar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
+        <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
+            <Video className="h-7 w-7 text-blue-600" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Ready to join?</h2>
-          <p className="text-gray-500 mb-6">
-            You're about to join a session with {mentorName}.
-          </p>
-          <button
-            onClick={connect}
-            className="w-full px-6 py-3 bg-stellar text-white font-bold rounded-xl hover:bg-stellar-dark transition-all"
-          >
-            Join Session
-          </button>
+          <h2 className="text-xl font-bold text-gray-900">{session.topic}</h2>
+          <p className="text-sm text-gray-500">with {session.mentorName}</p>
+          {isConnecting ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+              <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              Connecting…
+            </div>
+          ) : canJoin ? (
+            <button
+              onClick={join}
+              className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              Join Session
+            </button>
+          ) : (
+            <p className="text-sm text-gray-400">
+              Join button available 10 minutes before the session starts.
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-900/50">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={disconnect}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
-            aria-label="Leave session"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
+    <div className="flex h-screen bg-gray-900 overflow-hidden">
+      {/* Video area — 70% */}
+      <div className="flex flex-col" style={{ width: '70%' }}>
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-900/80">
           <div>
-            <h1 className="text-white font-bold">{sessionTopic}</h1>
-            <p className="text-white/60 text-sm">with {mentorName}</p>
+            <p className="text-white font-semibold text-sm">{session.topic}</p>
+            <p className="text-white/50 text-xs">with {session.mentorName}</p>
           </div>
-        </div>
-
-        <SessionTimer duration={sessionDuration} isLive />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex gap-4 p-4">
-        {/* Video Area */}
-        <div className="flex-1">
-          <VideoPlayer
-            participants={participants}
-            isScreenSharing={isScreenSharing}
-          />
-        </div>
-
-        {/* Notes Panel */}
-        {showNotes && (
-          <div className="w-80 bg-white rounded-2xl p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900">Session Notes</h3>
-              <button
-                onClick={() => setShowNotes(false)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-              >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          {/* Timer */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="font-mono text-white font-bold text-sm">{fmt(elapsed)}</span>
+              <span className="text-white/40 text-xs">LIVE</span>
             </div>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Take notes during the session..."
-              className="flex-1 w-full p-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-stellar/20 focus:border-stellar transition-all text-sm"
-            />
+            {/* Duration limit bar */}
+            <div className="w-32 h-1 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${nearLimit ? 'bg-red-500' : 'bg-blue-400'}`}
+                style={{ width: `${limitPct}%` }}
+              />
+            </div>
+            {nearLimit && <span className="text-xs text-red-400">Session limit approaching</span>}
           </div>
-        )}
-      </div>
-
-      {/* Controls */}
-      <div className="p-4 flex justify-center">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowNotes(!showNotes)}
-            className={`p-4 rounded-xl transition-all ${
-              showNotes
-                ? 'bg-stellar text-white'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-            aria-label="Toggle notes"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-
-          <SessionControls
-            isMuted={isMuted}
-            isVideoOff={isVideoOff}
-            isScreenSharing={isScreenSharing}
-            onToggleMute={toggleMute}
-            onToggleVideo={toggleVideo}
-            onToggleScreenShare={toggleScreenShare}
-            onEndSession={endSession}
-          />
         </div>
+
+        {/* Video placeholder */}
+        <div className="flex-1 relative bg-gray-800 flex items-center justify-center">
+          {isVideoOff ? (
+            <div className="flex flex-col items-center gap-2 text-white/40">
+              <VideoOff className="h-12 w-12" />
+              <span className="text-sm">Camera off</span>
+            </div>
+          ) : (
+            <div className="text-white/20 text-sm">Video stream</div>
+          )}
+          {/* Fullscreen toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="absolute top-3 right-3 p-2 rounded-lg bg-black/40 text-white/60 hover:text-white transition-colors"
+            aria-label="Toggle fullscreen"
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </div>
+
+        {/* Controls bar */}
+        <div className="flex items-center justify-center gap-3 py-4 bg-gray-900/80">
+          <button
+            onClick={() => setIsMuted(v => !v)}
+            aria-label={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+            className={`p-3 rounded-xl transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+          >
+            {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </button>
+          <button
+            onClick={() => setIsVideoOff(v => !v)}
+            aria-label={isVideoOff ? 'Turn on video (V)' : 'Turn off video (V)'}
+            className={`p-3 rounded-xl transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+          >
+            {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+          </button>
+          <div className="w-px h-8 bg-white/20" />
+          <button
+            onClick={() => setShowEndModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-3 text-sm font-semibold text-white hover:bg-red-600 transition-colors"
+          >
+            <PhoneOff className="h-4 w-4" />
+            End Session
+          </button>
+        </div>
+
+        {/* Keyboard hint */}
+        <p className="text-center text-xs text-white/20 pb-2">
+          M — mute · V — video · Esc — exit fullscreen
+        </p>
       </div>
+
+      {/* Sidebar — 30% */}
+      <div className="flex-1 border-l border-white/10">
+        <SessionSidebar
+          activeTab={sidebarTab}
+          onTabChange={setSidebarTab}
+          notes={notes}
+          onNotesChange={setNotes}
+          escrowStatus={escrowStatus}
+          collateral={120}
+          borrowedAmount={0}
+        />
+      </div>
+
+      {/* End session modal */}
+      {showEndModal && (
+        <EndSessionModal
+          elapsed={elapsed}
+          escrowStatus={escrowStatus}
+          onConfirm={endSession}
+          onCancel={() => setShowEndModal(false)}
+        />
+      )}
     </div>
   );
 };
