@@ -4,11 +4,10 @@ import MentorSearchBar from '../components/search/MentorSearchBar';
 import MentorFilterPanel from '../components/search/MentorFilterPanel';
 import SearchSortOptions from '../components/search/SearchSortOptions';
 import MentorGrid from '../components/search/MentorGrid';
-import MentorCard from '../components/search/MentorCard';
 import BookingModal from '../components/learner/BookingModal';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SearchX, Users } from 'lucide-react';
 import type { MentorProfile } from '../types';
-
-// ─── Local filter state ──────────────────────────────────────────────────────
 
 type Filters = {
   searchQuery: string;
@@ -29,8 +28,6 @@ const defaultFilters: Filters = {
   sortBy: 'rating',
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
 const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [page, setPage] = useState(1);
@@ -39,8 +36,6 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
   const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(null);
   const [savedMentorIds, setSavedMentorIds] = useState<Set<string>>(new Set());
   const [recentlyViewed, setRecentlyViewed] = useState<MentorProfile[]>([]);
-
-  // ─── Real data fetch ─────────────────────────────────────────────────────
 
   const { data, isLoading, isError, isFetching } = useMentorList({
     page,
@@ -59,8 +54,6 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
   const totalPages = data?.totalPages ?? 1;
   const hasMore = page < totalPages;
 
-  // ─── Handlers ────────────────────────────────────────────────────────────
-
   const updateFilter = (key: keyof Filters, value: unknown) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1);
@@ -68,6 +61,7 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
 
   const clearFilters = () => {
     setFilters(defaultFilters);
+    setSearchQuery('');
     setPage(1);
   };
 
@@ -86,11 +80,8 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
       const filtered = prev.filter((m) => m.id !== mentor.id);
       return [mentor, ...filtered].slice(0, 6);
     });
-    // TODO: navigate to /mentors/:id
     alert(`Viewing profile of ${mentor.name}`);
   };
-
-  // ─── Loading / Error states ────────────────────────────────────────────
 
   if (isError) {
     return (
@@ -106,11 +97,15 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // Determine if empty state is due to filters or zero data
+  const hasActiveFilters =
+    filters.searchQuery !== '' ||
+    filters.skills.length > 0 ||
+    filters.languages.length > 0 ||
+    filters.minPrice !== undefined;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
-      {/* Header */}
       <div className="mb-10">
         <h1 className="text-4xl font-black text-gray-900 mb-2">
           Find Your Perfect <span className="text-stellar">Mentor</span>
@@ -120,7 +115,6 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
         </p>
       </div>
 
-      {/* Search Bar */}
       <div className="mb-8">
         <MentorSearchBar
           value={searchQuery}
@@ -132,7 +126,6 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar - Filters */}
         <div className="lg:col-span-1">
           <MentorFilterPanel
             filters={{
@@ -148,7 +141,6 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
           />
         </div>
 
-        {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           <SearchSortOptions
             sortBy={filters.sortBy}
@@ -158,57 +150,77 @@ const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
             onViewModeChange={setViewMode}
           />
 
-          {/* Stale overlay while fetching next page / filter change */}
-          <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : ''}>
-            <MentorGrid
-              mentors={mentors}
-              savedMentors={savedMentorIds}
-              onSaveToggle={toggleSaveMentor}
-              onViewProfile={handleViewProfile}
-              onBookSession={isOnline ? setSelectedMentor : undefined}
-              viewMode={viewMode}
-              isLoading={isLoading}
-            />
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Previous
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                    page === p
-                      ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
-                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={!hasMore}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Next
-              </button>
+          {/* Empty State Intercept */}
+          {!isLoading && mentors.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm mt-6">
+              {hasActiveFilters ? (
+                <EmptyState
+                  icon={<SearchX className="w-10 h-10" />}
+                  title="No mentors found"
+                  description="We couldn't find any mentors matching your exact criteria. Try adjusting your filters or search terms."
+                  actionLabel="Clear All Filters"
+                  onAction={clearFilters}
+                />
+              ) : (
+                <EmptyState
+                  icon={<Users className="w-10 h-10" />}
+                  title="Mentors are joining soon"
+                  description="Our global network of mentors is currently being onboarded. Check back shortly to find your perfect match."
+                />
+              )}
             </div>
+          ) : (
+            <>
+              <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : ''}>
+                <MentorGrid
+                  mentors={mentors}
+                  savedMentors={savedMentorIds}
+                  onSaveToggle={toggleSaveMentor}
+                  onViewProfile={handleViewProfile}
+                  onBookSession={isOnline ? setSelectedMentor : undefined}
+                  viewMode={viewMode}
+                  isLoading={isLoading}
+                />
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                        page === p
+                          ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!hasMore}
+                    className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Recently Viewed */}
       {recentlyViewed.length > 0 && (
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Recently Viewed Mentors</h2>
