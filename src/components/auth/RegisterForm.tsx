@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  CheckCircle2,
   Wallet,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
@@ -89,7 +88,7 @@ export default function RegisterForm({
         formData.role,
       );
       onSuccess?.();
-    } catch (err) {
+    } catch {
       // Error is handled by context
     }
   };
@@ -449,14 +448,14 @@ export default function RegisterForm({
           <span className="text-sm text-gray-700">
             I agree to the{" "}
             <a
-              href="#"
+              href="/terms"
               className="font-medium text-stellar hover:text-stellar-dark"
             >
               Terms of Service
             </a>{" "}
             and{" "}
             <a
-              href="#"
+              href="/privacy"
               className="font-medium text-stellar hover:text-stellar-dark"
             >
               Privacy Policy

@@ -1,38 +1,16 @@
 import type { ReactNode } from 'react';
 import type { AssetCode } from './index';
 
-export interface ChartDatum {
-  date: string;
+export interface DataPoint {
+  label: string;
   value: number;
-  asset?: AssetCode;
-  category?: string;
-  learner?: string;
+  color?: string;
 }
 
-export interface EarningsMetrics {
-  avgDuration: number; // minutes
-  totalSessions: number;
-  platformFees: number;
-  currentPeriodTotal: number;
-  previousPeriodTotal: number;
-  periodChange: number; // percentage
+export interface MultiSeriesDataPoint {
+  label: string;
+  [key: string]: string | number | null | undefined;
 }
-
-export interface AggregatedData {
-  monthlyEarnings: ChartDatum[];
-  weeklySessions: ChartDatum[];
-  topLearners: ChartDatum[];
-  skillBreakdown: ChartDatum[];
-  metrics: EarningsMetrics;
-}
-
-export interface ChartExportOptions {
-  format: 'svg' | 'png';
-  filename?: string;
-}
-
-/** Row for multi-series Recharts (label + arbitrary numeric series keys). */
-export type MultiSeriesDataPoint = Record<string, string | number>;
 
 export interface ChartSeries {
   key: string;
@@ -40,10 +18,9 @@ export interface ChartSeries {
   color?: string;
 }
 
-export interface DataPoint {
-  label: string;
-  value: number;
-  color?: string;
+export interface ChartExportOptions {
+  format: 'png' | 'svg';
+  filename?: string;
 }
 
 export interface MetricCardData {
@@ -54,4 +31,30 @@ export interface MetricCardData {
   icon?: ReactNode;
   prefix?: string;
   suffix?: string;
+}
+
+export interface ChartDatum {
+  date: string;
+  value: number;
+  asset?: AssetCode;
+  category?: string;
+  learner?: string;
+  [key: string]: string | number | AssetCode | undefined;
+}
+
+export interface EarningsMetrics {
+  avgDuration: number;
+  totalSessions: number;
+  platformFees: number;
+  currentPeriodTotal: number;
+  previousPeriodTotal: number;
+  periodChange: number;
+}
+
+export interface AggregatedData {
+  monthlyEarnings: ChartDatum[];
+  weeklySessions: ChartDatum[];
+  topLearners: ChartDatum[];
+  skillBreakdown: ChartDatum[];
+  metrics: EarningsMetrics;
 }
