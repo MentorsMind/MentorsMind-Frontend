@@ -302,7 +302,7 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           >
             <span className="flex items-center gap-2">
               <Award className="w-4 h-4" />
-              Verified only
+              Show verified experts only
             </span>
             <div
               className={`w-5 h-5 rounded-full flex items-center justify-center ${

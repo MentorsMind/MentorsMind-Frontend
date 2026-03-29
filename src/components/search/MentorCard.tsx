@@ -1,6 +1,8 @@
-import React from 'react';
-import type { MentorProfile } from '../../types';
-import ImageOptimizer from '../performance/ImageOptimizer';
+import React from "react";
+import type { MentorProfile } from "../../types";
+import ImageOptimizer from "../performance/ImageOptimizer";
+import { useBadges } from "../../hooks/useBadges";
+import BadgeTooltip from "../mentor/BadgeTooltip";
 
 interface MentorCardProps {
   mentor: MentorProfile;
@@ -8,7 +10,7 @@ interface MentorCardProps {
   onSave: (id: string) => void;
   onViewProfile: (mentor: MentorProfile) => void;
   onBookSession?: (mentor: MentorProfile) => void;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
 }
 
 const MentorCard: React.FC<MentorCardProps> = ({
@@ -17,14 +19,17 @@ const MentorCard: React.FC<MentorCardProps> = ({
   onSave,
   onViewProfile,
   onBookSession,
-  viewMode = 'grid',
+  viewMode = "grid",
 }) => {
-  const isGridView = viewMode === 'grid';
+  const isGridView = viewMode === "grid";
+  const { badges } = useBadges(mentor.id);
+  const displayBadges = badges.slice(0, 3);
+  const excessBadges = badges.length > 3 ? badges.length - 3 : 0;
 
   return (
-    <div 
+    <div
       className={`group bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-xl hover:border-stellar/20 transition-all duration-300 ${
-        !isGridView ? 'flex gap-6' : ''
+        !isGridView ? "flex gap-6" : ""
       }`}
     >
       {/* Save Button */}
@@ -33,19 +38,29 @@ const MentorCard: React.FC<MentorCardProps> = ({
           e.stopPropagation();
           onSave(mentor.id);
         }}
-        aria-label={isSaved ? 'Unsave' : 'Save'}
+        aria-label={isSaved ? "Unsave" : "Save"}
         className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
-          isSaved 
-            ? 'bg-stellar text-white' 
-            : 'bg-gray-50 text-gray-400 hover:bg-stellar/10 hover:text-stellar'
+          isSaved
+            ? "bg-stellar text-white"
+            : "bg-gray-50 text-gray-400 hover:bg-stellar/10 hover:text-stellar"
         }`}
       >
-        <svg className="w-5 h-5" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        <svg
+          className="w-5 h-5"
+          fill={isSaved ? "currentColor" : "none"}
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          />
         </svg>
       </button>
 
-      <div className={`${!isGridView ? 'flex-shrink-0' : ''}`}>
+      <div className={`${!isGridView ? "flex-shrink-0" : ""}`}>
         {/* Avatar */}
         <div className="relative inline-block mb-4">
           {mentor.avatar ? (
@@ -66,7 +81,9 @@ const MentorCard: React.FC<MentorCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className={`flex-1 ${!isGridView ? 'flex flex-col justify-center' : ''}`}>
+      <div
+        className={`flex-1 ${!isGridView ? "flex flex-col justify-center" : ""}`}
+      >
         {/* Name & Title */}
         <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-stellar transition-colors">
           {mentor.name}
@@ -83,8 +100,42 @@ const MentorCard: React.FC<MentorCardProps> = ({
           <div className="w-1 h-1 rounded-full bg-gray-300" />
           <div className="text-gray-500">{mentor.totalSessions} sessions</div>
           <div className="w-1 h-1 rounded-full bg-gray-300" />
-          <div className="text-green-600 font-bold">{mentor.completionRate}% success</div>
+          <div className="text-green-600 font-bold">
+            {mentor.completionRate}% success
+          </div>
         </div>
+
+        {/* Badges */}
+        {badges.length > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            {displayBadges.map((badge) => (
+              <BadgeTooltip key={badge.id} badge={badge}>
+                <div
+                  className={`p-1.5 rounded-lg border ${badge.badgeBgColor} shadow-sm group-hover:scale-105 transition-transform flex items-center justify-center`}
+                >
+                  <svg
+                    className={`w-4 h-4 ${badge.badgeTextColor}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d={badge.icon}
+                    />
+                  </svg>
+                </div>
+              </BadgeTooltip>
+            ))}
+            {excessBadges > 0 && (
+              <div className="text-[10px] font-bold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg">
+                +{excessBadges} more
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Skills */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -106,9 +157,12 @@ const MentorCard: React.FC<MentorCardProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-50">
           <div>
-            <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Hourly Rate</div>
+            <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">
+              Hourly Rate
+            </div>
             <div className="text-2xl font-black text-gray-900">
-              {mentor.hourlyRate} <span className="text-sm font-bold text-stellar">XLM</span>
+              {mentor.hourlyRate}{" "}
+              <span className="text-sm font-bold text-stellar">XLM</span>
             </div>
           </div>
           <div className="flex items-center gap-3">

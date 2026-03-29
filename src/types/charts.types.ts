@@ -1,4 +1,4 @@
-import type { AssetCode } from './index';
+import type { AssetCode } from "./index";
 
 export interface ChartDatum {
   date: string;
@@ -24,7 +24,3 @@ export interface AggregatedData {
   skillBreakdown: ChartDatum[];
   metrics: EarningsMetrics;
 }
-</xai:function_call >
-
-<xai:function_call name="create_file">
-<parameter name="absolute_path">src/hooks/useEarningsData.ts
