@@ -19,16 +19,16 @@ const ASSET_ICONS: Record<string, string> = {
 };
 
 export function WalletBalance({
-  balances,
-  totalUsd,
-  minimumReserve,
-  availableXlm,
-  loading,
-  error,
+  balances = [],
+  totalUsd = 0,
+  minimumReserve = 1,
+  availableXlm = 0,
+  loading = false,
+  error = null,
   onRefresh,
 }: WalletBalanceProps) {
   const xlmBalance = balances.find(b => b.isNative);
-  const xlmAmount = xlmBalance ? parseFloat(xlmBalance.balance) : 0;
+  const xlmAmount = xlmBalance ? parseFloat(xlmBalance.balance || '0') : 0;
   const showReserveWarning = xlmAmount > 0 && availableXlm < 2;
 
   return (
@@ -43,7 +43,7 @@ export function WalletBalance({
             <div className="h-10 w-36 bg-white/20 rounded-xl animate-pulse" />
           ) : (
             <p className="text-4xl font-bold tabular-nums">
-              ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${(totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
         </div>
@@ -71,7 +71,7 @@ export function WalletBalance({
           <p className="text-xs text-amber-100 leading-relaxed">
             Low available XLM. Minimum reserve is{' '}
             <span className="font-bold">{minimumReserve} XLM</span> (base + trustlines).
-            Available to send: <span className="font-bold">{availableXlm.toFixed(2)} XLM</span>.
+            Available to send: <span className="font-bold">{(availableXlm || 0).toFixed(2)} XLM</span>.
           </p>
         </div>
       )}
@@ -107,7 +107,7 @@ export function WalletBalance({
                 </div>
                 <div className="text-right">
                   <p className="font-bold tabular-nums">
-                    {parseFloat(b.balance).toLocaleString(undefined, {
+                    {parseFloat(b.balance || '0').toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 7,
                     })}
@@ -115,7 +115,7 @@ export function WalletBalance({
                   {b.usdValue > 0 && (
                     <p className="text-white/60 text-xs tabular-nums flex items-center gap-1 justify-end">
                       <TrendingUp className="w-3 h-3" />
-                      ${b.totalUsd.toFixed(2)}
+                      ${(b.totalUsd || 0).toFixed(2)}
                     </p>
                   )}
                 </div>

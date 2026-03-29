@@ -1,5 +1,7 @@
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
+import * as matchers from '@testing-library/jest-dom/matchers'
+
+expect.extend(matchers)
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 if (typeof window !== 'undefined') {
@@ -14,8 +16,6 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
     disconnect() {}
   }
 
-  // @ts-expect-error test environment polyfill
   window.ResizeObserver = ResizeObserverMock;
-  // @ts-expect-error test environment polyfill
   global.ResizeObserver = ResizeObserverMock;
 }
