@@ -1,55 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { usePayment } from '../../hooks/usePayment';
 import type { PaymentDetails } from '../../types/payment.types';
 import PaymentMethod from './PaymentMethod';
 import PaymentBreakdown from './PaymentBreakdown';
 import PaymentReceipt from './PaymentReceipt';
 import TransactionTracker from './TransactionTracker';
+import AMLNotice from '../compliance/AMLNotice';
 import { useStellarTransaction } from '../../hooks/useStellarTransaction';
-
-// Live confirmation steps shown during processing
-const CONFIRMATION_STEPS = [
-  'Submitting transaction to Stellar network...',
-  'Awaiting ledger confirmation...',
-  'Verifying payment receipt...',
-  'Confirming session booking...',
-];
-
-const LiveConfirmationStatus: React.FC<{ active: boolean }> = ({ active }) => {
-  const [stepIndex, setStepIndex] = useState(0);
-
-  useEffect(() => {
-    if (!active) { setStepIndex(0); return; }
-    const interval = setInterval(() => {
-      setStepIndex(prev => (prev < CONFIRMATION_STEPS.length - 1 ? prev + 1 : prev));
-    }, 600);
-    return () => clearInterval(interval);
-  }, [active]);
-
-  if (!active) return null;
-
-  return (
-    <div className="mt-4 space-y-1.5">
-      {CONFIRMATION_STEPS.map((step, i) => (
-        <div
-          key={step}
-          className={`flex items-center gap-2 text-xs transition-all duration-300 ${
-            i < stepIndex ? 'text-green-600 font-bold' : i === stepIndex ? 'text-stellar font-bold animate-pulse' : 'text-gray-300'
-          }`}
-        >
-          {i < stepIndex ? (
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${i === stepIndex ? 'border-stellar' : 'border-gray-200'}`} />
-          )}
-          {step}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -66,8 +23,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, details, o
     setStep,
     selectAsset,
     connectWallet,
-    processPayment,
-    retry,
     reset
   } = usePayment(details);
 
@@ -274,11 +229,14 @@ Powered by Stellar Network
             )}
 
             {state.step === 'review' && (
-              <PaymentBreakdown 
-                breakdown={breakdown}
-                mentorName={details.mentorName}
-                sessionTopic={details.sessionTopic}
-              />
+              <div className="space-y-4">
+                <PaymentBreakdown 
+                  breakdown={breakdown}
+                  mentorName={details.mentorName}
+                  sessionTopic={details.sessionTopic}
+                />
+                <AMLNotice amountUsd={details.amount} />
+              </div>
             )}
 
             {(currentStep === 'processing' || currentStep === 'success' || currentStep === 'error') && (

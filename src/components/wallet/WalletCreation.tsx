@@ -129,6 +129,12 @@ export const WalletCreation = ({ onComplete, onCancel }: WalletCreationProps) =>
                 <li>You are solely responsible for the security of your wallet</li>
               </ul>
             </div>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+              Before continuing with identity and KYC checks, review our{' '}
+              <a href="/privacy" className="font-semibold underline underline-offset-2">Privacy Policy</a>
+              {' '}and{' '}
+              <a href="/terms" className="font-semibold underline underline-offset-2">Terms of Service</a>.
+            </div>
             <label className="flex items-start space-x-2">
               <input
                 type="checkbox"
