@@ -1,13 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ProfileHeader from '../components/mentor/ProfileHeader';
 import RatingBreakdown from '../components/mentor/RatingBreakdown';
 import PublicAvailability from '../components/mentor/PublicAvailability';
 import ReviewsList from '../components/mentor/ReviewsList';
+import { useShare } from '../hooks/useShare';
+import { applyMetaTags, buildMentorProfileMeta } from '../utils/og-meta.utils';
 
 const mentor = {
+  id: 'm1',
   name: 'John Doe',
   bio: 'Senior software engineer with 8+ years of experience in frontend development. Passionate about React, TypeScript, and helping developers level up their skills.',
+  rating: 4.9,
   joinDate: 'January 2023',
   sessionCount: 142,
   learnerCount: 89,
@@ -23,26 +27,87 @@ const mentor = {
 
 export default function MentorPublicProfile() {
   const { id } = useParams<{ id: string }>();
+  const { share } = useShare();
+  const [shareStatus, setShareStatus] = useState('');
+
+  const mentorId = id ?? mentor.id;
+  const profileUrl = `${window.location.origin}/mentors/${mentorId}`;
+  const sessionInviteToken = useMemo(() => `${mentorId}-${Date.now().toString(36)}`, [mentorId]);
+  const sessionInviteUrl = `${window.location.origin}/sessions/join/${sessionInviteToken}`;
 
   useEffect(() => {
     document.title = `${mentor.name} | Mentor Profile`;
-
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.name = 'description';
-      document.head.appendChild(meta);
-    }
-    meta.content = `View ${mentor.name}'s mentor profile, skills, languages, ratings, availability, and session pricing.`;
+    const cleanupMeta = applyMetaTags(
+      buildMentorProfileMeta({
+        id: mentorId,
+        name: mentor.name,
+        bio: mentor.bio,
+        rating: mentor.rating,
+        skills: mentor.skills,
+      })
+    );
 
     return () => {
       document.title = 'MentorMinds Stellar';
-      meta!.content = '';
+      cleanupMeta();
     };
-  }, []);
+  }, [mentorId]);
+
+  const handleShareProfile = async () => {
+    try {
+      const result = await share({
+        title: `${mentor.name} on MentorMinds`,
+        text: `Check out ${mentor.name}'s mentor profile with ${mentor.rating.toFixed(1)} star rating.`,
+        url: profileUrl,
+      });
+
+      setShareStatus(result.method === 'native' ? 'Profile shared.' : 'Profile link copied to clipboard.');
+    } catch {
+      setShareStatus('Unable to share profile right now.');
+    }
+  };
+
+  const handleShareSessionInvite = async () => {
+    try {
+      const result = await share({
+        title: 'MentorMinds Session Invite',
+        text: `Join my MentorMinds session: ${sessionInviteUrl}`,
+        url: sessionInviteUrl,
+      });
+
+      setShareStatus(result.method === 'native' ? 'Session invite shared.' : 'Session invite copied to clipboard.');
+    } catch {
+      setShareStatus('Unable to share session invite right now.');
+    }
+  };
+
+  const {
+    endorsements,
+    pendingSkill,
+    requestEndorsement,
+    cancelRequest,
+    toggleEndorsement,
+  } = useEndorsements(true);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={handleShareProfile}
+          className="rounded-xl bg-stellar px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-stellar-dark transition"
+        >
+          Share Profile
+        </button>
+        <button
+          type="button"
+          onClick={handleShareSessionInvite}
+          className="rounded-xl border border-stellar/20 bg-white px-4 py-2 text-sm font-bold text-stellar shadow-sm hover:bg-stellar/5 transition"
+        >
+          Share Session Invite
+        </button>
+      </div>
+      {shareStatus && <p className="text-sm font-medium text-stellar">{shareStatus}</p>}
 
       <ProfileHeader
         name={mentor.name}
@@ -51,6 +116,16 @@ export default function MentorPublicProfile() {
         sessionCount={mentor.sessionCount}
         learnerCount={mentor.learnerCount}
         verified={mentor.verified}
+      />
+
+      <EndorsementSection
+        name={mentor.name}
+        endorsements={endorsements}
+        hasCompletedSession={true}
+        pendingSkill={pendingSkill}
+        onRequestEndorsement={requestEndorsement}
+        onToggleEndorsement={toggleEndorsement}
+        onCancelRequest={cancelRequest}
       />
 
       <RatingBreakdown />

@@ -1,3 +1,50 @@
+import React, { useEffect } from 'react'
+import { NotificationPayload } from '../../services/notification.service'
+import useNotifications from '../../hooks/useNotifications'
+
+const ToastItem: React.FC<{ n: NotificationPayload; onClose: () => void }> = ({ n, onClose }) => {
+  useEffect(() => {
+    const t = setTimeout(onClose, 5000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  const bg = {
+    info: 'bg-blue-600',
+    success: 'bg-green-600',
+    warning: 'bg-yellow-600',
+    error: 'bg-red-600',
+  }[n.priority || 'info']
+
+  return (
+    <div className={`rounded shadow p-3 text-white ${bg} max-w-sm`}> 
+      <div className="font-semibold">{n.title || 'Notification'}</div>
+      <div className="text-sm">{n.message}</div>
+    </div>
+  )
+}
+
+export const Toasts: React.FC = () => {
+  const { toasts } = useNotifications()
+  const [, setTick] = React.useState(0)
+
+  useEffect(() => {
+    // simple re-render timer for toasts auto-remove handled in provider updates
+    const id = setInterval(() => setTick((t) => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  if (!toasts || toasts.length === 0) return null
+
+  return (
+    <div className="fixed right-4 top-4 flex flex-col gap-3 z-50">
+      {toasts.map((t) => (
+        <ToastItem key={t.id} n={t} onClose={() => { /* provider will remove via dismiss if desired */ }} />
+      ))}
+    </div>
+  )
+}
+
+export default Toasts
 import React from 'react';
 import { X, Check, AlertTriangle, Info, MessageCircle, Calendar, DollarSign, RefreshCw } from 'lucide-react';
 import { Notification } from '../../contexts/NotificationContext';

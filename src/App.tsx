@@ -1,9 +1,10 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useParams } from 'react-router-dom';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import OfflineBanner from './components/ui/OfflineBanner';
 import NetworkErrorToast from './components/ui/NetworkErrorToast';
 import SkipNavigation from './components/a11y/SkipNavigation';
+import NotificationCenter from './components/notifications/NotificationCenter';
 import LiveRegion from './components/a11y/LiveRegion';
 import AccessibilityPanel from './components/a11y/AccessibilityPanel';
 import CookieBanner from './components/compliance/CookieBanner';
@@ -33,6 +34,8 @@ const loadLearnerAnalyticsPage = () => import('./pages/LearnerAnalytics');
 const loadPlatformStats = () => import('./pages/PlatformStats');
 const loadPrivacyPolicy = () => import('./pages/PrivacyPolicy');
 const loadTermsOfService = () => import('./pages/TermsOfService');
+const loadISAMarketplace = () => import('./pages/ISAMarketplace');
+const loadPortfolio = () => import('./pages/Portfolio');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() =>
@@ -67,6 +70,47 @@ type AppView =
   | 'goals'
   | 'dashboard'
   | 'learner-profile';
+const LineChart = lazy(loadLineChart);
+const BarChart = lazy(loadBarChart);
+const PieChart = lazy(loadPieChart);
+const AreaChart = lazy(loadAreaChart);
+const MentorAnalyticsPage = lazy(loadMentorAnalyticsPage);
+const LearnerAnalyticsPage = lazy(loadLearnerAnalyticsPage);
+const PlatformStatsPage = lazy(loadPlatformStats);
+const PrivacyPolicyPage = lazy(loadPrivacyPolicy);
+const TermsOfServicePage = lazy(loadTermsOfService);
+const ISAMarketplacePage = lazy(loadISAMarketplace);
+const Portfolio = lazy(loadPortfolio);
+
+const TERMS_ACCEPTANCE_KEY = 'mm_terms_acceptance';
+const UNSUPPORTED_COUNTRIES = new Set(['IR', 'KP', 'SY', 'CU']);
+
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
+
+const earningsData = [
+  { label: 'Jan', earnings: 1200, sessions: 8 },
+  { label: 'Feb', earnings: 1800, sessions: 12 },
+  { label: 'Mar', earnings: 1500, sessions: 10 },
+  { label: 'Apr', earnings: 2200, sessions: 15 },
+  { label: 'May', earnings: 2800, sessions: 18 },
+  { label: 'Jun', earnings: 3100, sessions: 21 },
+];
+
+const sessionsByCategory = [
+  { label: 'Web Dev', value: 42 },
+  { label: 'Blockchain', value: 28 },
+  { label: 'Design', value: 18 },
+  { label: 'DevOps', value: 12 },
+];
+
+const ratingTrend = [
+  { label: 'Jan', rating: 4.2 },
+  { label: 'Feb', rating: 4.4 },
+  { label: 'Mar', rating: 4.3 },
+  { label: 'Apr', rating: 4.6 },
+  { label: 'May', rating: 4.7 },
+  { label: 'Jun', rating: 4.8 },
+];
 
 function AnalyticsDashboard() {
   return (
@@ -102,6 +146,18 @@ function AnalyticsDashboard() {
         </p>
       </div>
     </div>
+  );
+}
+
+function SessionJoinDeepLink() {
+  const { token } = useParams<{ token: string }>();
+
+  return (
+    <SessionRoom
+      sessionId={token ?? 'invite'}
+      sessionTopic="MentorMinds Session Invite"
+      mentorName="Mentor"
+    />
   );
 }
 
@@ -208,6 +264,9 @@ function App() {
               />
             </svg>
           </button>
+          <div className="flex items-center gap-3">
+            <NotificationCenter />
+          </div>
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-1 py-2 md:hidden">
@@ -305,6 +364,14 @@ function App() {
             }
           />
           <Route
+            path="/sessions/join/:token"
+            element={
+              <Suspense fallback={fallback}>
+                <SessionJoinDeepLink />
+              </Suspense>
+            }
+          />
+          <Route
             path="/mentor/analytics"
             element={
               <Suspense fallback={fallback}>
@@ -349,6 +416,22 @@ function App() {
             element={
               <Suspense fallback={fallback}>
                 <Settings />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/isa-marketplace"
+            element={
+              <Suspense fallback={fallback}>
+                <ISAMarketplacePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <Suspense fallback={fallback}>
+                <Portfolio />
               </Suspense>
             }
           />

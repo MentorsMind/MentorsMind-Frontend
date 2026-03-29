@@ -4,6 +4,7 @@ export const ROUTES = {
   MENTORS: '/mentors',
   MENTOR_PROFILE: '/mentors/:id',
   SESSIONS: '/sessions',
+  SESSION_JOIN: '/sessions/join/:token',
   HISTORY: '/history',
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
