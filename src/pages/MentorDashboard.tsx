@@ -123,7 +123,7 @@ const MentorDashboardContent: React.FC = () => {
         {widgets.filter(w => w.visible).sort((a, b) => a.order - b.order).map(widget => (
           <Widget key={widget.id} config={widget}>
             {widget.id === 'stats' && <PerformanceMetrics metrics={data.performance} />}
-            {widget.id === 'sessions' && <UpcomingSessions sessions={data.upcomingSessions} onConfirm={confirmSession} onCancel={cancelSession} onReschedule={rescheduleSession} />}
+            {widget.id === 'sessions' && <UpcomingSessions sessions={data.upcomingSessions} onConfirm={confirmSession} onCancel={cancelSession} onReschedule={(id) => rescheduleSession(id, new Date().toISOString())} />}
             {widget.id === 'earnings' && <EarningsOverview earnings={data.earnings} onExport={exportEarningsCSV} />}
             {widget.id === 'activity' && <ActivityFeed activities={data.activities} />}
           </Widget>

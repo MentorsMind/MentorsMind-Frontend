@@ -122,8 +122,6 @@ export function useGoals() {
       sharedWithMentor: false,
       reminderEnabled: false,
       notes: '',
-      createdAt: now,
-      updatedAt: now,
     });
   }, [addGoal]);
 

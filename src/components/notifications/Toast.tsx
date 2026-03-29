@@ -131,7 +131,7 @@ export const Toast: React.FC<ToastProps> = ({
       `}
     >
       {autoClose && (
-        <div className="absolute top-0 left-0 h-1 bg-gray-200 rounded-t-lg overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gray-200 rounded-t-lg overflow-hidden">
           <div
             className={`h-full ${getProgressBarColor()} transition-all ease-linear`}
             style={{
@@ -187,16 +187,21 @@ export const Toast: React.FC<ToastProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes shrink {
-          from {
-            width: 100%;
+      <style>
+        {`
+          @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
           }
-          to {
-            width: 0%;
+          @keyframes slide-up {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
           }
-        }
-      `}</style>
+          .animate-slide-up {
+            animation: slide-up 0.3s ease-out forwards;
+          }
+        `}
+      </style>
     </div>
   );
 };

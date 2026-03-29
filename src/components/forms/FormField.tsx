@@ -42,15 +42,15 @@ export const FormField: React.FC<FormFieldProps> = ({
       <div className="relative">
         {React.Children.map(children, child => {
           if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
+            return React.cloneElement(child as React.ReactElement<any>, {
               id: name,
               'aria-invalid': error ? 'true' : 'false',
               'aria-describedby': [
                 error ? errorId : null,
                 hint ? hintId : null
               ].filter(Boolean).join(' ') || undefined,
-              ...child.props
-            } as any);
+              ...(child as any).props
+            });
           }
           return child;
         })}

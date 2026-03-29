@@ -1,6 +1,7 @@
 import React, { lazy, useEffect, useState, Suspense } from 'react';
 import { Routes, Route, Link, useParams } from 'react-router-dom';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useHorizon } from './hooks/useHorizon';
 import OfflineBanner from './components/ui/OfflineBanner';
 import NetworkErrorToast from './components/ui/NetworkErrorToast';
 import SkipNavigation from './components/a11y/SkipNavigation';
@@ -37,6 +38,7 @@ const loadPrivacyPolicy = () => import('./pages/PrivacyPolicy');
 const loadTermsOfService = () => import('./pages/TermsOfService');
 const loadISAMarketplace = () => import('./pages/ISAMarketplace');
 const loadPortfolio = () => import('./pages/Portfolio');
+const loadTreasuryDashboard = () => import('./pages/TreasuryDashboard');
 
 const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() =>
@@ -83,6 +85,7 @@ const PrivacyPolicyPage = lazy(loadPrivacyPolicy);
 const TermsOfServicePage = lazy(loadTermsOfService);
 const ISAMarketplacePage = lazy(loadISAMarketplace);
 const Portfolio = lazy(loadPortfolio);
+const TreasuryDashboard = lazy(loadTreasuryDashboard);
 
 const TERMS_ACCEPTANCE_KEY = 'mm_terms_acceptance';
 const UNSUPPORTED_COUNTRIES = new Set(['IR', 'KP', 'SY', 'CU']);
@@ -101,6 +104,7 @@ type AppView =
   | "goals"
   | "dashboard"
   | "learner-profile";
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'treasury';
 
 const earningsData = [
   { label: "Jan", earnings: 1200, sessions: 8 },
@@ -125,8 +129,31 @@ const ratingTrend = [
   { label: "Apr", rating: 4.6 },
   { label: "May", rating: 4.7 },
   { label: "Jun", rating: 4.8 },
+  { label: 'Jan', rating: 4.2 },
+  { label: 'Feb', rating: 4.4 },
+  { label: 'Mar', rating: 4.3 },
+  { label: 'Apr', rating: 4.6 },
+  { label: 'May', rating: 4.5 },
+  { label: 'Jun', rating: 4.8 },
 ];
 
+const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<AppView>('dashboard');
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const isOnline = useOnlineStatus();
+  const perf = usePerformance();
+
+  useEffect(() => {
+    const accepted = localStorage.getItem(TERMS_ACCEPTANCE_KEY);
+    if (accepted === 'true') {
+      setIsTermsAccepted(true);
+    }
+  }, []);
+
+  const handleTermsAccept = () => {
+    localStorage.setItem(TERMS_ACCEPTANCE_KEY, 'true');
+    setIsTermsAccepted(true);
+  };
 function AnalyticsDashboard() {
   return (
     <div className="space-y-6 pb-10">
@@ -222,11 +249,72 @@ function App() {
     reviews: loadReviewList,
     analytics: loadAreaChart,
     profile: loadMentorProfileSetup,
+  const preloaders: Record<AppView, () => Promise<any>> = {
+    onboarding: loadMentorOnboarding,
+    learner: loadLearnerOnboarding,
+    wallet: loadMentorWallet,
+    search: loadMentorSearch,
     sessions: loadMentorSessions,
     settings: loadSettings,
+    analytics: loadMentorAnalyticsPage,
+    profile: loadMentorProfileSetup,
     goals: loadLearningGoals,
+    reviews: loadReviewList,
     dashboard: () => Promise.resolve(),
     'learner-profile': loadLearnerProfile,
+    treasury: loadTreasuryDashboard,
+  };
+
+  useEffect(() => {
+    preloadCriticalResources();
+    Object.values(preloaders).forEach(p => p());
+  }, []);
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return (
+          <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <header className="flex justify-between items-end">
+              <div>
+                <h1 className="text-4xl font-black text-gray-900 leading-none">Dashboard</h1>
+                <p className="text-gray-500 mt-2">Welcome back! Here's what's happening with your sessions.</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCurrentView('treasury')}
+                  className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-sm font-bold shadow-xl shadow-gray-200 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  View Treasury
+                </button>
+                <button className="px-6 py-3 bg-linear-to-r from-stellar to-blue-600 text-white rounded-2xl text-sm font-bold shadow-xl shadow-stellar/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  Withdraw Funds
+                </button>
+              </div>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricCard title="Total Earnings" value="12,450" change={12.5} prefix="$" />
+              <MetricCard title="Active Sessions" value="24" change={8.2} />
+              <MetricCard title="Avg. Rating" value="4.8" change={2.1} />
+              <MetricCard title="Student Reach" value="1,840" change={15.4} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-xl font-bold">Earnings Overview</h2>
+                  <select className="bg-gray-50 border-none rounded-xl text-xs font-bold px-4 py-2 focus:ring-2 focus:ring-stellar/20">
+                    <option>Last 6 Months</option>
+                    <option>Last Year</option>
+                  </select>
+                </div>
+                <AreaChart 
+                  data={earningsData as any} 
+                  series={[{ key: 'earnings', name: 'Earnings' }]}
+                  title="Monthly Revenue"
+                />
+              </div>
   const handleViewChange = (next: AppView, label: string) => {
     setView(next);
     setAnnouncement(`Navigated to ${label}`);
@@ -576,28 +664,52 @@ function App() {
 
                       <RatingBreakdown stats={stats} />
 
-                      <div className="rounded-[2.5rem] border border-gray-100 bg-white p-8 shadow-sm md:p-12">
-                        <ReviewList
-                          reviews={reviews}
-                          stats={stats}
-                          onVoteHelpful={voteHelpful}
-                          onFilterChange={setFilterRating}
-                          currentFilter={filterRating}
-                          onAddResponse={addMentorResponse}
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={paginate}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
-              </Suspense>
-            }
-          />
-        </Routes>
-      </main>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs">
+                <h2 className="text-xl font-bold mb-8">Sessions by Topic</h2>
+                <PieChart data={sessionsByCategory} title="Topic Distribution" />
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs">
+                <h2 className="text-xl font-bold mb-8">Rating Trend</h2>
+                <LineChart 
+                  data={ratingTrend as any} 
+                  series={[{ key: 'rating', name: 'Rating' }]}
+                  title="Satisfaction Score"
+                />
+              </div>
+              <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs overflow-hidden">
+                <h2 className="text-xl font-bold mb-8">Recent Reviews</h2>
+                <ReviewList 
+                  reviews={[]} 
+                  stats={{ average: 0, totalReviews: 0, distribution: [], trends: { labels: [], values: [] } }} 
+                  onVoteHelpful={() => {}} 
+                  onFilterChange={() => {}} 
+                  currentFilter={null} 
+                  onAddResponse={() => {}} 
+                  currentPage={1} 
+                  totalPages={1} 
+                  onPageChange={() => {}} 
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 'onboarding': return <MentorOnboarding />;
+      case 'learner': return <LearnerOnboarding />;
+      case 'wallet': return <MentorWallet />;
+      case 'search': return <MentorSearch />;
+      case 'sessions': return <MentorSessions />;
+      case 'settings': return <Settings />;
+      case 'analytics': return <MentorAnalyticsPage />;
+      case 'profile': return <MentorProfileSetup />;
+      case 'goals': return <LearningGoals />;
+      case 'learner-profile': return <LearnerProfile />;
+      case 'treasury': return <TreasuryDashboard />;
+      default: return null;
+    }
+  };
       <InstallPrompt />
       <MobileDashboard />
 
@@ -628,26 +740,39 @@ function App() {
         </div>
       </aside>
 
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans selection:bg-stellar/10 selection:text-stellar">
+      <SkipNavigation />
+      {!isOnline && <OfflineBanner />}
+      <NetworkErrorToast 
+        message="Unable to connect to service" 
+        onRetry={() => window.location.reload()} 
+        onClose={() => console.log('toast closed')} 
+      />
+      <LiveRegion message="" />
+      
+      {!isTermsAccepted && <TermsAcceptance isOpen={!isTermsAccepted} onAccept={handleTermsAccept} />}
       <CookieBanner />
 
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/85 py-3 text-[10px] text-gray-500 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-4 md:flex-row">
-          <span>Demo Version 1.0 • Built with Vite, React & Tailwind CSS • Powered by Stellar</span>
-          <div className="flex items-center gap-3">
-            <Link to="/privacy" className="font-semibold text-gray-600 hover:text-stellar">Privacy Policy</Link>
-            <Link to="/terms" className="font-semibold text-gray-600 hover:text-stellar">Terms of Service</Link>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event('open-cookie-preferences'))}
-              className="font-semibold text-gray-600 hover:text-stellar"
-            >
-              Cookie Preferences
-            </button>
+      <main id="main-content" className="relative">
+        <Suspense fallback={
+          <div className="h-screen flex items-center justify-center">
+            <div className="w-16 h-16 border-4 border-stellar/20 border-t-stellar rounded-full animate-spin" />
           </div>
-        </div>
-      </footer>
+        }>
+          <Routes>
+            <Route path="/" element={renderView()} />
+            <Route path="/governance" element={<Governance />} />
+            <Route path="/governance/proposals/:id" element={<ProposalDetail />} />
+            <Route path="/treasury" element={<TreasuryDashboard />} />
+            <Route path="/learner-profile" element={<LearnerProfile />} />
+          </Routes>
+        </Suspense>
+      </main>
+
+      <AccessibilityPanel isOpen={false} onClose={() => {}} />
     </div>
   );
-}
+};
 
 export default App;

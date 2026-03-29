@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { freighterService, type FreighterWalletInfo } from '../services/freighter.service';
-import { Transaction } from 'stellar-sdk';
+import { Transaction, Networks } from '@stellar/stellar-sdk';
 
 export interface FreighterState {
   isInstalled: boolean;

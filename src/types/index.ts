@@ -422,3 +422,5 @@ export type {
   FeedbackCategoryRatings,
   SessionFeedbackEntry,
 } from "./session.types";
+
+export * from "./reminder.types";

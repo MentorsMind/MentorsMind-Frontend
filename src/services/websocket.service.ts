@@ -189,23 +189,23 @@ export class WebSocketService {
     }
   }
 
-  onOpen(callback: () => void): void {
+  onOpen(callback?: () => void): void {
     this.eventListeners.onOpen = callback;
   }
 
-  onClose(callback: (event: WSCloseEvent) => void): void {
+  onClose(callback?: (event: WSCloseEvent) => void): void {
     this.eventListeners.onClose = callback;
   }
 
-  onMessage(callback: (message: WebSocketMessage) => void): void {
+  onMessage(callback?: (message: WebSocketMessage) => void): void {
     this.eventListeners.onMessage = callback;
   }
 
-  onError(callback: (error: WSErrorEvent) => void): void {
+  onError(callback?: (error: WSErrorEvent) => void): void {
     this.eventListeners.onError = callback;
   }
 
-  onReconnect(callback: (attempt: number) => void): void {
+  onReconnect(callback?: (attempt: number) => void): void {
     this.eventListeners.onReconnect = callback;
   }
 
