@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useWebRTC } from '../hooks/useWebRTC';
+import RecordingConsent from '../components/session/RecordingConsent';
+import RecordingIndicator from '../components/session/RecordingIndicator';
+import ConnectionQuality from '../components/session/ConnectionQuality';
+import VideoControls from '../components/session/VideoControls';
 import VideoGrid from '../components/session/VideoGrid';
 import SessionTimer from '../components/session/SessionTimer';
-import VideoControls from '../components/session/VideoControls';
-import ConnectionQuality from '../components/session/ConnectionQuality';
+import { useRecording } from '../hooks/useRecording';
+import { useWebRTC } from '../hooks/useWebRTC';
 
 interface SessionRoomProps {
   sessionId: string;
   meetingLink?: string;
   sessionTopic?: string;
   mentorName?: string;
+  viewerRole?: 'mentor' | 'learner';
 }
 
 const SessionRoom: React.FC<SessionRoomProps> = ({
@@ -17,6 +21,7 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
   meetingLink,
   sessionTopic = 'Mentoring Session',
   mentorName = 'Mentor',
+  viewerRole = 'learner',
 }) => {
   const {
     isConnected,
@@ -64,6 +69,32 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
       'requestPictureInPicture' in HTMLVideoElement.prototype,
     [],
   );
+
+  const remotePartyRole = viewerRole === 'mentor' ? 'learner' : 'mentor';
+  const remotePartyName = viewerRole === 'mentor' ? 'Learner' : mentorName;
+  const {
+    isRecordingActive,
+    canRequestRecording,
+    canStopRecording,
+    pendingRequestType,
+    statusMessage: recordingStatusMessage,
+    privacyNotice,
+    incomingRequest,
+    incomingSecondsRemaining,
+    consentMetadata,
+    recordingArchive,
+    requestRecording,
+    requestStopRecording,
+    acceptIncomingRequest,
+    declineIncomingRequest,
+  } = useRecording({
+    sessionId,
+    sessionTopic,
+    isSessionConnected: isConnected,
+    localPartyRole: viewerRole,
+    remotePartyRole,
+    remotePartyName,
+  });
 
   useEffect(() => {
     const video = primaryVideoRef.current;
@@ -160,6 +191,26 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
           <p className="text-gray-500 mb-6">
             You&apos;re about to join a session with {mentorName}.
           </p>
+          {recordingArchive && consentMetadata && (
+            <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stellar">Recording Ready</p>
+              <h3 className="mt-2 text-lg font-bold text-gray-900">Download recording</h3>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                Recording available until {new Date(recordingArchive.availableUntil).toLocaleDateString()}.
+              </p>
+              <div className="mt-4 rounded-2xl bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">On-chain consent metadata</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{consentMetadata.ledgerReference}</p>
+              </div>
+              <a
+                href={recordingArchive.downloadUrl}
+                download={recordingArchive.fileName}
+                className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-stellar px-4 py-3 font-bold text-white transition-all hover:bg-stellar-dark"
+              >
+                Download recording
+              </a>
+            </div>
+          )}
           <button
             onClick={() => {
               void connect();
@@ -194,34 +245,75 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
 
         <div className="flex flex-wrap items-center justify-end gap-3">
           <ConnectionQuality quality={connectionQuality} rttMs={rttMs} />
+          <RecordingIndicator
+            isRecording={isRecordingActive}
+            retentionNotice={privacyNotice}
+            metadataReference={consentMetadata?.ledgerReference}
+          />
           <SessionTimer duration={sessionDuration} isLive />
         </div>
       </div>
 
-      {(isAudioOnly || isScreenSharing) && (
-        <div className="px-4">
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
-            {isAudioOnly && <span>Audio-only fallback is active because video capture failed.</span>}
-            {isScreenSharing && <span>Screen share is active and mirrored into the peer connection.</span>}
-          </div>
-        </div>
-      )}
-
       <div className="flex flex-1 flex-col gap-4 p-4 lg:flex-row">
-        <div className="flex-1">
-          <VideoGrid
-            localStream={localStream}
-            remoteStream={remoteStream}
-            screenStream={screenStream}
-            isMuted={isMuted}
-            isCameraOff={isCameraOff}
-            isRemoteVideoOff={remoteVideoOff}
-            isScreenSharing={isScreenSharing}
-            isAudioOnly={isAudioOnly}
-            isReconnecting={isReconnecting}
-            remoteName={mentorName}
-            primaryVideoRef={primaryVideoRef}
-          />
+        <div className="flex flex-1 flex-col gap-4">
+          {(isAudioOnly || isScreenSharing) && (
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
+              {isAudioOnly && <span>Audio-only fallback is active because video capture failed.</span>}
+              {isScreenSharing && <span>Screen share is active and mirrored into the peer connection.</span>}
+            </div>
+          )}
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="rounded-2xl bg-white/10 p-5 text-left text-white">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-300">Recording Consent</p>
+                  <h2 className="mt-2 text-xl font-bold">Session recording status</h2>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white/80">
+                  {pendingRequestType === 'start'
+                    ? 'Awaiting consent'
+                    : pendingRequestType === 'stop'
+                    ? 'Awaiting stop consent'
+                    : isRecordingActive
+                    ? 'Recording live'
+                    : 'Recording off'}
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-white/75">{recordingStatusMessage}</p>
+              <p className="mt-3 text-sm font-semibold text-white">{privacyNotice}</p>
+            </div>
+
+            <div className="rounded-2xl bg-white p-5 text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-stellar">On-chain metadata</p>
+              <h3 className="mt-2 text-lg font-bold text-gray-900">Consent anchored to session metadata</h3>
+              <p className="mt-3 text-sm leading-6 text-gray-600">
+                Recording consent is stored on-chain as session metadata so both participants have an auditable record of when capture was approved.
+              </p>
+              <div className="mt-4 rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Ledger reference</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">
+                  {consentMetadata?.ledgerReference || 'Awaiting mutual consent'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <VideoGrid
+              localStream={localStream}
+              remoteStream={remoteStream}
+              screenStream={screenStream}
+              isMuted={isMuted}
+              isCameraOff={isCameraOff}
+              isRemoteVideoOff={remoteVideoOff}
+              isScreenSharing={isScreenSharing}
+              isAudioOnly={isAudioOnly}
+              isReconnecting={isReconnecting}
+              remoteName={mentorName}
+              primaryVideoRef={primaryVideoRef}
+            />
+          </div>
         </div>
 
         {showNotes && (
@@ -263,6 +355,34 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
             </svg>
           </button>
 
+          {!isRecordingActive ? (
+            <button
+              onClick={requestRecording}
+              disabled={!canRequestRecording}
+              className={`px-5 py-4 rounded-xl font-bold transition-all ${
+                canRequestRecording
+                  ? 'bg-white text-gray-900 hover:bg-gray-100'
+                  : 'bg-white/10 text-white/60 cursor-not-allowed'
+              }`}
+              aria-label="Request Recording"
+            >
+              {pendingRequestType === 'start' ? 'Awaiting consent...' : 'Request Recording'}
+            </button>
+          ) : (
+            <button
+              onClick={requestStopRecording}
+              disabled={!canStopRecording}
+              className={`px-5 py-4 rounded-xl font-bold transition-all ${
+                canStopRecording
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-red-500/40 text-white/70 cursor-not-allowed'
+              }`}
+              aria-label="Stop Recording"
+            >
+              {pendingRequestType === 'stop' ? 'Awaiting stop consent...' : 'Stop Recording'}
+            </button>
+          )}
+
           <VideoControls
             isMuted={isMuted}
             isCameraOff={isCameraOff}
@@ -285,6 +405,13 @@ const SessionRoom: React.FC<SessionRoomProps> = ({
           />
         </div>
       </div>
+
+      <RecordingConsent
+        request={incomingRequest}
+        secondsRemaining={incomingSecondsRemaining}
+        onAccept={acceptIncomingRequest}
+        onDecline={declineIncomingRequest}
+      />
     </div>
   );
 };
