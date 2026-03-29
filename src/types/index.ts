@@ -344,7 +344,7 @@ export interface MentorDashboardData {
   pendingMessagesCount: number;
 }
 
-export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
+export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
 
 export interface PaymentTransaction {
   id: string;
@@ -359,6 +359,9 @@ export interface PaymentTransaction {
   description: string;
   sessionId?: string;
   sessionTopic?: string;
+  transactionType?: "payment" | "escrow" | "swap" | "fee" | "staking";
+  memo?: string;
+  fee?: number;
 }
 
 export interface PaymentAnalytics {

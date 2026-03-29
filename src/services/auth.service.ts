@@ -33,6 +33,12 @@ export default class AuthService {
       },
       opts,
     );
+    const config = {
+      method: "GET",
+      url: apiConfig.url.auth.me,
+    } as const;
+
+    return opts ? request<User>(config, opts) : request(config);
   }
 
   async logout(opts?: RequestOptions) {

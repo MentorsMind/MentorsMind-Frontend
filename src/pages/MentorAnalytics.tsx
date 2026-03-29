@@ -1,132 +1,200 @@
-import React, { useState } from 'react';
-import DatePicker from 'react-datepicker';
-import { format, subDays } from 'date-fns';
-import { useEarningsData } from '../hooks/useEarningsData';
-import { AreaChartComponent } from '../components/charts/AreaChart';
-import { EarningsChart } from '../components/charts/EarningsChart';
-import { exportToCSV } from '../utils/export.utils';
-import { formatCurrency } from '../utils/export.utils';
+import React, { useEffect, useMemo, useState } from 'react';
+import CohortChart from '../components/charts/CohortChart';
+import ForecastChart from '../components/charts/ForecastChart';
+import GeoDistributionMap from '../components/charts/GeoDistributionMap';
+import HeatmapChart from '../components/charts/HeatmapChart';
+import LineChart from '../components/charts/LineChart';
+import MetricCard from '../components/charts/MetricCard';
+import PieChart from '../components/charts/PieChart';
+import { useDashboard } from '../hooks/useDashboard';
+import { useMentorAnalytics } from '../hooks/useMentorAnalytics';
+import { DashboardLayout } from '../layouts/DashboardLayout';
+import { downloadPdfReport } from '../utils/pdf-export.utils';
 
-const MentorAnalytics: React.FC = () => {
-  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
-    start: subDays(new Date(), 180), // 6 months ago
-    end: new Date(),
-  });
+type RangePreset = '7d' | '30d' | '90d' | '1y' | 'custom';
 
-  const { data, loading, exportCSV } = useEarningsData(dateRange);
+function offsetDate(days: number) {
+  const next = new Date();
+  next.setDate(next.getDate() + days);
+  return next;
+}
 
-  const handleExport = () => {
-    exportToCSV('mentor_earnings', 
-      ['Date', 'Learner', 'Topic', 'Duration (min)', 'Gross', 'Platform Fee', 'Net', 'Asset'],
-      [] // Can integrate actual data here
-    );
+function formatDateInput(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+const presetConfig: Record<Exclude<RangePreset, 'custom'>, number> = {
+  '7d': -7,
+  '30d': -30,
+  '90d': -90,
+  '1y': -365,
+};
+
+const MentorAnalyticsContent: React.FC = () => {
+  const { setRole, setLoading } = useDashboard();
+  const [preset, setPreset] = useState<RangePreset>('30d');
+  const [customStart, setCustomStart] = useState(formatDateInput(offsetDate(-45)));
+  const [customEnd, setCustomEnd] = useState(formatDateInput(new Date()));
+
+  useEffect(() => {
+    setRole('mentor');
+    setLoading(false);
+  }, [setLoading, setRole]);
+
+  const range = useMemo(() => {
+    if (preset === 'custom') {
+      return {
+        start: new Date(`${customStart}T00:00:00`),
+        end: new Date(`${customEnd}T23:59:59`),
+      };
+    }
+
+    return {
+      start: offsetDate(presetConfig[preset]),
+      end: new Date(),
+    };
+  }, [customEnd, customStart, preset]);
+
+  const analytics = useMentorAnalytics(range);
+
+  const handleExportPdf = () => {
+    downloadPdfReport({
+      filename: 'mentor-analytics-report',
+      title: 'Mentor Analytics Deep Dive',
+      subtitle: `Range: ${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}`,
+      sections: analytics.pdfSections,
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse bg-white rounded-3xl p-12 shadow-xl">
-            <div className="h-8 bg-gray-200 rounded-lg w-64 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-48 mb-8"></div>
-            <div className="space-y-4">
-              <div className="h-64 bg-gray-200 rounded-2xl"></div>
-              <div className="h-64 bg-gray-200 rounded-2xl"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const changeClass = data.metrics.periodChange >= 0 ? 'text-green-600' : 'text-red-600';
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-              Earnings Analytics
-            </h1>
-            <p className="text-xl text-gray-600 font-medium">
-              Track your revenue, sessions, and performance over time
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-3">
-              <DatePicker
-                selectsRange
-                startDate={dateRange.start}
-                endDate={dateRange.end}
-                onChange={(update: [Date | null, Date | null]) => {
-                  setDateRange({
-                    start: update[0] || subDays(new Date(), 180),
-                    end: update[1] || new Date(),
-                  });
-                }}
-                dateFormat="MMM d, yyyy"
-                className="text-sm font-medium text-gray-900 focus:outline-none"
-                wrapperClassName="w-full"
-              />
-            </div>
-            <button
-              onClick={handleExport}
-              className="bg-stellar hover:bg-stellar/90 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap"
-            >
-              Export CSV
-            </button>
-          </div>
+    <div className="space-y-8 p-6">
+      <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">Mentor Analytics</p>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-950">Deep dive into learner retention and revenue quality</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+            Track cohort behavior, demand shifts, session completion quality, and a 30-day revenue outlook from recurring bookings.
+          </p>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm group hover:shadow-xl transition-all">
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Total Sessions</div>
-            <div className="text-2xl font-black text-gray-900">{data.metrics.totalSessions}</div>
+        <div className="flex flex-col gap-3 rounded-[2rem] border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            {(['7d', '30d', '90d', '1y', 'custom'] as RangePreset[]).map((option) => (
+              <button
+                key={option}
+                onClick={() => setPreset(option)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  preset === option
+                    ? 'bg-slate-950 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
           </div>
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm group hover:shadow-xl transition-all">
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Avg Duration</div>
-            <div className="text-2xl font-black text-gray-900">{data.metrics.avgDuration} min</div>
-          </div>
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm group hover:shadow-xl transition-all">
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Platform Fees</div>
-            <div className="text-2xl font-black text-gray-900">${data.metrics.platformFees.toFixed(0)}</div>
-          </div>
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm group hover:shadow-xl transition-all">
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">
-              Period Change
-              <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${changeClass}`}>
-                {data.metrics.periodChange >= 0 ? '+' : ''}{data.metrics.periodChange.toFixed(0)}%
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900">
-              ${data.metrics.currentPeriodTotal.toFixed(0)}
-              <span className="text-sm text-gray-500 font-normal ml-1">
-                vs ${data.metrics.previousPeriodTotal.toFixed(0)} prev
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Charts */}
-        <div className="space-y-8">
-          <AreaChartComponent 
-            data={data.monthlyEarnings} 
-            title="Monthly Earnings with Asset Breakdown" 
-          />
-          <EarningsChart 
-            weeklySessions={data.weeklySessions}
-            topLearners={data.topLearners}
-            skillBreakdown={data.skillBreakdown}
-          />
+          {preset === 'custom' && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Start</span>
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={(event) => setCustomStart(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">End</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={(event) => setCustomEnd(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+            </div>
+          )}
+
+          <button
+            onClick={handleExportPdf}
+            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
+          >
+            Export PDF report
+          </button>
         </div>
-      </div>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetricCard title="Revenue" value={`$${analytics.summary.totalRevenue.toLocaleString()}`} />
+        <MetricCard title="Completed Sessions" value={analytics.summary.completedSessions} />
+        <MetricCard title="Active Learners" value={analytics.summary.activeLearners} />
+        <MetricCard title="Average Review" value={analytics.summary.averageReview} suffix="/5" />
+        <MetricCard title="30d Forecast" value={`$${analytics.summary.forecastedRevenue.toLocaleString()}`} />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <CohortChart
+          title="Cohort Retention"
+          description="% of learners who return for later sessions"
+          data={analytics.cohortRetention}
+        />
+        <PieChart
+          title="Revenue by Skill / Topic"
+          description="Top earning topics in the selected range"
+          data={analytics.revenueBySkill}
+          donut
+          valuePrefix="$"
+        />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <HeatmapChart
+          title="Peak Booking Hours"
+          description="Day-by-hour booking density"
+          days={analytics.days}
+          hours={analytics.hours}
+          data={analytics.peakBookingHours}
+        />
+        <GeoDistributionMap
+          title="Learner Geography"
+          description="Where your repeat demand is strongest"
+          data={analytics.geography}
+        />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <ForecastChart
+          title="Revenue Forecast"
+          description="Next 30 days from recurring booking patterns"
+          data={analytics.revenueForecast}
+        />
+        <LineChart
+          title="Session Completion Rate Trend"
+          description="Completed sessions as a percentage of booked sessions"
+          data={analytics.completionTrend}
+          series={[{ key: 'completionRate', name: 'Completion rate', color: '#16a34a' }]}
+          valueSuffix="%"
+        />
+      </section>
+
+      <LineChart
+        title="Average Review Score Trend"
+        description="Review score movement over time"
+        data={analytics.reviewTrend}
+        series={[{ key: 'averageScore', name: 'Average review', color: '#2563eb' }]}
+      />
     </div>
   );
 };
 
-export default MentorAnalytics;
+const MentorAnalytics: React.FC = () => {
+  return (
+    <DashboardLayout>
+      <MentorAnalyticsContent />
+    </DashboardLayout>
+  );
+};
 
+export default MentorAnalytics;

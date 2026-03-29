@@ -1,3 +1,18 @@
+import React, { Suspense } from 'react'
+
+type Loader<T extends React.ComponentType<any>> = () => Promise<{ default: T }>
+
+export function lazyWithPreload<T extends React.ComponentType<any>>(loader: Loader<T>) {
+  const LazyComponent = React.lazy(loader)
+  ;(LazyComponent as any).preload = loader
+  return LazyComponent as React.LazyExoticComponent<T> & { preload?: () => Promise<any> }
+}
+
+export const LazyBoundary: React.FC<{ fallback?: React.ReactNode; children: React.ReactNode }> = ({ fallback = null, children }) => {
+  return <Suspense fallback={fallback}>{children}</Suspense>
+}
+
+export default LazyBoundary
 import React, { Suspense } from 'react';
 
 interface LazyComponentProps {

@@ -1,5 +1,38 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import type { AssetCode } from './index';
+
+export interface DataPoint {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface MultiSeriesDataPoint {
+  label: string;
+  [key: string]: string | number | null | undefined;
+}
+
+export interface ChartSeries {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+export interface ChartExportOptions {
+  format: 'png' | 'svg';
+  filename?: string;
+}
+
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  icon?: ReactNode;
+  prefix?: string;
+  suffix?: string;
+}
 
 export interface ChartDatum {
   date: string;
@@ -8,6 +41,7 @@ export interface ChartDatum {
   asset?: AssetCode;
   category?: string;
   learner?: string;
+  [key: string]: string | number | AssetCode | undefined;
 }
 
 export interface UseChartDataOptions<T> {
@@ -23,12 +57,12 @@ export interface UseChartDataResult<T> {
 }
 
 export interface EarningsMetrics {
-  avgDuration: number; // minutes
+  avgDuration: number;
   totalSessions: number;
   platformFees: number;
   currentPeriodTotal: number;
   previousPeriodTotal: number;
-  periodChange: number; // percentage
+  periodChange: number;
 }
 
 export interface AggregatedData {

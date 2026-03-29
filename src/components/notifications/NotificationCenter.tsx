@@ -1,3 +1,57 @@
+import React, { useState } from 'react'
+import NotificationBadge from './NotificationBadge'
+import NotificationItem from './NotificationItem'
+import useNotifications from '../../hooks/useNotifications'
+import NotificationPreferences from './NotificationPreferences'
+
+export const NotificationCenter: React.FC = () => {
+  const { notifications, clearAll } = useNotifications()
+  const [open, setOpen] = useState(false)
+  const [showPrefs, setShowPrefs] = useState(false)
+
+  return (
+    <div className="relative">
+      <button className="relative p-2" onClick={() => setOpen((s) => !s)} aria-label="Notifications">
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+          <path d="M15 17H9" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+          <path d="M12 3v1" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+          <path d="M18 8a6 6 0 10-12 0v4l-2 2v1h16v-1l-2-2V8z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <NotificationBadge className="absolute -top-1 -right-1" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-96 bg-white border rounded shadow-lg z-40">
+          <div className="p-3 border-b flex justify-between items-center">
+            <div className="font-semibold">Notifications</div>
+            <div className="flex gap-2">
+              <button className="text-sm text-gray-600" onClick={() => setShowPrefs(true)}>Preferences</button>
+              <button className="text-sm text-red-600" onClick={() => clearAll()}>Clear</button>
+            </div>
+          </div>
+          <div className="max-h-80 overflow-auto">
+            {notifications.length === 0 && <div className="p-4 text-sm text-gray-500">No notifications</div>}
+            {notifications.map((n) => (
+              <NotificationItem key={n.id} n={n} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showPrefs && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setShowPrefs(false)} />
+          <div className="bg-white p-6 rounded shadow-lg z-50 w-96">
+            <button className="mb-4 text-sm text-gray-500" onClick={() => setShowPrefs(false)}>Close</button>
+            <NotificationPreferences />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default NotificationCenter
 import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
