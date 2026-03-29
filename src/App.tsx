@@ -90,25 +90,45 @@ const TreasuryDashboard = lazy(loadTreasuryDashboard);
 const TERMS_ACCEPTANCE_KEY = 'mm_terms_acceptance';
 const UNSUPPORTED_COUNTRIES = new Set(['IR', 'KP', 'SY', 'CU']);
 
+type AppView =
+  | "onboarding"
+  | "learner"
+  | "wallet"
+  | "portfolio"
+  | "search"
+  | "reviews"
+  | "analytics"
+  | "profile"
+  | "sessions"
+  | "settings"
+  | "goals"
+  | "dashboard"
+  | "learner-profile";
 type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'treasury';
 
 const earningsData = [
-  { label: 'Jan', earnings: 1200, sessions: 8 },
-  { label: 'Feb', earnings: 1800, sessions: 12 },
-  { label: 'Mar', earnings: 1500, sessions: 10 },
-  { label: 'Apr', earnings: 2200, sessions: 15 },
-  { label: 'May', earnings: 2800, sessions: 18 },
-  { label: 'Jun', earnings: 3100, sessions: 21 },
+  { label: "Jan", earnings: 1200, sessions: 8 },
+  { label: "Feb", earnings: 1800, sessions: 12 },
+  { label: "Mar", earnings: 1500, sessions: 10 },
+  { label: "Apr", earnings: 2200, sessions: 15 },
+  { label: "May", earnings: 2800, sessions: 18 },
+  { label: "Jun", earnings: 3100, sessions: 21 },
 ];
 
 const sessionsByCategory = [
-  { label: 'Web Dev', value: 42 },
-  { label: 'Blockchain', value: 28 },
-  { label: 'Design', value: 18 },
-  { label: 'DevOps', value: 12 },
+  { label: "Web Dev", value: 42 },
+  { label: "Blockchain", value: 28 },
+  { label: "Design", value: 18 },
+  { label: "DevOps", value: 12 },
 ];
 
 const ratingTrend = [
+  { label: "Jan", rating: 4.2 },
+  { label: "Feb", rating: 4.4 },
+  { label: "Mar", rating: 4.3 },
+  { label: "Apr", rating: 4.6 },
+  { label: "May", rating: 4.7 },
+  { label: "Jun", rating: 4.8 },
   { label: 'Jan', rating: 4.2 },
   { label: 'Feb', rating: 4.4 },
   { label: 'Mar', rating: 4.3 },
@@ -185,7 +205,7 @@ function SessionJoinDeepLink() {
 
 function App() {
   const isOnline = useOnlineStatus();
-  const [view, setView] = useState<AppView>('onboarding');
+  const [view, setView] = useState<AppView>("onboarding");
   const [showForm, setShowForm] = useState(false);
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
@@ -204,7 +224,7 @@ function App() {
     currentPage,
     totalPages,
     paginate,
-  } = useReviews('m1');
+  } = useReviews("m1");
 
   useEffect(() => {
     preloadCriticalResources();
@@ -220,6 +240,15 @@ function App() {
     return () => window.removeEventListener('api-network-error', handleNetworkError);
   }, []);
 
+  const preloaders: Record<AppView, () => Promise<unknown>> = {
+    onboarding: loadMentorOnboarding,
+    learner: loadLearnerOnboarding,
+    wallet: loadMentorWallet,
+    portfolio: loadPortfolio,
+    search: loadMentorSearch,
+    reviews: loadReviewList,
+    analytics: loadAreaChart,
+    profile: loadMentorProfileSetup,
   const preloaders: Record<AppView, () => Promise<any>> = {
     onboarding: loadMentorOnboarding,
     learner: loadLearnerOnboarding,
@@ -306,7 +335,7 @@ function App() {
       {networkError && (
         <NetworkErrorToast
           message={networkError}
-          onRetry={() => window.dispatchEvent(new Event('online'))}
+          onRetry={() => window.dispatchEvent(new Event("online"))}
           onClose={() => setNetworkError(null)}
         />
       )}
@@ -560,27 +589,29 @@ function App() {
             element={
               <Suspense fallback={fallback}>
                 <>
-                  {view === 'settings' ? (
+                  {view === "settings" ? (
                     <Settings />
-                  ) : view === 'onboarding' ? (
+                  ) : view === "onboarding" ? (
                     <MentorOnboarding />
-                  ) : view === 'learner' ? (
+                  ) : view === "learner" ? (
                     <LearnerOnboarding />
-                  ) : view === 'wallet' ? (
+                  ) : view === "wallet" ? (
                     <MentorWallet isOnline={isOnline} />
-                  ) : view === 'goals' ? (
+                  ) : view === "portfolio" ? (
+                    <Portfolio />
+                  ) : view === "goals" ? (
                     <LearningGoals />
-                  ) : view === 'sessions' ? (
+                  ) : view === "sessions" ? (
                     <MentorSessions isOnline={isOnline} />
-                  ) : view === 'profile' ? (
+                  ) : view === "profile" ? (
                     <MentorProfileSetup />
-                  ) : view === 'search' ? (
+                  ) : view === "search" ? (
                     <MentorSearch isOnline={isOnline} />
-                  ) : view === 'analytics' ? (
+                  ) : view === "analytics" ? (
                     <AnalyticsDashboard />
-                  ) : view === 'dashboard' ? (
+                  ) : view === "dashboard" ? (
                     <MentorDashboard />
-                  ) : view === 'learner-profile' ? (
+                  ) : view === "learner-profile" ? (
                     <LearnerProfile />
                   ) : (
                     <div className="space-y-10">
@@ -611,7 +642,7 @@ function App() {
                               : 'bg-stellar text-white hover:bg-stellar-dark'
                           }`}
                         >
-                          {showForm ? 'Cancel Review' : 'Write a Review'}
+                          {showForm ? "Cancel Review" : "Write a Review"}
                         </button>
                       </div>
 
@@ -624,7 +655,7 @@ function App() {
                                 reviewerId: `user-${Date.now()}`,
                               });
                               setShowForm(false);
-                              setAnnouncement('Your review has been submitted.');
+                              setAnnouncement("Your review has been submitted.");
                             }}
                             onCancel={() => setShowForm(false)}
                           />
@@ -704,7 +735,8 @@ function App() {
         </div>
 
         <div className="mt-3 text-[11px] text-gray-500">
-          Budget: {budgetStatus.jsBudgetKb}KB JS / {budgetStatus.chunkBudgetKb}KB chunks / {budgetStatus.imageBudgetKb}KB images
+          Budget: {budgetStatus.jsBudgetKb}KB JS / {budgetStatus.chunkBudgetKb}KB chunks /{" "}
+          {budgetStatus.imageBudgetKb}KB images
         </div>
       </aside>
 
