@@ -77,27 +77,26 @@ export const useWallet = () => {
     setLoading(true);
     try {
       const server = getHorizonServer();
-      const transactionsResponse = await server.transactions()
+      const operationsResponse = await server.operations()
         .forAccount(wallet.publicKey)
         .limit(limit)
         .order('desc')
         .call();
 
-      const transactions: Transaction[] = transactionsResponse.records.map(tx => {
-        const operation = tx.operations?.[0]; // Get first operation
+      const transactions: Transaction[] = (operationsResponse.records as any[]).map(op => {
         return {
-          id: tx.id,
-          hash: tx.hash,
-          type: operation?.type || 'payment',
-          amount: operation?.amount || '0',
-          assetCode: operation?.asset_type === 'native' ? 'XLM' : operation?.asset_code || 'XLM',
-          assetIssuer: operation?.asset_issuer,
-          from: operation?.from || '',
-          to: operation?.to || '',
-          memo: tx.memo,
-          timestamp: new Date(tx.created_at),
-          status: tx.successful ? 'completed' : 'failed',
-          fee: tx.fee_charged.toString(),
+          id: op.id,
+          hash: op.transaction_hash,
+          type: op.type as any,
+          amount: (op as any).amount || '0',
+          assetCode: (op as any).asset_type === 'native' ? 'XLM' : (op as any).asset_code || 'XLM',
+          assetIssuer: (op as any).asset_issuer,
+          from: (op as any).from || (op as any).funder || '',
+          to: (op as any).to || (op as any).account || '',
+          memo: '', 
+          timestamp: new Date(op.created_at),
+          status: op.transaction_successful ? 'completed' : 'failed',
+          fee: '0.00001', 
         };
       });
 

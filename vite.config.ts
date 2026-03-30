@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { PERFORMANCE_BUDGETS } from './src/utils/performance.utils';
 
 const performanceBudgetPlugin = (): Plugin => ({
@@ -18,12 +19,89 @@ const performanceBudgetPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
+<<<<<<< HEAD
+  plugins: [
+    react(),
+    performanceBudgetPlugin(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['vite.svg'],
+      manifest: {
+        name: 'MentorsMind',
+        short_name: 'MentorsMind',
+        description: 'Mentorship platform',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'script',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'js-cache',
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'style',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'css-cache',
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'api-cache',
+            },
+          },
+        ],
+      },
+    }),
+  ],
+=======
   plugins: [react(), performanceBudgetPlugin()],
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'recharts'],
+  },
+>>>>>>> main
   build: {
+    target: 'es2018',
     cssCodeSplit: true,
     modulePreload: {
       polyfill: true,
     },
+    sourcemap: false,
+    treeshake: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -41,5 +119,10 @@ export default defineConfig({
     },
     reportCompressedSize: true,
     chunkSizeWarningLimit: PERFORMANCE_BUDGETS.maxChunkKb,
+    minify: 'esbuild',
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+    polyfillModulePreload: true,
   },
 });

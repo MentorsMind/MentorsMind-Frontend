@@ -46,14 +46,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }
   };
 
-  const learningStyleOptions: { value: LearningStyle; label: string }[] = [
+  const learningStyleOptions = [
     { value: 'visual', label: 'Visual' },
     { value: 'auditory', label: 'Auditory' },
     { value: 'reading/writing', label: 'Reading/Writing' },
     { value: 'kinesthetic', label: 'Kinesthetic' },
   ];
 
-  const visibilityOptions: { value: ProfileVisibility; label: string }[] = [
+  const visibilityOptions = [
     { value: 'public', label: 'Public' },
     { value: 'mentors-only', label: 'Mentors Only' },
     { value: 'private', label: 'Private' },
@@ -88,43 +88,54 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   </span>
                 </div>
                 <FileUpload
-                  onFileSelect={handlePhotoChange}
-                  accept="image/*"
-                  maxSize={2 * 1024 * 1024}
+                  onChange={handlePhotoChange}
+                  config={{
+                    acceptedTypes: ['image/*'],
+                    maxSize: 2 * 1024 * 1024
+                  }}
                 />
               </div>
             </div>
 
             <div className="sm:col-span-4">
-              <TextInput
-                label="Full Name"
-                name="fullName"
-                value={formData.fullName}
-                onChange={(e) => handleChange('fullName', e.target.value)}
-                required
-              />
+              <FormField label="Full Name" name="fullName" required>
+                <TextInput
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => handleChange('fullName', e.target.value)}
+                  required
+                />
+              </FormField>
             </div>
 
             <div className="sm:col-span-6">
-              <TextArea
-                label="Bio"
-                name="bio"
-                value={formData.bio || ''}
-                onChange={(e) => handleChange('bio', e.target.value)}
-                rows={3}
-                description="A brief summary of your professional background (max 160 characters)."
-              />
+              <FormField 
+                label="Bio" 
+                name="bio" 
+                hint="A brief summary of your professional background (max 160 characters)."
+              >
+                <TextArea
+                  name="bio"
+                  value={formData.bio || ''}
+                  onChange={(e) => handleChange('bio', e.target.value)}
+                  rows={2}
+                />
+              </FormField>
             </div>
 
             <div className="sm:col-span-6">
-              <TextArea
-                label="Introduction"
+              <FormField 
+                label="Introduction" 
                 name="introduction"
-                value={formData.introduction || ''}
-                onChange={(e) => handleChange('introduction', e.target.value)}
-                rows={4}
-                description="Introduce yourself to mentors. Mention what you're working on and what you hope to achieve."
-              />
+                hint="Introduce yourself to mentors. Mention what you're working on and what you hope to achieve."
+              >
+                <TextArea
+                  name="introduction"
+                  value={formData.introduction || ''}
+                  onChange={(e) => handleChange('introduction', e.target.value)}
+                  rows={4}
+                />
+              </FormField>
             </div>
           </div>
         </div>
@@ -137,7 +148,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
           <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-6">
-              <FormField label="Learning Goals" description="Tags that represent your primary learning objectives.">
+              <FormField label="Learning Goals" name="learningGoals" hint="Tags that represent your primary learning objectives.">
                 <LearningGoals
                   goals={formData.learningGoals}
                   onChange={(goals) => handleChange('learningGoals', goals)}
@@ -146,7 +157,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
             </div>
 
             <div className="sm:col-span-6">
-              <FormField label="Skill Levels" description="Your current proficiency in relevant technical areas.">
+              <FormField label="Skill Levels" name="skillLevels" hint="Your current proficiency in relevant technical areas.">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {formData.skillLevels.map((skill, index) => (
                     <SkillLevelIndicator
@@ -170,47 +181,51 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           <h3 className="text-xl font-semibold leading-6 text-gray-900">Preferences & Settings</h3>
           <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-3">
-              <Select
-                label="Preferred Learning Style"
-                name="preferredLearningStyle"
-                value={formData.preferredLearningStyle}
-                onChange={(e) => handleChange('preferredLearningStyle', e.target.value)}
-                options={learningStyleOptions}
-              />
+              <FormField label="Preferred Learning Style" name="preferredLearningStyle">
+                <Select
+                  name="preferredLearningStyle"
+                  value={formData.preferredLearningStyle}
+                  onChange={(val) => handleChange('preferredLearningStyle', val)}
+                  options={learningStyleOptions as any}
+                />
+              </FormField>
             </div>
 
             <div className="sm:col-span-3">
-              <Select
-                label="Timezone"
-                name="timezone"
-                value={formData.timezone}
-                onChange={(e) => handleChange('timezone', e.target.value)}
-                options={[
-                  { value: 'UTC-8', label: 'Pacific Time (PT)' },
-                  { value: 'UTC-5', label: 'Eastern Time (ET)' },
-                  { value: 'UTC+0', label: 'Greenwich Mean Time (GMT)' },
-                  { value: 'UTC+1', label: 'Central European Time (CET)' },
-                ]}
-              />
+              <FormField label="Timezone" name="timezone">
+                <Select
+                  name="timezone"
+                  value={formData.timezone}
+                  onChange={(val) => handleChange('timezone', val)}
+                  options={[
+                    { value: 'UTC-8', label: 'Pacific Time (PT)' },
+                    { value: 'UTC-5', label: 'Eastern Time (ET)' },
+                    { value: 'UTC+0', label: 'Greenwich Mean Time (GMT)' },
+                    { value: 'UTC+1', label: 'Central European Time (CET)' },
+                  ]}
+                />
+              </FormField>
             </div>
 
             <div className="sm:col-span-3">
-              <TextInput
-                label="Preferred Language"
-                name="language"
-                value={formData.language}
-                onChange={(e) => handleChange('language', e.target.value)}
-              />
+              <FormField label="Preferred Language" name="language">
+                <TextInput
+                  name="language"
+                  value={formData.language}
+                  onChange={(e) => handleChange('language', e.target.value)}
+                />
+              </FormField>
             </div>
 
             <div className="sm:col-span-3">
-              <Select
-                label="Profile Visibility"
-                name="visibility"
-                value={formData.visibility}
-                onChange={(e) => handleChange('visibility', e.target.value)}
-                options={visibilityOptions}
-              />
+              <FormField label="Profile Visibility" name="visibility">
+                <Select
+                  name="visibility"
+                  value={formData.visibility}
+                  onChange={(val) => handleChange('visibility', val)}
+                  options={visibilityOptions as any}
+                />
+              </FormField>
             </div>
           </div>
         </div>

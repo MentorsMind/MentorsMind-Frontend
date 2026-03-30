@@ -12,36 +12,32 @@ export default class AuthService {
       data: { email, password },
     } as const;
 
-    return opts ? request<{ accessToken: string; refreshToken: string }>(config, opts) : request(config);
+    return opts
+      ? request<{ accessToken: string; refreshToken: string }>(config, opts)
+      : request(config);
+    return request<{ accessToken: string; refreshToken: string }>(config, opts);
   }
 
-  async signup(email: string, password: string, opts?: RequestOptions) {
+  async signup(email: string, password: string, name: string, role: string, opts?: RequestOptions) {
     const config = {
       method: "POST",
       url: apiConfig.url.auth.signup,
-      data: { email, password },
+      data: { email, password, name, role },
     } as const;
 
-    return opts ? request<{ accessToken: string; refreshToken: string }>(config, opts) : request(config);
+    return opts
+      ? request<{ accessToken: string; refreshToken: string }>(config, opts)
+      : request(config);
+    return request<{ accessToken: string; refreshToken: string }>(config, opts);
   }
 
   async me(opts?: RequestOptions) {
-<<<<<<< fix/89-email-notification-preferences-ui
     const config = {
       method: "GET",
       url: apiConfig.url.auth.me,
     } as const;
 
-    return opts ? request<{ id: string; email: string }>(config, opts) : request(config);
-=======
-    return request<User>(
-      {
-        method: "GET",
-        url: apiConfig.url.auth.me,
-      },
-      opts,
-    );
->>>>>>> main
+    return request<User>(config, opts);
   }
 
   async logout(opts?: RequestOptions) {
@@ -50,7 +46,7 @@ export default class AuthService {
         method: "DELETE",
         url: apiConfig.url.auth.logout,
       },
-      opts,
+      opts
     );
   }
 
@@ -60,22 +56,22 @@ export default class AuthService {
         method: "GET",
         url: `${apiConfig.url.auth.forgotPassword}/${email}`,
       },
-      opts,
+      opts
     );
   }
 
   async resetPassword(
     token: string,
     newPassword: string,
-    opts?: RequestOptions,
+    opts?: RequestOptions
   ) {
     return request<User>(
       {
         method: "POST",
-        url: `${apiConfig.url.auth.resetPassword}`,
+        url: apiConfig.url.auth.resetPassword,
         data: { token, newPassword },
       },
-      opts,
+      opts
     );
   }
 
@@ -83,10 +79,10 @@ export default class AuthService {
     return request<boolean>(
       {
         method: "POST",
-        url: `${apiConfig.url.auth.verifyEmail}`,
+        url: apiConfig.url.auth.verifyEmail,
         data: { token },
       },
-      opts,
+      opts
     );
   }
 
@@ -94,10 +90,10 @@ export default class AuthService {
     return request<boolean>(
       {
         method: "POST",
-        url: `${apiConfig.url.auth.resendVerification}`,
+        url: apiConfig.url.auth.resendVerification,
         data: { email },
       },
-      opts,
+      opts
     );
   }
 
@@ -114,7 +110,7 @@ export default class AuthService {
         url: apiConfig.url.auth.refreshToken,
         data: { refreshToken },
       },
-      opts,
+      opts
     );
   }
 }

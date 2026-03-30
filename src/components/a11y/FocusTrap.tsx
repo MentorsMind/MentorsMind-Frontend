@@ -6,7 +6,7 @@ interface FocusTrapProps {
   /** Whether the trap is active */
   active?: boolean;
   /** Element to return focus to when trap deactivates */
-  returnFocusRef?: React.RefObject<HTMLElement>;
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
   className?: string;
 }
 

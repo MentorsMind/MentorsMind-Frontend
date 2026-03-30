@@ -26,7 +26,7 @@ export interface DelegationHookResult {
   removeDelegation: () => Promise<void>;
 }
 
-const FAKE_ENS = {
+const FAKE_ENS: Record<string, string> = {
   'alice.eth': 'GABCDE12345FAKEADDRESS000000000000000000000000',
   'bob.eth': 'GBOBDELEGATE0000000000000000000000000000000',
   'carol.eth': 'GCAROLDELEGATE00000000000000000000000000000',

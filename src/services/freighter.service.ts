@@ -1,4 +1,4 @@
-import { Networks, Transaction, TransactionBuilder } from 'stellar-sdk';
+import { Networks, Transaction, TransactionBuilder } from '@stellar/stellar-sdk';
 
 export interface FreighterModule {
   isConnected(): Promise<boolean>;
@@ -121,7 +121,7 @@ export class FreighterService {
         accountToSign
       });
 
-      return TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
+      return TransactionBuilder.fromXDR(signedXdr, networkPassphrase) as Transaction;
     } catch (error) {
       console.error('Error signing transaction:', error);
       if (error instanceof Error && error.message.includes('User declined')) {

@@ -135,7 +135,7 @@ export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
           </button>
         </div>
 
-        {navigator.share && (
+        {typeof navigator.share !== 'undefined' && (
           <button
             onClick={handleShare}
             className="w-full flex items-center justify-center space-x-2 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

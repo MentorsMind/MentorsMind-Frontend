@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AchievementBadge } from '../../types';
+import CertificateCard from './CertificateCard';
 
 interface AchievementBadgesProps {
   achievements: AchievementBadge[];
@@ -26,6 +27,15 @@ const AchievementBadges: React.FC<AchievementBadgesProps> = ({ achievements, onU
             <div className="text-2xl">{badge.icon}</div>
             <h4 className="mt-2 text-sm font-bold text-gray-900">{badge.title}</h4>
             <p className="mt-1 text-xs text-gray-600">{badge.description}</p>
+            {badge.unlocked && (
+              <div className="mt-3">
+                <CertificateCard
+                  skill={badge.title}
+                  earnedAt={badge.unlockedAt}
+                  certificateId={badge.id}
+                />
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-gray-500">
                 {badge.unlocked ? 'Unlocked' : 'Locked'}

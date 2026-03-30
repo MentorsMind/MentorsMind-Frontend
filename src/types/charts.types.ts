@@ -58,3 +58,15 @@ export interface AggregatedData {
   skillBreakdown: ChartDatum[];
   metrics: EarningsMetrics;
 }
+
+export interface UseChartDataOptions<T> {
+  fetchFn: () => Promise<T>;
+  deps?: any[];
+}
+
+export interface UseChartDataResult<T> {
+  data: T | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
