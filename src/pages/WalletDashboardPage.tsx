@@ -4,6 +4,9 @@ import { WalletBalance } from '../components/wallet/WalletBalance';
 import { TrustlineManager } from '../components/wallet/TrustlineManager';
 import { WalletQRCode } from '../components/wallet/WalletQRCode';
 import { TransactionHistory } from '../components/wallet/TransactionHistory';
+import { KYCStatusBanner } from '../components/compliance/KYCStatus';
+import { useKYC } from '../hooks/useKYC';
+import { useNavigate } from 'react-router-dom';
 
 interface WalletDashboardPageProps {
   publicKey: string;
@@ -16,6 +19,9 @@ export default function WalletDashboardPage({ publicKey, nickname }: WalletDashb
     loading, error, fetchAccount, addTrustline,
   } = useHorizon(publicKey);
 
+  const { status, limits, resubmit, rejectionReason } = useKYC();
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchAccount();
   }, [fetchAccount]);
@@ -26,6 +32,14 @@ export default function WalletDashboardPage({ publicKey, nickname }: WalletDashb
         <h2 className="text-2xl font-bold text-gray-900">Wallet</h2>
         <p className="text-sm text-gray-500 mt-1">Stellar account overview</p>
       </div>
+
+      <KYCStatusBanner
+        status={status}
+        limits={limits}
+        onVerify={() => navigate('/kyc')}
+        onResubmit={resubmit}
+        rejectionReason={rejectionReason}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left column */}
