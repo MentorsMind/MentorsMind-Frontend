@@ -35,6 +35,7 @@ const MentorPublicProfile = lazy(loadMentorPublicProfile);
 const LearnerProfile = lazy(() => loadLearnerProfile().then(m => ({ default: m.LearnerProfilePage })));
 const MentorOnboarding = lazy(loadMentorOnboarding);
 const LearnerOnboarding = lazy(loadLearnerOnboarding);
+const KYCVerification = lazy(() => import('./pages/KYCVerification'));
 const MentorWallet = lazy(loadMentorWallet);
 const MentorSearch = lazy(loadMentorSearch);
 const MentorSessions = lazy(loadMentorSessions);
@@ -54,7 +55,7 @@ const BarChart = lazy(loadBarChart);
 const PieChart = lazy(loadPieChart);
 const AreaChart = lazy(loadAreaChart);
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile';
+type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile' | 'sessions' | 'settings' | 'goals' | 'dashboard' | 'learner-profile' | 'kyc';
 
 const earningsData = [
   { label: 'Jan', earnings: 1200, sessions: 8 },
@@ -191,6 +192,7 @@ function App() {
     goals: loadLearningGoals,
     dashboard: () => Promise.resolve(),
     'learner-profile': loadLearnerProfile,
+    kyc: () => import('./pages/KYCVerification'),
   };
 
   const fallback = <div className="flex h-64 items-center justify-center">Loading...</div>;
@@ -304,6 +306,14 @@ function App() {
             element={
               <Suspense fallback={fallback}>
                 <ProposalDetail />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/kyc"
+            element={
+              <Suspense fallback={fallback}>
+                <KYCVerification />
               </Suspense>
             }
           />

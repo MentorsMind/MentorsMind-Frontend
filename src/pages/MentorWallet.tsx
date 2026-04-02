@@ -9,6 +9,9 @@ import MetricCard from '../components/charts/MetricCard';
 import { FreighterConnect } from '../components/wallet/FreighterConnect';
 import EscrowStatus from '../components/payment/EscrowStatus';
 import EscrowTimeline from '../components/payment/EscrowTimeline';
+import { KYCStatusBanner } from '../components/compliance/KYCStatus';
+import { useKYC } from '../hooks/useKYC';
+import { useNavigate } from 'react-router-dom';
 
 const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const {
@@ -22,6 +25,9 @@ const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
     copied, copyAddress,
     exportEarnings,
   } = useMentorWallet();
+
+  const { status, limits, resubmit, rejectionReason } = useKYC();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'escrow'>('overview');
   const [selectedEscrowId, setSelectedEscrowId] = useState<string | null>(null);
@@ -43,6 +49,14 @@ const MentorWallet: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => 
         <h2 className="text-3xl font-bold mb-1">Wallet</h2>
         <p className="text-gray-500">Manage your Stellar earnings and payouts.</p>
       </div>
+
+      <KYCStatusBanner
+        status={status}
+        limits={limits}
+        onVerify={() => navigate('/kyc')}
+        onResubmit={resubmit}
+        rejectionReason={rejectionReason}
+      />
 
       {/* Wallet Connection Section */}
       <div className="mb-6">
