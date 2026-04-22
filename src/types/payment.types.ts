@@ -21,6 +21,7 @@ export type PaymentStep = 'connect' | 'method' | 'review' | 'processing' | 'succ
 export interface PaymentState {
   step: PaymentStep;
   selectedAsset: StellarAssetCode;
+  isSubmitting: boolean;
   transactionHash?: string;
   error?: string;
 }
@@ -28,7 +29,7 @@ export interface PaymentState {
 export interface PaymentDetails {
   mentorId: string;
   mentorName: string;
-  sessionId: string;
+  sessionId?: string;
   sessionTopic: string;
   amount: number; // Base amount in USD or equivalent
 }
@@ -94,4 +95,67 @@ export interface EscrowDisputeRequest {
   description: string;
   filedBy: 'learner';
   filedAt: string;
+}
+
+// ── Payment History & Transaction Types ──────────────────────────────────────
+
+export type PaymentType = 'deposit' | 'payment' | 'refund';
+export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
+
+export interface PaymentTransaction {
+  id: string;
+  type: PaymentType;
+  mentorId: string;
+  mentorName: string;
+  amount: number;
+  currency: StellarAssetCode;
+  status: PaymentStatus;
+  date: string;
+  stellarTxHash: string;
+  description: string;
+  sessionId: string;
+  sessionTopic: string;
+  // Fee breakdown
+  grossAmount?: number;
+  platformFee?: number;
+  networkFee?: number;
+  netAmount?: number;
+  // Refund tracking
+  isRefund?: boolean;
+  originalPaymentId?: string;
+  refundReason?: string;
+  // Failed transaction info
+  failureReason?: string;
+  failedAt?: string;
+  // Ledger info
+  ledgerSequence?: number;
+  timestamp?: string;
+}
+
+export interface PaymentHistoryResponse {
+  data: PaymentTransaction[];
+  pagination: {
+    cursor?: string;
+    hasMore: boolean;
+    count: number;
+  };
+}
+
+export interface PaymentDetailResponse {
+  data: PaymentTransaction & {
+    fullBreakdown: {
+      baseAmount: number;
+      platformFeePercentage: number;
+      platformFeeAmount: number;
+      networkFeeAmount: number;
+      totalDeductions: number;
+      netAmount: number;
+    };
+    stellarDetails: {
+      transactionHash: string;
+      ledgerSequence: number;
+      timestamp: string;
+      horizonUrl: string;
+    };
+  };
 }

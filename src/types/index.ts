@@ -15,6 +15,8 @@ export interface User {
   avatarUrl?: string;
   stellarPublicKey?: string;
   createdAt: string;
+  /** Whether the user has MFA (TOTP) enabled */
+  mfaEnabled?: boolean;
 }
 
 export interface Mentor extends User {

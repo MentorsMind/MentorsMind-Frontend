@@ -18,6 +18,7 @@ export const usePayment = (details: PaymentDetails) => {
   const [state, setState] = useState<PaymentState>({
     step: wallet ? 'method' : 'connect',
     selectedAsset: 'XLM',
+    isSubmitting: false,
   });
 
   const assets = useMemo((): StellarAsset[] => {
@@ -76,6 +77,9 @@ export const usePayment = (details: PaymentDetails) => {
   }, [connectWalletHook]);
 
   const processPayment = useCallback(async () => {
+    // Guard against double-submission
+    if (state.isSubmitting || state.step === 'processing') return;
+
     if (!selectedAssetData) {
       setState(prev => ({ 
         ...prev, 
@@ -109,7 +113,7 @@ export const usePayment = (details: PaymentDetails) => {
       }
     }
 
-    setState(prev => ({ ...prev, step: 'processing', error: undefined }));
+    setState(prev => ({ ...prev, step: 'processing', isSubmitting: true, error: undefined }));
 
     try {
       // Send payment to escrow account (this would be the platform's escrow account)
@@ -152,12 +156,14 @@ export const usePayment = (details: PaymentDetails) => {
         setState(prev => ({ 
           ...prev, 
           step: 'success', 
+          isSubmitting: false,
           transactionHash: finalStatus.transactionHash 
         }));
       } else {
         setState(prev => ({ 
           ...prev, 
           step: 'error', 
+          isSubmitting: false,
           error: 'Payment confirmation timeout.' 
         }));
       }
@@ -167,19 +173,21 @@ export const usePayment = (details: PaymentDetails) => {
       setState(prev => ({ 
         ...prev, 
         step: 'error', 
+        isSubmitting: false,
         error: error instanceof Error ? error.message : 'Payment failed.' 
       }));
     }
-  }, [breakdown.totalAmount, selectedAssetData, state.selectedAsset, wallet, connectWallet, sendPayment, details]);
+  }, [breakdown.totalAmount, selectedAssetData, state.selectedAsset, state.isSubmitting, state.step, wallet, connectWallet, sendPayment, details]);
 
   const retry = useCallback(() => {
-    setState(prev => ({ ...prev, step: 'review', error: undefined }));
+    setState(prev => ({ ...prev, step: 'review', isSubmitting: false, error: undefined }));
   }, []);
 
   const reset = useCallback(() => {
     setState({
       step: 'method',
       selectedAsset: 'XLM',
+      isSubmitting: false,
     });
   }, []);
 

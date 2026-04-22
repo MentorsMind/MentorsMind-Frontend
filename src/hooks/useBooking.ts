@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import BookingService from '../services/booking.service';
 import type {
   AvailabilitySlot,
   BookingConfirmationDetails,
@@ -149,6 +150,9 @@ export const useBooking = (mentor: MentorProfile | null) => {
   );
   const [learnerCalendar, setLearnerCalendar] = useState<LearnerCalendarEvent[]>([]);
   const [confirmedBooking, setConfirmedBooking] = useState<BookingConfirmationDetails | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const bookingService = useRef(new BookingService());
 
   useEffect(() => {
     if (!mentor) {
@@ -230,7 +234,6 @@ export const useBooking = (mentor: MentorProfile | null) => {
     return {
       mentorId: draft.mentorId,
       mentorName: draft.mentorName,
-      sessionId: `booking-${draft.mentorId}-${draft.selectedSlot.id}`,
       sessionTopic: `${SESSION_TYPE_LABELS[draft.sessionType]} on ${draft.selectedSlot.dateLabel}`,
       amount: Number(pricing.totalAmount.toFixed(2)),
     };
@@ -283,44 +286,67 @@ export const useBooking = (mentor: MentorProfile | null) => {
   }, [mentor]);
 
   const confirmBooking = useCallback(
-    (paymentTransactionHash?: string) => {
+    async (paymentTransactionHash?: string, sessionId?: string) => {
       if (!draft?.selectedSlot || !pricing || !mentor) {
         return null;
       }
 
-      const sessionId = `session-${draft.selectedSlot.id}`;
-      const bookingBase = {
-        sessionId,
-        mentorId: draft.mentorId,
-        mentorName: draft.mentorName,
-        sessionType: draft.sessionType,
-        duration: draft.duration,
-        notes: draft.notes,
-        slot: draft.selectedSlot,
-        pricing,
-        paymentTransactionHash,
-      };
+      setIsConfirming(true);
+      setConfirmError(null);
 
-      const learnerCalendarEvent: LearnerCalendarEvent = {
-        id: sessionId,
-        title: `${SESSION_TYPE_LABELS[draft.sessionType]} with ${draft.mentorName}`,
-        start: draft.selectedSlot.start,
-        end: draft.selectedSlot.end,
-        mentorName: draft.mentorName,
-        notes: draft.notes || 'No notes added.',
-        status: 'scheduled',
-      };
+      try {
+        const response = await bookingService.current.create({
+          mentorId: draft.mentorId,
+          sessionType: draft.sessionType,
+          duration: draft.duration,
+          notes: draft.notes,
+          slotStart: draft.selectedSlot.start,
+          slotEnd: draft.selectedSlot.end,
+          timezone: draft.selectedSlot.timezone,
+          totalAmount: pricing.totalAmount,
+          currency: pricing.currency,
+          paymentTransactionHash,
+        });
 
-      const confirmation: BookingConfirmationDetails = {
-        ...bookingBase,
-        calendarInvite: createCalendarInvite(bookingBase),
-        learnerCalendarEvent,
-      };
+        const resolvedId = response.id ?? sessionId ?? '';
+        const bookingBase = {
+          sessionId: resolvedId,
+          mentorId: draft.mentorId,
+          mentorName: draft.mentorName,
+          sessionType: draft.sessionType,
+          duration: draft.duration,
+          notes: draft.notes,
+          slot: draft.selectedSlot,
+          pricing,
+          paymentTransactionHash,
+        };
 
-      setLearnerCalendar((current) => [learnerCalendarEvent, ...current]);
-      setConfirmedBooking(confirmation);
+        const learnerCalendarEvent: LearnerCalendarEvent = {
+          id: resolvedId || draft.selectedSlot.id,
+          title: `${SESSION_TYPE_LABELS[draft.sessionType]} with ${draft.mentorName}`,
+          start: draft.selectedSlot.start,
+          end: draft.selectedSlot.end,
+          mentorName: draft.mentorName,
+          notes: draft.notes || 'No notes added.',
+          status: 'scheduled',
+        };
 
-      return confirmation;
+        const confirmation: BookingConfirmationDetails = {
+          ...bookingBase,
+          calendarInvite: createCalendarInvite(bookingBase),
+          learnerCalendarEvent,
+        };
+
+        setLearnerCalendar((current) => [learnerCalendarEvent, ...current]);
+        setConfirmedBooking(confirmation);
+        return confirmation;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create booking.';
+        setConfirmError(message);
+        return null;
+      } finally {
+        setIsConfirming(false);
+      }
     },
     [draft, mentor, pricing]
   );
@@ -333,6 +359,8 @@ export const useBooking = (mentor: MentorProfile | null) => {
     pricing,
     learnerCalendar,
     confirmedBooking,
+    isConfirming,
+    confirmError,
     paymentDetails,
     setSessionType,
     setDuration,

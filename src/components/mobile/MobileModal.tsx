@@ -1,5 +1,6 @@
 import React, { useEffect, ReactNode } from 'react';
 import { X } from 'lucide-react';
+import FocusTrap from '../a11y/FocusTrap';
 import { useMobile } from '../../hooks/useMobile';
 
 interface MobileModalProps {
@@ -67,12 +68,13 @@ export const MobileModal: React.FC<MobileModalProps> = ({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <div
-        className={`bg-background w-full overflow-hidden flex flex-col ${modalClasses[position]} ${
-          position === 'bottom' ? 'animate-in slide-in-from-bottom duration-300' : ''
-        } ${position === 'center' ? 'animate-in zoom-in-95 duration-200' : ''} ${className}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <FocusTrap active>
+        <div
+          className={`bg-white w-full overflow-hidden flex flex-col ${modalClasses[position]} ${
+            position === 'bottom' ? 'animate-in slide-in-from-bottom duration-300' : ''
+          } ${position === 'center' ? 'animate-in zoom-in-95 duration-200' : ''} ${className}`}
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
@@ -93,11 +95,12 @@ export const MobileModal: React.FC<MobileModalProps> = ({
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          {children}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            {children}
+          </div>
         </div>
-      </div>
+      </FocusTrap>
     </div>
   );
 };

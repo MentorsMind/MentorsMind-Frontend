@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FocusTrap from '../a11y/FocusTrap';
 import { User, Mail, Lock, Trash2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 interface AccountSettingsProps {
@@ -59,6 +60,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
         <form onSubmit={handleEmailChange} className="space-y-3">
           <input
             type="email"
+            aria-label="New email address"
             placeholder="New email address"
             value={emailForm.newEmail}
             onChange={e => setEmailForm(p => ({ ...p, newEmail: e.target.value }))}
@@ -67,6 +69,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
           />
           <input
             type="password"
+            aria-label="Confirm with your password"
             placeholder="Confirm with your password"
             value={emailForm.password}
             onChange={e => setEmailForm(p => ({ ...p, password: e.target.value }))}
@@ -95,6 +98,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
           <div className="relative">
             <input
               type={showPasswords.current ? 'text' : 'password'}
+              aria-label="Current password"
               placeholder="Current password"
               value={passwordForm.current}
               onChange={e => setPasswordForm(p => ({ ...p, current: e.target.value }))}
@@ -109,6 +113,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
           <div className="relative">
             <input
               type={showPasswords.next ? 'text' : 'password'}
+              aria-label="New password"
               placeholder="New password"
               value={passwordForm.next}
               onChange={e => setPasswordForm(p => ({ ...p, next: e.target.value }))}
@@ -122,6 +127,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
           </div>
           <input
             type="password"
+            aria-label="Confirm new password"
             placeholder="Confirm new password"
             value={passwordForm.confirm}
             onChange={e => setPasswordForm(p => ({ ...p, confirm: e.target.value }))}
@@ -161,7 +167,8 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+          <FocusTrap active>
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -173,6 +180,7 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
             </p>
             <input
               type="text"
+              aria-label="Delete confirmation input"
               value={deleteConfirm}
               onChange={e => setDeleteConfirm(e.target.value)}
               placeholder="Type DELETE to confirm"
@@ -190,7 +198,8 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({ userEmail, userName }
                 Delete Account
               </button>
             </div>
-          </div>
+            </div>
+          </FocusTrap>
         </div>
       )}
     </div>
