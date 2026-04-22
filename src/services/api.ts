@@ -33,10 +33,7 @@ api.interceptors.response.use(
           original.headers!.Authorization = `Bearer ${newToken}`;
           return api(original);
         } catch {
-          localStorage.removeItem('mm_token');
-          localStorage.removeItem('mm_refresh_token');
-          localStorage.removeItem('mm_user');
-          window.location.href = '/';
+          window.dispatchEvent(new Event('auth:logout'));
         }
       }
     }

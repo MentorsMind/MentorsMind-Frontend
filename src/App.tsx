@@ -19,8 +19,8 @@ import PaymentHistory from './pages/PaymentHistory';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <SkipNavigation />
         <main id="main-content">
           <Routes>
@@ -48,7 +48,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
