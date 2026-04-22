@@ -17,6 +17,7 @@ import LearnerProfile from './pages/LearnerProfile';
 import LearnerOnboarding from './pages/LearnerOnboarding';
 import SessionHistory from './pages/SessionHistory';
 import PaymentHistory from './pages/PaymentHistory';
+import MentorAvailability from './pages/MentorAvailability';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/mentor/profile" element={<ProtectedRoute><ErrorBoundary><DashboardLayout><MentorProfile /></DashboardLayout></ErrorBoundary></ProtectedRoute>} />
             <Route path="/mentor/wallet" element={<ProtectedRoute><ErrorBoundary><DashboardLayout><MentorWallet /></DashboardLayout></ErrorBoundary></ProtectedRoute>} />
             <Route path="/mentor/sessions" element={<ProtectedRoute><ErrorBoundary><DashboardLayout><SessionHistory /></DashboardLayout></ErrorBoundary></ProtectedRoute>} />
+            <Route path="/mentor/availability" element={<ProtectedRoute><ErrorBoundary><DashboardLayout><MentorAvailability /></DashboardLayout></ErrorBoundary></ProtectedRoute>} />
 
             {/* Learner routes */}
             <Route path="/learner" element={<ProtectedRoute><ErrorBoundary><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ErrorBoundary></ProtectedRoute>} />

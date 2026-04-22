@@ -5,10 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 interface NavItem { label: string; to: string; icon: string; }
 
 const mentorNav: NavItem[] = [
-  { label: 'Dashboard', to: '/mentor/dashboard', icon: '🏠' },
-  { label: 'Sessions',  to: '/mentor/sessions',  icon: '📅' },
-  { label: 'Wallet',    to: '/mentor/wallet',    icon: '💰' },
-  { label: 'Profile',   to: '/mentor/profile',   icon: '👤' },
+  { label: 'Dashboard',    to: '/mentor/dashboard',    icon: '🏠' },
+  { label: 'Sessions',     to: '/mentor/sessions',     icon: '📅' },
+  { label: 'Availability', to: '/mentor/availability', icon: '🗓️' },
+  { label: 'Wallet',       to: '/mentor/wallet',       icon: '💰' },
+  { label: 'Profile',      to: '/mentor/profile',      icon: '👤' },
 ];
 
 const learnerNav: NavItem[] = [
