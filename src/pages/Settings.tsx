@@ -10,6 +10,7 @@ import NotificationSettings from '../components/settings/NotificationSettings';
 import PrivacySettings from '../components/settings/PrivacySettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import PasskeyManager from '../components/settings/PasskeyManager';
+import MFASettings from '../components/settings/MFASettings';
 
 type SettingsTab =
   | 'account'
@@ -153,7 +154,13 @@ const Settings: React.FC = () => {
         );
 
       case 'security':
-        return <PasskeyManager />;
+        return (
+          <div className="space-y-8">
+            <MFASettings />
+            <div className="border-t border-gray-100" />
+            <PasskeyManager />
+          </div>
+        );
 
       case 'localization':
         return (

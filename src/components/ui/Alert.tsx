@@ -7,6 +7,7 @@ interface AlertProps {
   title?: string;
   children: ReactNode;
   onClose?: () => void;
+  className?: string;
 }
 
 const styles: Record<AlertType, { wrapper: string; icon: string }> = {
@@ -16,10 +17,10 @@ const styles: Record<AlertType, { wrapper: string; icon: string }> = {
   info:    { wrapper: 'bg-blue-50 border-blue-200 text-blue-800',    icon: 'ℹ️' },
 };
 
-export default function Alert({ type = 'info', title, children, onClose }: AlertProps) {
+export default function Alert({ type = 'info', title, children, onClose, className = '' }: AlertProps) {
   const s = styles[type];
   return (
-    <div className={`flex gap-3 p-4 rounded-lg border ${s.wrapper}`} role="alert">
+    <div className={`flex gap-3 p-4 rounded-lg border ${s.wrapper} ${className}`} role="alert">
       <span className="text-lg leading-none">{s.icon}</span>
       <div className="flex-1 text-sm">
         {title && <p className="font-semibold mb-0.5">{title}</p>}

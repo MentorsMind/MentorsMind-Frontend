@@ -25,8 +25,12 @@ export default function LoginForm() {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/learner/dashboard');
+      const { mfaRequired } = await login(email, password);
+      if (mfaRequired) {
+        navigate('/auth/mfa-challenge');
+      } else {
+        navigate('/learner/dashboard');
+      }
     } catch {
       setError('Invalid email or password.');
     } finally {
