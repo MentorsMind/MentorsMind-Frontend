@@ -230,7 +230,6 @@ export const useBooking = (mentor: MentorProfile | null) => {
     return {
       mentorId: draft.mentorId,
       mentorName: draft.mentorName,
-      sessionId: `booking-${draft.mentorId}-${draft.selectedSlot.id}`,
       sessionTopic: `${SESSION_TYPE_LABELS[draft.sessionType]} on ${draft.selectedSlot.dateLabel}`,
       amount: Number(pricing.totalAmount.toFixed(2)),
     };
@@ -283,14 +282,13 @@ export const useBooking = (mentor: MentorProfile | null) => {
   }, [mentor]);
 
   const confirmBooking = useCallback(
-    (paymentTransactionHash?: string) => {
+    (paymentTransactionHash?: string, sessionId?: string) => {
       if (!draft?.selectedSlot || !pricing || !mentor) {
         return null;
       }
 
-      const sessionId = `session-${draft.selectedSlot.id}`;
       const bookingBase = {
-        sessionId,
+        sessionId: sessionId ?? '',
         mentorId: draft.mentorId,
         mentorName: draft.mentorName,
         sessionType: draft.sessionType,
@@ -302,7 +300,7 @@ export const useBooking = (mentor: MentorProfile | null) => {
       };
 
       const learnerCalendarEvent: LearnerCalendarEvent = {
-        id: sessionId,
+        id: sessionId ?? draft.selectedSlot.id,
         title: `${SESSION_TYPE_LABELS[draft.sessionType]} with ${draft.mentorName}`,
         start: draft.selectedSlot.start,
         end: draft.selectedSlot.end,

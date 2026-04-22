@@ -28,7 +28,7 @@ export interface PaymentState {
 export interface PaymentDetails {
   mentorId: string;
   mentorName: string;
-  sessionId: string;
+  sessionId?: string;
   sessionTopic: string;
   amount: number; // Base amount in USD or equivalent
 }

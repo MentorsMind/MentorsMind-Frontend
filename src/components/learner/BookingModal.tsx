@@ -60,8 +60,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
     onClose();
   };
 
-  const handlePaymentSuccess = (transactionHash: string) => {
-    confirmBooking(transactionHash);
+  const handlePaymentSuccess = (transactionHash: string, sessionId?: string) => {
+    confirmBooking(transactionHash, sessionId);
     setPaymentCompleted(true);
   };
 

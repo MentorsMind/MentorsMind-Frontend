@@ -161,7 +161,7 @@ Powered by Stellar Network
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `receipt_${details.sessionId}.txt`;
+    link.download = `receipt_${details.sessionId ?? details.mentorId}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
