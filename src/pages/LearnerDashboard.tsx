@@ -1,9 +1,17 @@
+import React from 'react';
 import MetricCard from '../components/charts/MetricCard';
 import LearningProgress from '../components/learner/LearningProgress';
 import GoalSetting from '../components/learner/GoalSetting';
 import SessionList from '../components/mentor/SessionList';
+import PostSessionReview from '../components/session/PostSessionReview';
+import { usePostSessionReview } from '../hooks/usePostSessionReview';
+import { useSessionHistory } from '../hooks/useSessionHistory';
 
 export default function LearnerDashboard() {
+  const { sessions } = useSessionHistory();
+  const { pendingSession, submitted, updatedRating, submitReview, dismissForNow, close } =
+    usePostSessionReview(sessions);
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
@@ -27,6 +35,18 @@ export default function LearnerDashboard() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Sessions</h2>
         <SessionList />
       </div>
+
+      {/* Post-session review prompt — auto-appears when a completed session has no review */}
+      {pendingSession && (
+        <PostSessionReview
+          session={pendingSession}
+          submitted={submitted}
+          updatedRating={updatedRating}
+          onSubmit={submitReview}
+          onDismiss={dismissForNow}
+          onClose={close}
+        />
+      )}
     </div>
   );
 }

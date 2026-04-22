@@ -4,8 +4,14 @@ import ProfileHeader from '../components/mentor/ProfileHeader';
 import RatingBreakdown from '../components/mentor/RatingBreakdown';
 import PublicAvailability from '../components/mentor/PublicAvailability';
 import ReviewsList from '../components/mentor/ReviewsList';
+import EndorsementSection from '../components/profile/EndorsementSection';
 import { useShare } from '../hooks/useShare';
+import { useEndorsements } from '../hooks/useEndorsements';
+import { useReviews } from '../hooks/useReviews';
 import { applyMetaTags, buildMentorProfileMeta } from '../utils/og-meta.utils';
+
+// TODO: replace with auth context once available
+const CURRENT_USER_ID = 'u1';
 
 const mentor = {
   id: 'm1',
@@ -46,7 +52,6 @@ export default function MentorPublicProfile() {
         skills: mentor.skills,
       })
     );
-
     return () => {
       document.title = 'MentorMinds Stellar';
       cleanupMeta();
@@ -60,7 +65,6 @@ export default function MentorPublicProfile() {
         text: `Check out ${mentor.name}'s mentor profile with ${mentor.rating.toFixed(1)} star rating.`,
         url: profileUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Profile shared.' : 'Profile link copied to clipboard.');
     } catch {
       setShareStatus('Unable to share profile right now.');
@@ -74,20 +78,16 @@ export default function MentorPublicProfile() {
         text: `Join my MentorMinds session: ${sessionInviteUrl}`,
         url: sessionInviteUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Session invite shared.' : 'Session invite copied to clipboard.');
     } catch {
       setShareStatus('Unable to share session invite right now.');
     }
   };
 
-  const {
-    endorsements,
-    pendingSkill,
-    requestEndorsement,
-    cancelRequest,
-    toggleEndorsement,
-  } = useEndorsements(true);
+  const { endorsements, pendingSkill, requestEndorsement, cancelRequest, toggleEndorsement } =
+    useEndorsements(true);
+
+  const { allReviews, markHelpful, editReview } = useReviews(mentorId);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
@@ -132,7 +132,12 @@ export default function MentorPublicProfile() {
 
       <PublicAvailability />
 
-      <ReviewsList />
+      <ReviewsList
+        reviews={allReviews}
+        currentUserId={CURRENT_USER_ID}
+        onVoteHelpful={markHelpful}
+        onEdit={editReview}
+      />
 
       {/* Skills */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
@@ -171,7 +176,6 @@ export default function MentorPublicProfile() {
           ))}
         </ul>
       </div>
-
     </div>
   );
 }

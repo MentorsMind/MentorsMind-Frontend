@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
 import { X, Star, CheckCircle } from 'lucide-react';
-import type { SessionHistoryItem } from '../../types';
+import type { SessionHistoryItem } from '../../types/session.types';
 import { SkillTagSelector } from '../mentor/SkillTagSelector';
 
 const SKILL_SUGGESTIONS = [
   'React', 'TypeScript', 'Node.js', 'System Design', 'Stellar', 'Soroban',
   'Python', 'Leadership', 'Career Development', 'DevOps', 'Machine Learning',
 ];
+
+const STAR_LABELS: Record<number, string> = {
+  1: 'Poor',
+  2: 'Fair',
+  3: 'Good',
+  4: 'Great',
+  5: 'Excellent',
+};
+
+const MIN_CHARS = 20;
+const MAX_CHARS = 500;
 
 interface PostSessionReviewProps {
   session: SessionHistoryItem;
@@ -36,9 +47,25 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
     weekday: 'short', month: 'short', day: 'numeric',
   });
 
+  const charCount = comment.length;
+  const charCountColor =
+    charCount > MAX_CHARS
+      ? 'text-red-500'
+      : charCount >= MIN_CHARS
+      ? 'text-emerald-600'
+      : 'text-gray-400';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) { setError('Please select a star rating.'); return; }
+    if (comment.length > 0 && comment.length < MIN_CHARS) {
+      setError(`Written review must be at least ${MIN_CHARS} characters.`);
+      return;
+    }
+    if (comment.length > MAX_CHARS) {
+      setError(`Written review must be ${MAX_CHARS} characters or fewer.`);
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -49,6 +76,8 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
       setLoading(false);
     }
   };
+
+  const activeStarLabel = STAR_LABELS[hovered || rating];
 
   return (
     <div
@@ -119,51 +148,66 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
             </div>
 
             <div className="space-y-5 p-6">
-              {/* Star rating */}
+              {/* Star rating with labels */}
               <div>
                 <label className="mb-2 block text-sm font-bold text-gray-900 dark:text-white">
                   Rating <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-1" role="group" aria-label="Star rating">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      aria-label={`${star} star${star > 1 ? 's' : ''}`}
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHovered(star)}
-                      onMouseLeave={() => setHovered(0)}
-                      className="text-3xl transition-transform hover:scale-110 focus:outline-none"
-                    >
-                      <Star
-                        className={`h-8 w-8 ${
-                          star <= (hovered || rating)
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1" role="group" aria-label="Star rating">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        aria-label={`${star} star${star > 1 ? 's' : ''} — ${STAR_LABELS[star]}`}
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHovered(star)}
+                        onMouseLeave={() => setHovered(0)}
+                        className="transition-transform hover:scale-110 focus:outline-none"
+                      >
+                        <Star
+                          className={`h-8 w-8 ${
+                            star <= (hovered || rating)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {activeStarLabel && (
+                    <span className="text-sm font-semibold text-yellow-600 min-w-[60px]">
+                      {activeStarLabel}
+                    </span>
+                  )}
                 </div>
                 {error && <p role="alert" className="mt-1 text-sm text-red-500">{error}</p>}
               </div>
 
-              {/* Written review */}
+              {/* Written review with char counter */}
               <div>
                 <label
                   htmlFor="post-review-comment"
                   className="mb-2 block text-sm font-bold text-gray-900 dark:text-white"
                 >
-                  Written review <span className="font-normal text-gray-400">(optional)</span>
+                  Written review{' '}
+                  <span className="font-normal text-gray-400">(optional, {MIN_CHARS}–{MAX_CHARS} chars)</span>
                 </label>
                 <textarea
                   id="post-review-comment"
                   rows={3}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
+                  maxLength={MAX_CHARS + 1}
                   placeholder="Share what you learned or how the session went..."
                   className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white outline-none focus:border-stellar focus:bg-white dark:focus:bg-gray-700 resize-none"
                 />
+                <div className={`mt-1 text-right text-xs font-medium ${charCountColor}`}>
+                  {charCount}/{MAX_CHARS}
+                  {charCount > 0 && charCount < MIN_CHARS && (
+                    <span className="ml-2 text-gray-400">({MIN_CHARS - charCount} more to go)</span>
+                  )}
+                </div>
               </div>
 
               {/* Skill tags */}
