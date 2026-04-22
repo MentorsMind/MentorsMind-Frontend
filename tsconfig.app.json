@@ -10,7 +10,6 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
@@ -22,16 +21,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src/main.tsx",
-    "src/App.tsx",
-    "src/pages/Home.tsx",
-    "src/pages/Settings.tsx",
-    "src/components/navigation/**/*.ts",
-    "src/components/navigation/**/*.tsx",
-    "src/hooks/useNavigation.ts",
-    "src/config/**/*.ts",
-    "src/types/**/*.ts",
-    "src/utils/performance.utils.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "src/**/__tests__/**",

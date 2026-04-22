@@ -1,101 +1,26 @@
-import React, { useState } from 'react';
-import {
-  PieChart as RePieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Sector,
-} from 'recharts';
-import ChartContainer from './ChartContainer';
-import { CHART_COLORS } from '../../utils/chart.utils';
-import type { DataPoint } from '../../types/charts.types';
+import { PieChart as RePieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
 interface PieChartProps {
-  data: DataPoint[];
+  data: { name: string; value: number }[];
   title?: string;
-  description?: string;
-  isLoading?: boolean;
-  error?: string | null;
-  exportable?: boolean;
-  exportFilename?: string;
-  donut?: boolean;
-  valuePrefix?: string;
-  valueSuffix?: string;
-  className?: string;
+  height?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+export default function PieChart({ data, title, height = 300 }: PieChartProps) {
   return (
-    <g>
-      <text x={cx} y={cy - 8} textAnchor="middle" fill="#111827" className="text-sm font-semibold" fontSize={13}>
-        {payload.label}
-      </text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fill="#6b7280" fontSize={11}>
-        {value} ({(percent * 100).toFixed(1)}%)
-      </text>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <Sector cx={cx} cy={cy} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-    </g>
-  );
-};
-
-const PieChart: React.FC<PieChartProps> = ({
-  data,
-  title,
-  description,
-  isLoading,
-  error,
-  exportable,
-  exportFilename,
-  donut = false,
-  valuePrefix = '',
-  valueSuffix = '',
-  className,
-}) => {
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
-
-  return (
-    <ChartContainer
-      title={title}
-      description={description}
-      isLoading={isLoading}
-      error={error}
-      exportable={exportable}
-      exportFilename={exportFilename}
-      className={className}
-    >
-      <ResponsiveContainer width="100%" height={300}>
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      {title && <h3 className="text-sm font-semibold text-gray-700 mb-4">{title}</h3>}
+      <ResponsiveContainer width="100%" height={height}>
         <RePieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            cx="50%"
-            cy="50%"
-            innerRadius={donut ? 60 : 0}
-            outerRadius={100}
-            activeIndex={activeIndex}
-            activeShape={donut ? renderActiveShape : undefined}
-            onMouseEnter={(_, index) => setActiveIndex(index)}
-            onMouseLeave={() => setActiveIndex(undefined)}
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-            ))}
+          <Pie data={data} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+            {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
-          <Tooltip
-            contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: 12 }}
-            formatter={(value: number) => [`${valuePrefix}${value}${valueSuffix}`]}
-          />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Tooltip />
+          <Legend />
         </RePieChart>
       </ResponsiveContainer>
-    </ChartContainer>
+    </div>
   );
-};
-
-export default PieChart;
+}

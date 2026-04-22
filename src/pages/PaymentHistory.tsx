@@ -1,98 +1,28 @@
-import React from 'react';
-import { useState } from 'react';
-import { usePaymentHistory } from '../hooks/usePaymentHistory';
-import PaymentFilters from '../components/payment/PaymentFilters';
-import PaymentHistoryList from '../components/payment/PaymentHistoryList';
-import TransactionDetail from '../components/payment/TransactionDetail';
-import type { PaymentTransaction } from '../types';
+import type { Payment } from '../types';
+import PaymentStatus from '../components/payment/PaymentStatus';
 
-const PaymentHistory: React.FC = () => {
-  const {
-    transactions,
-    analytics,
-    filters,
-    sortField,
-    sortDirection,
-    currentPage,
-    totalPages,
-    totalResults,
-    updateFilters,
-    toggleStatusFilter,
-    clearFilters,
-    handleSort,
-    exportCSV,
-    generateReceipt,
-    setCurrentPage,
-  } = usePaymentHistory();
+const MOCK: Payment[] = [
+  { id: '1', sessionId: 's1', amount: 90, asset: 'USDC', status: 'completed', stellarTxHash: 'TXABC123', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+  { id: '2', sessionId: 's2', amount: 60, asset: 'XLM',  status: 'pending',   createdAt: new Date(Date.now() - 86400000).toISOString() },
+  { id: '3', sessionId: 's3', amount: 120, asset: 'USDC', status: 'refunded', createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+];
 
-  const [selectedTx, setSelectedTx] = useState<PaymentTransaction | null>(null);
-
+export default function PaymentHistory() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
-
-      {/* Page Header */}
-      <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-            Payment <span className="text-stellar">History</span>
-          </h1>
-          <p className="text-gray-500 font-medium tracking-wide">
-            All your Stellar transactions in one place.
-          </p>
-        </div>
-
-        <button
-          id="export-csv-btn"
-          onClick={exportCSV}
-          className="flex items-center gap-2.5 px-6 py-3 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all shadow-lg shadow-gray-200"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          Export CSV
-        </button>
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
+      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        {MOCK.map(p => (
+          <div key={p.id} className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">{p.amount} {p.asset}</p>
+              <p className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</p>
+              {p.stellarTxHash && <p className="text-xs font-mono text-gray-400 mt-0.5">{p.stellarTxHash.slice(0, 16)}…</p>}
+            </div>
+            <PaymentStatus status={p.status} />
+          </div>
+        ))}
       </div>
-
-      {/* Two-column layout: filters sidebar + list */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-
-        {/* Filters (sticky sidebar on large screens) */}
-        <div className="lg:col-span-1 lg:sticky lg:top-8">
-          <PaymentFilters
-            filters={filters}
-            onUpdateFilter={updateFilters}
-            onToggleStatus={toggleStatusFilter}
-            onClear={clearFilters}
-            totalResults={totalResults}
-          />
-        </div>
-
-        {/* Transaction List */}
-        <div className="lg:col-span-3">
-          <PaymentHistoryList
-            transactions={transactions}
-            analytics={analytics}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalResults={totalResults}
-            onSort={handleSort}
-            onPageChange={setCurrentPage}
-            onSelectTransaction={setSelectedTx}
-          />
-        </div>
-      </div>
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetail
-        transaction={selectedTx}
-        onClose={() => setSelectedTx(null)}
-        onDownloadReceipt={generateReceipt}
-      />
     </div>
   );
-};
-
-export default PaymentHistory;
+}

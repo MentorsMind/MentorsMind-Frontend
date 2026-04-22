@@ -1,71 +1,24 @@
-import React from 'react';
-import { FieldError } from '../../types/forms.types';
+import { ReactNode } from 'react';
 
-type FormFieldProps = {
-  label: string;
-  name: string;
-  error?: FieldError;
-  required?: boolean;
+interface FormFieldProps {
+  label?: string;
+  error?: string;
   hint?: string;
-  children: React.ReactNode;
-  className?: string;
-};
+  required?: boolean;
+  children: ReactNode;
+}
 
-export const FormField: React.FC<FormFieldProps> = ({
-  label,
-  name,
-  error,
-  required,
-  hint,
-  children,
-  className = ''
-}) => {
-  const errorId = `${name}-error`;
-  const hintId = `${name}-hint`;
-
+export default function FormField({ label, error, hint, required, children }: FormFieldProps) {
   return (
-    <div className={`form-field ${className}`}>
-      <label 
-        htmlFor={name}
-        className="block text-sm font-medium text-gray-700 mb-1"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
-      </label>
-      
-      {hint && (
-        <p id={hintId} className="text-sm text-gray-500 mb-2">
-          {hint}
-        </p>
+    <div className="space-y-1">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700">
+          {label}{required && <span className="text-red-500 ml-1">*</span>}
+        </label>
       )}
-
-      <div className="relative">
-        {React.Children.map(children, child => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              id: name,
-              'aria-invalid': error ? 'true' : 'false',
-              'aria-describedby': [
-                error ? errorId : null,
-                hint ? hintId : null
-              ].filter(Boolean).join(' ') || undefined,
-              ...child.props
-            } as any);
-          }
-          return child;
-        })}
-      </div>
-
-      {error && (
-        <p 
-          id={errorId}
-          className="mt-1 text-sm text-red-600"
-          role="alert"
-          aria-live="polite"
-        >
-          {error.message}
-        </p>
-      )}
+      {children}
+      {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
-};
+}

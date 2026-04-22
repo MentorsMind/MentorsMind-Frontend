@@ -1,75 +1,41 @@
-import React, { useState } from 'react';
-import { useSessionHistory } from '../hooks/useSessionHistory';
-import { useFeedback } from '../hooks/useFeedback';
-import HistoryList from '../components/learner/HistoryList';
-import LearningProgress from '../components/learner/LearningProgress';
-import LearnerNotes from '../components/learner/LearnerNotes';
-import FeedbackForm from '../components/learner/FeedbackForm';
-import FeedbackHistory from '../components/learner/FeedbackHistory';
+import type { Session } from '../types';
+import Badge from '../components/ui/Badge';
+import NoteEditor from '../components/learner/NoteEditor';
+import { useState } from 'react';
 
-const SessionHistory: React.FC = () => {
-  const { sessions, loading, exportReport } = useSessionHistory();
-  const [activeTab, setActiveTab] = useState<'progress' | 'history' | 'notes' | 'feedback'>('progress');
-  const feedback = useFeedback();
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="h-64 bg-gray-200 rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
-      <div className="flex flex-wrap justify-between items-center gap-6 mb-8">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-            Your Learning <span className="text-stellar">Hub</span>
-          </h1>
-          <p className="text-gray-500 font-medium">
-            Track progress, manage notes, and capture session feedback in one workspace.
-          </p>
-        </div>
-
-        <button
-          onClick={exportReport}
-          className="px-6 py-3 bg-stellar text-white rounded-xl font-bold hover:bg-stellar/90 transition-all shadow-lg shadow-stellar/20"
-        >
-          Export Report
-        </button>
-      </div>
-
-      <div className="flex items-center gap-4 border-b border-gray-100 pb-2 mb-6">
-        {(['progress', 'history', 'notes', 'feedback'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === tab
-                ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'progress' && <LearningProgress />}
-      {activeTab === 'history' && <HistoryList sessions={sessions} />}
-      {activeTab === 'notes' && <LearnerNotes />}
-      {activeTab === 'feedback' && (
-        <div className="space-y-6">
-          <FeedbackForm {...feedback} />
-          <FeedbackHistory history={feedback.history} onEdit={feedback.editFeedback} />
-        </div>
-      )}
-    </div>
-  );
+const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
+  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'error', rescheduled: 'warning',
 };
 
-export default SessionHistory;
+const MOCK: Session[] = [
+  { id: '1', mentorId: 'm1', learnerId: 'l1', scheduledAt: new Date(Date.now() - 86400000 * 2).toISOString(), duration: 60, status: 'completed', price: 90, asset: 'USDC', notes: '' },
+  { id: '2', mentorId: 'm2', learnerId: 'l1', scheduledAt: new Date(Date.now() - 86400000 * 7).toISOString(), duration: 30, status: 'completed', price: 45, asset: 'XLM', notes: '' },
+];
+
+export default function SessionHistory() {
+  const [activeNotes, setActiveNotes] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <h1 className="text-2xl font-bold text-gray-900">Session History</h1>
+      <div className="space-y-3">
+        {MOCK.map(s => (
+          <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{new Date(s.scheduledAt).toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{s.duration} min · {s.price} {s.asset}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
+                <button onClick={() => setActiveNotes(activeNotes === s.id ? null : s.id)}
+                  className="text-xs text-indigo-600 hover:underline">Notes</button>
+              </div>
+            </div>
+            {activeNotes === s.id && <NoteEditor sessionId={s.id} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

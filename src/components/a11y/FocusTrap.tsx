@@ -1,41 +1,30 @@
-import React, { useRef, useEffect } from 'react';
-import { trapFocus } from '../../utils/a11y.utils';
+import { useEffect, useRef, ReactNode } from 'react';
 
-interface FocusTrapProps {
-  children: React.ReactNode;
-  /** Whether the trap is active */
-  active?: boolean;
-  /** Element to return focus to when trap deactivates */
-  returnFocusRef?: React.RefObject<HTMLElement>;
-  className?: string;
-}
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-/**
- * Traps keyboard focus within its children when `active` is true.
- * Ideal for modals, drawers, and dialogs.
- */
-const FocusTrap: React.FC<FocusTrapProps> = ({
-  children,
-  active = true,
-  returnFocusRef,
-  className,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function FocusTrap({ children, active = true }: { children: ReactNode; active?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!active || !containerRef.current) return;
-    const cleanup = trapFocus(containerRef.current);
-    return () => {
-      cleanup();
-      returnFocusRef?.current?.focus();
+    if (!active || !ref.current) return;
+    const el = ref.current;
+    const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
     };
-  }, [active, returnFocusRef]);
 
-  return (
-    <div ref={containerRef} className={className}>
-      {children}
-    </div>
-  );
-};
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, [active]);
 
-export default FocusTrap;
+  return <div ref={ref}>{children}</div>;
+}

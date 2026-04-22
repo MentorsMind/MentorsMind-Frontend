@@ -2,14 +2,24 @@ export const ROUTES = {
   HOME: '/',
   DASHBOARD: '/dashboard',
   MENTORS: '/mentors',
+  MENTOR_PROFILE: '/mentors/:id',
   SESSIONS: '/sessions',
+  SESSION_JOIN: '/sessions/join/:token',
   HISTORY: '/history',
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
   PROFILE: '/profile',
   SETTINGS: '/settings',
+  MENTOR_ANALYTICS: '/mentor/analytics',
+  LEARNER_ANALYTICS: '/learner/analytics',
+  PLATFORM_STATS: '/stats',
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  GOVERNANCE: '/governance',
+  PROPOSAL_DETAIL: '/governance/proposals/:id',
+  CREDIT_SCORE: '/credit-score',
 } as const;
 
 export interface RouteConfig {
@@ -22,12 +32,16 @@ export interface RouteConfig {
 
 export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
-  { path: '/mentor/analytics', label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
+  { path: ROUTES.MENTOR_ANALYTICS, label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
+  { path: ROUTES.LEARNER_ANALYTICS, label: 'Learning Analytics', protected: true, roles: ['learner'], icon: 'LineChart' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
-{ path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
+  { path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
   { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },
   { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
+  { path: ROUTES.CREDIT_SCORE, label: 'Credit Score', protected: true, roles: ['learner'], icon: 'CreditCard' },
+  { path: ROUTES.PLATFORM_STATS, label: 'Platform Stats', protected: false, icon: 'Globe' },
+  { path: ROUTES.GOVERNANCE, label: 'Governance', protected: true, icon: 'Shield' },
 ];
 
 export const USER_NAVIGATION: RouteConfig[] = [
@@ -45,7 +59,7 @@ export const FOOTER_NAVIGATION = {
     { path: '/contact', label: 'Contact Us' },
   ],
   LEGAL: [
-    { path: '/privacy', label: 'Privacy Policy' },
-    { path: '/terms', label: 'Terms of Service' },
+    { path: ROUTES.PRIVACY, label: 'Privacy Policy' },
+    { path: ROUTES.TERMS, label: 'Terms of Service' },
   ],
 };

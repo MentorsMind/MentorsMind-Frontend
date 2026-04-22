@@ -1,303 +1,80 @@
-import React, { useState } from "react";
-import { useMentorSearch } from "../hooks/useMentorSearch";
-import {
-  useSearchFilters,
-  type SearchFiltersState,
-} from "../hooks/useSearchFilters";
-import type { SearchFilters } from "../types";
-import MentorSearchBar from "../components/search/MentorSearchBar";
-import MentorFilterPanel from "../components/search/MentorFilterPanel";
-import SearchSortOptions from "../components/search/SearchSortOptions";
-import MentorGrid from "../components/search/MentorGrid";
-import MentorCard from "../components/search/MentorCard";
-import BookingModal from "../components/learner/BookingModal";
-import type { MentorProfile } from "../types";
+import { useState } from 'react';
+import MentorCard from '../components/mentor/MentorCard';
+import PaymentModal from '../components/payment/PaymentModal';
+import Input from '../components/ui/Input';
+import Badge from '../components/ui/Badge';
+import type { Mentor } from '../types';
 
-const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
-  const {
-    mentors,
-    totalResults,
-    currentPage,
-    totalPages,
-    hasMore,
-    updateFilter,
-    clearFilters,
-    nextPage,
-    prevPage,
-    goToPage,
-    getSuggestions,
-    toggleSaveMentor,
-    isSaved,
-    addRecentlyViewed,
-    getRecommendations,
-    getRecentlyViewedMentors,
-  } = useMentorSearch();
+// Mock data
+const MOCK_MENTORS: Mentor[] = [
+  { id: '1', email: 'alice@example.com', name: 'Alice Chen', role: 'mentor', bio: 'Senior Rust & Blockchain engineer with 8 years experience. Soroban smart contract specialist.', skills: ['Rust', 'Soroban', 'Stellar', 'WebAssembly'], hourlyRate: 120, currency: 'USDC', rating: 4.9, reviewCount: 87, sessionCount: 312, isVerified: true, timezone: 'UTC-8', languages: ['English', 'Mandarin'], createdAt: '' },
+  { id: '2', email: 'bob@example.com', name: 'Bob Martinez', role: 'mentor', bio: 'Full-stack developer specializing in React, TypeScript, and Node.js. 6 years building production apps.', skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'], hourlyRate: 90, currency: 'XLM', rating: 4.7, reviewCount: 54, sessionCount: 198, isVerified: true, timezone: 'UTC-5', languages: ['English', 'Spanish'], createdAt: '' },
+  { id: '3', email: 'priya@example.com', name: 'Priya Sharma', role: 'mentor', bio: 'Machine learning engineer at a top AI lab. Expert in Python, TensorFlow, and data science.', skills: ['Python', 'TensorFlow', 'ML', 'Data Science'], hourlyRate: 150, currency: 'USDC', rating: 5.0, reviewCount: 32, sessionCount: 145, isVerified: true, timezone: 'UTC+5:30', languages: ['English', 'Hindi'], createdAt: '' },
+  { id: '4', email: 'james@example.com', name: 'James Okafor', role: 'mentor', bio: 'DevOps and cloud architect. AWS certified. Kubernetes, Docker, and CI/CD expert.', skills: ['AWS', 'Kubernetes', 'Docker', 'DevOps'], hourlyRate: 110, currency: 'USDC', rating: 4.8, reviewCount: 61, sessionCount: 220, isVerified: false, timezone: 'UTC+1', languages: ['English'], createdAt: '' },
+];
 
-  // Use URL-synced search filters
-  const {
-    filters: urlFilters,
-    updateFilter: updateUrlFilter,
-    applyPreset,
-    clearFilters: clearUrlFilters,
-    viewMode,
-    setViewMode,
-    activeFilterCount,
-    getShareableUrl,
-    presets,
-  } = useSearchFilters();
+const ALL_SKILLS = ['Rust', 'React', 'TypeScript', 'Python', 'Soroban', 'Stellar', 'Node.js', 'AWS', 'ML', 'Docker'];
 
-  const [searchQuery, setSearchQuery] = useState(urlFilters.searchQuery);
-  const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(
-    null,
-  );
+export default function MentorSearch() {
+  const [query, setQuery] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [maxPrice, setMaxPrice] = useState('');
+  const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    updateUrlFilter("searchQuery", query);
-    // Also update the mentor search hook
-    updateFilter("searchQuery", query);
-  };
+  const toggleSkill = (s: string) =>
+    setSelectedSkills(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
-  const handleFilterChange = (key: string, value: unknown) => {
-    const validKeys: (keyof SearchFilters)[] = [
-      "searchQuery",
-      "skills",
-      "minPrice",
-      "maxPrice",
-      "minRating",
-      "availabilityDays",
-      "languages",
-      "sortBy",
-    ];
-
-    if (validKeys.includes(key as keyof SearchFilters)) {
-      // Cast value to match expected type for URL filters
-      const urlValue = value as SearchFiltersState[keyof SearchFiltersState];
-      updateUrlFilter(key as keyof SearchFiltersState, urlValue);
-      // Also update the mentor search hook
-      const filterValue = value as SearchFilters[keyof SearchFilters];
-      updateFilter(key as keyof SearchFilters, filterValue);
-    }
-  };
-
-  const handleClearFilters = () => {
-    clearUrlFilters();
-    clearFilters();
-    setSearchQuery("");
-  };
-
-  const handleViewProfile = (mentor: MentorProfile) => {
-    addRecentlyViewed(mentor.id);
-    // In a real app, this would navigate to the mentor's profile page
-    alert(`Viewing profile of ${mentor.name}`);
-  };
-
-  const suggestions = getSuggestions(searchQuery);
-  const recommendations = getRecommendations();
-  const recentlyViewed = getRecentlyViewedMentors();
+  const filtered = MOCK_MENTORS.filter(m => {
+    const matchQuery = !query || m.name.toLowerCase().includes(query.toLowerCase()) || m.skills.some(s => s.toLowerCase().includes(query.toLowerCase()));
+    const matchSkills = selectedSkills.length === 0 || selectedSkills.every(s => m.skills.includes(s));
+    const matchPrice = !maxPrice || m.hourlyRate <= Number(maxPrice);
+    return matchQuery && matchSkills && matchPrice;
+  });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-gray-900 mb-2">
-          Find Your Perfect <span className="text-stellar">Mentor</span>
-        </h1>
-        <p className="text-gray-500 font-medium">
-          Discover expert mentors ready to help you grow your skills.
-        </p>
-      </div>
-
-      {/* Search Bar with Presets */}
-      <div className="mb-8">
-        <MentorSearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onSearch={handleSearch}
-          suggestions={suggestions}
-          placeholder="Search by name, skill (e.g., Stellar, React), or expertise..."
-          presets={presets}
-          onPresetClick={applyPreset}
-          getShareableUrl={getShareableUrl}
-          activeFilterCount={activeFilterCount}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar - Filters */}
-        <div className="lg:col-span-1">
-          <MentorFilterPanel
-            filters={{
-              skills: urlFilters.skills,
-              minPrice: urlFilters.minPrice,
-              maxPrice: urlFilters.maxPrice,
-              minRating: urlFilters.minRating,
-              availability: urlFilters.availability,
-              availabilityDays: urlFilters.availabilityDays,
-              languages: urlFilters.languages,
-              timezone: urlFilters.timezone,
-              verifiedOnly: urlFilters.verifiedOnly,
-            }}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            activeFilterCount={activeFilterCount}
-          />
-        </div>
-
-        {/* Main Content - Results */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Sort & View Options */}
-          <SearchSortOptions
-            sortBy={urlFilters.sortBy}
-            onSortChange={(sort) => {
-              updateUrlFilter(
-                "sortBy",
-                sort as "rating" | "price_low" | "price_high" | "newest",
-              );
-              updateFilter(
-                "sortBy",
-                sort as
-                  | "rating"
-                  | "price_low"
-                  | "price_high"
-                  | "experience"
-                  | "sessions",
-              );
-            }}
-            resultsCount={totalResults}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-
-          {/* Mentor Grid/List */}
-          <MentorGrid
-            mentors={mentors}
-            savedMentors={
-              new Set(
-                mentors
-                  .filter((mentor) => isSaved(mentor.id))
-                  .map((mentor) => mentor.id),
-              )
-            }
-            onSaveToggle={toggleSaveMentor}
-            onViewProfile={handleViewProfile}
-            onBookSession={isOnline ? setSelectedMentor : undefined}
-            viewMode={viewMode}
-          />
-
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Previous
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                      currentPage === page
-                        ? "bg-stellar text-white shadow-lg shadow-stellar/20"
-                        : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
-
-              <button
-                onClick={nextPage}
-                disabled={!hasMore}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Next
-              </button>
+      <div className="bg-white border-b border-gray-200 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find a Mentor</h1>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input placeholder="Search by name or skill..." value={query} onChange={e => setQuery(e.target.value)} />
             </div>
-          )}
+            <Input placeholder="Max price (per hour)" type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="md:w-48" />
+          </div>
+          {/* Skill filters */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {ALL_SKILLS.map(s => (
+              <button key={s} onClick={() => toggleSkill(s)}
+                className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors
+                  ${selectedSkills.includes(s) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Recently Viewed Section */}
-      {recentlyViewed.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Recently Viewed Mentors
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recentlyViewed.map((mentor) => (
-              <div
-                key={mentor.id}
-                onClick={() => handleViewProfile(mentor)}
-                className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-lg hover:border-stellar/20 transition-all cursor-pointer flex items-center gap-4"
-              >
-                {mentor.avatar ? (
-                  <img
-                    src={mentor.avatar}
-                    alt={mentor.name}
-                    className="w-16 h-16 rounded-xl object-cover border-2 border-white"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-xl">
-                    {mentor.name[0]}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 truncate">
-                    {mentor.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 truncate">
-                    {mentor.title}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-yellow-400 text-xs">★</span>
-                    <span className="text-xs font-bold text-gray-900">
-                      {mentor.rating}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+      {/* Results */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <p className="text-sm text-gray-500 mb-6">{filtered.length} mentor{filtered.length !== 1 ? 's' : ''} found</p>
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-5xl mb-4">🔍</p>
+            <p className="text-lg font-medium">No mentors found</p>
+            <p className="text-sm mt-1">Try adjusting your filters</p>
           </div>
-        </div>
-      )}
-
-      {/* Personalized Recommendations */}
-      {recommendations.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Recommended For You
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendations.map((mentor) => (
-              <MentorCard
-                key={mentor.id}
-                mentor={mentor}
-                isSaved={isSaved(mentor.id)}
-                onSave={toggleSaveMentor}
-                onViewProfile={handleViewProfile}
-                onBookSession={isOnline ? setSelectedMentor : undefined}
-                viewMode="grid"
-              />
-            ))}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map(m => <MentorCard key={m.id} mentor={m} onBook={setBookingMentor} />)}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <BookingModal
-        isOpen={selectedMentor !== null}
-        mentor={selectedMentor}
-        onClose={() => setSelectedMentor(null)}
-      />
+      {bookingMentor && (
+        <PaymentModal isOpen={!!bookingMentor} onClose={() => setBookingMentor(null)} mentor={bookingMentor} sessionDuration={60} />
+      )}
     </div>
   );
-};
-
-export default MentorSearch;
+}

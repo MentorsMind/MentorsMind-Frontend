@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   User, Bell, Shield, Palette, Globe, Link2, Clock,
-  CheckCircle, Loader2, ChevronRight, Wallet, Calendar,
+  CheckCircle, Loader2, ChevronRight, Wallet, Calendar, Download,
 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
+import SanctionsError from '../components/compliance/SanctionsError';
 import AccountSettings from '../components/settings/AccountSettings';
 import NotificationSettings from '../components/settings/NotificationSettings';
 import PrivacySettings from '../components/settings/PrivacySettings';
@@ -47,8 +48,32 @@ const LANGUAGES = [
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 const BUFFERS = [0, 5, 10, 15, 30];
+const DEFAULT_SANCTIONED_WALLETS = [
+  'GSANCTIONSDEMO0000000000000000000000000000000000000000000000000000',
+];
 
 const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar bg-white';
+
+function isSanctionedWallet(address: string) {
+  const normalized = address.trim().toUpperCase();
+  if (!normalized) return false;
+
+  const storedWallets = (() => {
+    try {
+      const raw = localStorage.getItem('sanctioned_wallets');
+      return raw ? JSON.parse(raw) as string[] : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const flaggedWallets = new Set(
+    [...DEFAULT_SANCTIONED_WALLETS, ...storedWallets]
+      .map((item) => String(item).trim().toUpperCase()),
+  );
+
+  return flaggedWallets.has(normalized) || normalized.includes('SANCTION');
+}
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
@@ -56,6 +81,26 @@ const Settings: React.FC = () => {
   const [walletInput, setWalletInput] = useState(settings.connected.stellarWallet ?? '');
 
   const mockUser = { email: 'user@example.com', name: 'Alex Johnson' };
+  const walletFlagged = isSanctionedWallet(walletInput);
+
+  const handleExportMyData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      user: mockUser,
+      settings,
+      termsAcceptedAt: localStorage.getItem('mm_terms_acceptance'),
+      cookieConsent: localStorage.getItem('mm_cookie_consent'),
+      connectedWallet: settings.connected.stellarWallet,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mentorsmind-data-export.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -72,10 +117,28 @@ const Settings: React.FC = () => {
 
       case 'privacy':
         return (
-          <PrivacySettings
-            settings={settings.privacy}
-            onChange={updates => updateSettings('privacy', updates)}
-          />
+          <div className="space-y-6">
+            <PrivacySettings
+              settings={settings.privacy}
+              onChange={updates => updateSettings('privacy', updates)}
+            />
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">GDPR data portability</p>
+                  <p className="mt-1 text-sm text-gray-500">Export my data as a JSON archive with settings, consent timestamps, and connected account metadata.</p>
+                </div>
+                <button
+                  onClick={handleExportMyData}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-stellar px-4 py-2 text-sm font-semibold text-white transition hover:bg-stellar-dark"
+                >
+                  <Download className="h-4 w-4" />
+                  Export my data
+                </button>
+              </div>
+            </div>
+          </div>
         );
 
       case 'appearance':
@@ -146,7 +209,8 @@ const Settings: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => updateSettings('connected', { stellarWallet: walletInput || null })}
-                  className="px-4 py-2 bg-stellar text-white text-sm font-semibold rounded-xl hover:bg-stellar-dark transition-colors"
+                  disabled={walletFlagged}
+                  className="px-4 py-2 bg-stellar text-white text-sm font-semibold rounded-xl hover:bg-stellar-dark transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {settings.connected.stellarWallet ? 'Update' : 'Connect'}
                 </button>
@@ -159,6 +223,7 @@ const Settings: React.FC = () => {
                   </button>
                 )}
               </div>
+              {walletFlagged && <SanctionsError walletAddress={walletInput} />}
             </div>
 
             {/* Calendar Sync */}

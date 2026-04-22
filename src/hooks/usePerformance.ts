@@ -40,7 +40,7 @@ export const usePerformance = () => {
     try {
       lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
       clsObserver.observe({ type: 'layout-shift', buffered: true });
-      inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 });
+      inpObserver.observe({ type: 'event', buffered: true });
     } catch {
       return () => undefined;
     }

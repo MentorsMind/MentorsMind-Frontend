@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import axios from 'axios';
+import type { Transaction, TxType, TxStatus, AssetCode } from '../types';
 
 // Horizon REST API base — swap to testnet for dev
 const HORIZON_BASE = 'https://horizon.stellar.org';
@@ -68,22 +69,9 @@ export interface ParsedBalance {
   isAuthorized: boolean;
 }
 
-export interface ParsedTransaction {
-  id: string;
-  hash: string;
-  type: 'payment' | 'create_account' | 'path_payment' | 'escrow' | 'fee' | 'other';
-  amount: string;
-  assetCode: string;
-  assetIssuer?: string;
-  from: string;
-  to: string;
-  timestamp: Date;
-  successful: boolean;
-}
-
 export interface HorizonState {
   balances: ParsedBalance[];
-  transactions: ParsedTransaction[];
+  transactions: Transaction[];
   accountId: string;
   subentryCount: number;
   loading: boolean;
@@ -127,59 +115,27 @@ async function fetchPrices(codes: string[]): Promise<Record<string, number>> {
   }
 }
 
-function parseOperation(op: HorizonOperation, accountId: string): ParsedTransaction {
-  let type: ParsedTransaction['type'] = 'other';
-  let amount = '0';
-  let assetCode = 'XLM';
-  let assetIssuer: string | undefined;
-  let from = op.source_account ?? accountId;
-  let to = accountId;
-
-  switch (op.type) {
-    case 'payment':
-      type = 'payment';
-      amount = op.amount ?? '0';
-      assetCode = op.asset_type === 'native' ? 'XLM' : (op.asset_code ?? 'XLM');
-      assetIssuer = op.asset_issuer;
-      from = op.from ?? from;
-      to = op.to ?? to;
-      break;
-    case 'create_account':
-      type = 'create_account';
-      amount = op.starting_balance ?? '0';
-      assetCode = 'XLM';
-      from = op.funder ?? from;
-      to = op.account ?? to;
-      break;
-    case 'path_payment_strict_send':
-    case 'path_payment_strict_receive':
-      type = 'path_payment';
-      amount = op.amount ?? op.source_amount ?? '0';
-      assetCode = op.asset_type === 'native' ? 'XLM' : (op.asset_code ?? 'XLM');
-      assetIssuer = op.asset_issuer;
-      from = op.from ?? from;
-      to = op.to ?? to;
-      break;
-    case 'manage_buy_offer':
-    case 'manage_sell_offer':
-      type = 'escrow';
-      assetCode = op.asset_code ?? 'XLM';
-      break;
-    default:
-      type = 'other';
+function parseOperation(op: HorizonOperation, accountId: string, _prices: Record<string, number>): Transaction {
+  let type: TxType = 'other' as any;
+  let status: TxStatus = op.transaction_successful ? 'completed' : 'failed';
+  let amount = parseFloat(op.amount ?? op.starting_balance ?? op.source_amount ?? '0');
+  let asset = (op.asset_code ?? 'XLM') as AssetCode;
+  
+  if (op.type === 'payment') {
+    type = 'earning'; // Assuming earnings for simplified view
+  } else if (op.type === 'create_account') {
+    type = 'earning';
   }
 
   return {
     id: op.id,
-    hash: op.transaction_hash,
     type,
+    status,
     amount,
-    assetCode,
-    assetIssuer,
-    from,
-    to,
-    timestamp: new Date(op.created_at),
-    successful: op.transaction_successful,
+    asset,
+    usdAmount: amount * (_prices[asset] ?? 0),
+    description: `${op.type.replace(/_/g, ' ')} from ${op.from ?? op.funder ?? 'network'}`,
+    date: op.created_at,
   };
 }
 
@@ -251,7 +207,7 @@ export function useHorizon(publicKey: string | undefined) {
       const availableXlm = Math.max(0, xlmAmount - minReserve);
 
       // 5. Parse transactions
-      const parsedTxs = ops.map(op => parseOperation(op, publicKey));
+      const parsedTxs = ops.map(op => parseOperation(op, publicKey, prices));
 
       setState({
         balances: parsedBalances,

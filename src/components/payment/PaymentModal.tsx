@@ -1,307 +1,133 @@
-import React, { useEffect, useState } from 'react';
-import { usePayment } from '../../hooks/usePayment';
-import type { PaymentDetails } from '../../types/payment.types';
-import PaymentMethod from './PaymentMethod';
-import PaymentBreakdown from './PaymentBreakdown';
-import PaymentReceipt from './PaymentReceipt';
-import TransactionTracker from './TransactionTracker';
-import { useStellarTransaction } from '../../hooks/useStellarTransaction';
-
-// Live confirmation steps shown during processing
-const CONFIRMATION_STEPS = [
-  'Submitting transaction to Stellar network...',
-  'Awaiting ledger confirmation...',
-  'Verifying payment receipt...',
-  'Confirming session booking...',
-];
-
-const LiveConfirmationStatus: React.FC<{ active: boolean }> = ({ active }) => {
-  const [stepIndex, setStepIndex] = useState(0);
-
-  useEffect(() => {
-    if (!active) { setStepIndex(0); return; }
-    const interval = setInterval(() => {
-      setStepIndex(prev => (prev < CONFIRMATION_STEPS.length - 1 ? prev + 1 : prev));
-    }, 600);
-    return () => clearInterval(interval);
-  }, [active]);
-
-  if (!active) return null;
-
-  return (
-    <div className="mt-4 space-y-1.5">
-      {CONFIRMATION_STEPS.map((step, i) => (
-        <div
-          key={step}
-          className={`flex items-center gap-2 text-xs transition-all duration-300 ${
-            i < stepIndex ? 'text-green-600 font-bold' : i === stepIndex ? 'text-stellar font-bold animate-pulse' : 'text-gray-300'
-          }`}
-        >
-          {i < stepIndex ? (
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${i === stepIndex ? 'border-stellar' : 'border-gray-200'}`} />
-          )}
-          {step}
-        </div>
-      ))}
-    </div>
-  );
-};
+import { useState } from 'react';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Badge from '../ui/Badge';
+import Alert from '../ui/Alert';
+import type { AssetType, Mentor } from '../../types';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  details: PaymentDetails;
+  mentor: Mentor;
+  sessionDuration: number; // minutes
   onSuccess?: (txHash: string) => void;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, details, onSuccess }) => {
-  const {
-    state,
-    breakdown,
-    assets,
-    setStep,
-    selectAsset,
-    reset
-  } = usePayment(details);
+const PLATFORM_FEE = 0.05;
+const ASSETS: AssetType[] = ['XLM', 'USDC', 'PYUSD'];
 
-  const {
-    step: txStep,
-    txHash,
-    error: txError,
-    ledgerCloseCountdown,
-    escrowAddress,
-    submitTransaction,
-    reset: resetTx
-  } = useStellarTransaction();
+type Step = 'review' | 'processing' | 'success' | 'error';
 
-  // Sync state between usePayment and useStellarTransaction
-  const currentStep = txStep !== 'idle' ? (txStep === 'submitting' || txStep === 'pending' ? 'processing' : txStep) : state.step;
+export default function PaymentModal({ isOpen, onClose, mentor, sessionDuration, onSuccess }: PaymentModalProps) {
+  const [asset, setAsset] = useState<AssetType>('XLM');
+  const [step, setStep] = useState<Step>('review');
+  const [txHash, setTxHash] = useState('');
 
-  // Handle ESC key to close
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && currentStep !== 'processing') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [currentStep, onClose]);
+  const sessionPrice = (mentor.hourlyRate * sessionDuration) / 60;
+  const platformFee = sessionPrice * PLATFORM_FEE;
+  const total = sessionPrice + platformFee;
 
-  // Handle success callback
-  useEffect(() => {
-    if (txStep === 'confirmed' && txHash && onSuccess) {
-      onSuccess(txHash);
-    }
-  }, [txStep, txHash, onSuccess]);
-
-  if (!isOpen) return null;
-
-  const handleBack = () => {
-    if (state.step === 'review') setStep('method');
-    else if (currentStep === 'error') {
-        resetTx();
-        setStep('review');
-    }
+  const handlePay = async () => {
+    setStep('processing');
+    // Simulate Stellar transaction
+    await new Promise(r => setTimeout(r, 2500));
+    const mockHash = 'TX' + Math.random().toString(36).substring(2, 18).toUpperCase();
+    setTxHash(mockHash);
+    setStep('success');
+    onSuccess?.(mockHash);
   };
 
-  const handleClose = () => {
-    if (currentStep !== 'processing') {
-      onClose();
-      // Optional: reset after fade out
-      setTimeout(() => {
-          reset();
-          resetTx();
-      }, 300);
-    }
-  };
-
-  const handleProcessPayment = async () => {
-    await submitTransaction(async () => {
-      // Logic for actual transaction would go here
-      // For now we simulate the result expected by TransactionTracker
-      const mockHash = Array.from({ length: 64 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('');
-      
-      const mockEscrow = state.selectedAsset !== 'XLM' 
-        ? 'G' + Math.random().toString(36).substring(2, 58).toUpperCase() 
-        : undefined;
-
-      // Simulate network interaction
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      return { hash: mockHash, escrow: mockEscrow };
-    });
-  };
-
-  const handleRetry = () => {
-    resetTx();
-    handleProcessPayment();
-  };
-
-  const mockDownloadReceipt = () => {
-    const receiptText = `
-MENTORSMIND PAYMENT RECEIPT
----------------------------
-Date: ${new Date().toLocaleString()}
-Mentor: ${details.mentorName}
-Topic: ${details.sessionTopic}
-Amount: ${breakdown.totalAmount.toFixed(4)} ${breakdown.assetCode}
-Status: COMPLETED
-Transaction Hash: ${state.transactionHash}
----------------------------
-Powered by Stellar Network
-    `;
-    const blob = new Blob([receiptText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `receipt_${details.sessionId ?? details.mentorId}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const handleClose = () => { setStep('review'); onClose(); };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-gray-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
-        onClick={handleClose}
-      />
-
-      {/* Modal Container */}
-      <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl shadow-stellar/10 border border-gray-100 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
-        
-        {/* Header */}
-        <div className="px-8 pt-8 pb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {['review', 'error'].includes(state.step) && (
-              <button 
-                onClick={handleBack}
-                className="p-2 -ml-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
-                aria-label="Go back"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-            )}
-            <h2 className="text-xl font-black text-gray-900 tracking-tight">
-              {state.step === 'method' && 'Select Asset'}
-              {state.step === 'review' && 'Review Payment'}
-              {currentStep === 'processing' && 'Sign Transaction'}
-              {currentStep === 'success' && 'Confirmed'}
-              {currentStep === 'error' && 'Retry Payment'}
-            </h2>
+    <Modal isOpen={isOpen} onClose={handleClose} title={step === 'review' ? 'Confirm Payment' : undefined} size="md">
+      {step === 'review' && (
+        <div className="space-y-5">
+          {/* Mentor info */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+              {mentor.name[0]}
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">{mentor.name}</p>
+              <p className="text-sm text-gray-500">{sessionDuration} min session</p>
+            </div>
+            <span className="ml-auto px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Escrow Protected</span>
           </div>
-          <button 
-            onClick={handleClose}
-            disabled={currentStep === 'processing'}
-            className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all disabled:opacity-0"
-            aria-label="Close modal"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+
+          {/* Asset selector */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Pay with</p>
+            <div className="flex gap-2">
+              {ASSETS.map(a => (
+                <button key={a} onClick={() => setAsset(a)}
+                  className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-colors
+                    ${asset === a ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Breakdown */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-gray-600">
+              <span>Session fee ({sessionDuration} min)</span>
+              <span>{sessionPrice.toFixed(2)} {asset}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Platform fee (5%)</span>
+              <span>{platformFee.toFixed(2)} {asset}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-100">
+              <span>Total</span>
+              <span>{total.toFixed(2)} {asset}</span>
+            </div>
+          </div>
+
+          <Alert type="info">Funds are held in escrow and released to the mentor after session completion.</Alert>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
+            <Button onClick={handlePay} className="flex-1">Pay {total.toFixed(2)} {asset}</Button>
+          </div>
+        </div>
+      )}
+
+      {step === 'processing' && (
+        <div className="py-12 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-indigo-100 flex items-center justify-center">
+            <svg className="animate-spin w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="px-8 pb-10">
-          <div className="mt-4">
-            {state.step === 'method' && (
-              <PaymentMethod 
-                assets={assets}
-                selectedAsset={state.selectedAsset}
-                onSelect={(asset) => {
-                  selectAsset(asset);
-                  setStep('review');
-                }}
-              />
-            )}
-
-            {state.step === 'review' && (
-              <PaymentBreakdown 
-                breakdown={breakdown}
-                mentorName={details.mentorName}
-                sessionTopic={details.sessionTopic}
-              />
-            )}
-
-            {(currentStep === 'processing' || currentStep === 'success' || currentStep === 'error') && (
-              <TransactionTracker 
-                step={txStep}
-                error={txError}
-                txHash={txHash}
-                ledgerCloseCountdown={ledgerCloseCountdown}
-                escrowAddress={escrowAddress}
-                breakdown={breakdown}
-                priceInUSD={assets.find(a => a.code === state.selectedAsset)?.priceInUSD || 1}
-              />
-            )}
-
-            {currentStep === 'success' && (
-              <PaymentReceipt 
-                details={details}
-                breakdown={breakdown}
-                transactionHash={txHash}
-                onDownload={mockDownloadReceipt}
-              />
-            )}
           </div>
+          <p className="font-semibold text-gray-900">Processing on Stellar...</p>
+          <p className="text-sm text-gray-500">Submitting transaction to the blockchain</p>
+        </div>
+      )}
 
-          {/* Footer Actions */}
-          <div className="mt-8">
-            {state.step === 'review' && (
-              <button
-                onClick={handleProcessPayment}
-                className="w-full py-4 px-6 bg-stellar text-white rounded-[1.25rem] font-black text-base shadow-xl shadow-stellar/25 hover:bg-stellar-dark hover:scale-[1.01] active:scale-95 transition-all"
-              >
-                Confirm & Pay {breakdown.totalAmount.toFixed(4)} {breakdown.assetCode}
-              </button>
-            )}
+      {step === 'success' && (
+        <div className="py-8 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center text-3xl">✅</div>
+          <h3 className="text-xl font-bold text-gray-900">Payment Successful!</h3>
+          <p className="text-sm text-gray-500">Your session is confirmed and funds are in escrow.</p>
+          <div className="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-600 break-all">{txHash}</div>
+          <Button onClick={handleClose} className="w-full">Done</Button>
+        </div>
+      )}
 
-            {currentStep === 'error' && (
-              <div className="space-y-3">
-                <button
-                  onClick={handleRetry}
-                  className="w-full py-4 px-6 bg-stellar text-white rounded-[1.25rem] font-black text-base shadow-xl shadow-stellar/25 hover:bg-stellar-dark transition-all"
-                >
-                  Try Again
-                </button>
-                <button
-                  onClick={() => setStep('method')}
-                  className="w-full py-4 px-6 bg-white text-gray-500 rounded-[1.25rem] font-bold text-sm border-2 border-gray-100 hover:bg-gray-50 transition-all"
-                >
-                  Change Payment Method
-                </button>
-              </div>
-            )}
-
-            {state.step === 'success' && (
-              <button
-                onClick={handleClose}
-                className="w-full py-4 px-6 bg-gray-50 text-gray-900 rounded-[1.25rem] font-black text-base hover:bg-gray-100 transition-all"
-              >
-                Done
-              </button>
-            )}
-
-            {state.step === 'method' && (
-              <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-6">
-                Requires a Stellar Compatible Wallet
-              </p>
-            )}
+      {step === 'error' && (
+        <div className="py-8 text-center space-y-4">
+          <div className="text-5xl">❌</div>
+          <h3 className="text-xl font-bold text-gray-900">Payment Failed</h3>
+          <p className="text-sm text-gray-500">Something went wrong. Please try again.</p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
+            <Button onClick={() => setStep('review')} className="flex-1">Try Again</Button>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
-};
-
-export default PaymentModal;
+}
