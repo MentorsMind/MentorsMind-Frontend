@@ -42,12 +42,13 @@ export async function login(email: string, password: string): Promise<LoginResul
 }
 
 export async function register(
-  name: string,
+  firstName: string,
+  lastName: string,
   email: string,
   password: string,
   role: 'mentor' | 'learner'
 ): Promise<AuthResponse> {
-  const { data } = await api.post('/auth/register', { name, email, password, role });
+  const { data } = await api.post('/auth/register', { firstName, lastName, email, password, role });
   return data.data;
 }
 

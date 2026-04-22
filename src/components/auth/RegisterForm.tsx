@@ -8,7 +8,7 @@ import Alert from '../ui/Alert';
 export default function RegisterForm() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,11 +18,11 @@ export default function RegisterForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.name || !form.email || !form.password) { setError('Please fill in all fields.'); return; }
+    if (!form.firstName || !form.lastName || !form.email || !form.password) { setError('Please fill in all fields.'); return; }
     if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.role);
+      await register(form.firstName, form.lastName, form.email, form.password, form.role);
       navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
     } catch {
       setError('Registration failed. Please try again.');
@@ -43,7 +43,8 @@ export default function RegisterForm() {
         {error && <Alert type="error" className="mb-4">{error}</Alert>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Full Name" value={form.name} onChange={set('name')} placeholder="Jane Doe" required />
+          <Input label="First Name" value={form.firstName} onChange={set('firstName')} placeholder="Jane" required />
+          <Input label="Last Name" value={form.lastName} onChange={set('lastName')} placeholder="Doe" required />
           <Input label="Email" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required />
           <Input label="Password" type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" required />
 

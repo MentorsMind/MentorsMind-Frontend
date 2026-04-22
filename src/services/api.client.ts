@@ -1,14 +1,7 @@
 import type { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import axios from "axios";
 import { initTokenRefresh } from "../utils/request.refresh.util";
-
-let accessToken: string;
-let refreshToken: string;
-
-const setTokens = (access: string, refresh: string) => {
-  accessToken = access;
-  refreshToken = refresh;
-};
+import { tokenStorage } from "../utils/token.storage.utils";
 
 // Use to wait few seconds before retry
 const getBackOffDelay = (retry: number) => {
@@ -80,8 +73,9 @@ if (typeof window !== "undefined") {
 }
 
 api.interceptors.request.use((config) => {
-  if (accessToken && config.headers) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+  const at = tokenStorage.getAccessToken();
+  if (at && config.headers) {
+    config.headers.Authorization = `Bearer ${at}`;
   }
 
   if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -161,21 +155,8 @@ api.interceptors.response.use(
       return api(originalReq);
     }
 
-    // Refresh token
-    if (error.response?.status === 401 && refreshToken) {
-      try {
-        const res = await axios.post("/auth/refresh", { refreshToken });
-        setTokens(res.data.accessToken, res.data.refreshToken);
-
-        if (originalReq.headers) {
-          originalReq.headers.Authorization = `Bearer ${res.data.accessToken}`;
-        }
-
-        return api(originalReq);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
-      }
-    }
+    // NOTE: Token refresh is handled by initTokenRefresh to avoid
+    // multiple competing refresh attempts. Do not perform refresh here.
 
     return Promise.reject(error);
   },
