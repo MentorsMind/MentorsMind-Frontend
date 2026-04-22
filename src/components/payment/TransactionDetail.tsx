@@ -5,6 +5,7 @@ interface TransactionDetailProps {
   transaction: PaymentTransaction | null;
   onClose: () => void;
   onDownloadReceipt: (txId: string) => void;
+  onRetryPayment?: (txId: string) => void;
 }
 
 const STATUS_CONFIG: Record<PaymentStatus, { label: string; bg: string; text: string; border: string }> = {
@@ -47,6 +48,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
   transaction,
   onClose,
   onDownloadReceipt,
+  onRetryPayment,
 }) => {
   if (!transaction) return null;
 
@@ -155,25 +157,122 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
                 d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
             </svg>
           </a>
-        </div>
+        {/* Amount Breakdown Section */}
+        {(transaction.grossAmount || transaction.netAmount) && (
+          <div className="mx-6 my-2 rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-5 h-5 rounded-full bg-stellar/10 flex items-center justify-center">
+                <svg className="w-3 h-3 text-stellar" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                Amount Breakdown
+              </span>
+            </div>
+            <div className="space-y-2">
+              {transaction.grossAmount && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Gross Amount:</span>
+                  <span className="font-semibold">{transaction.grossAmount} {transaction.currency}</span>
+                </div>
+              )}
+              {transaction.platformFee && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Platform Fee:</span>
+                  <span className="font-semibold text-red-600">-{transaction.platformFee} {transaction.currency}</span>
+                </div>
+              )}
+              {transaction.networkFee && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Network Fee:</span>
+                  <span className="font-semibold text-red-600">-{transaction.networkFee} {transaction.currency}</span>
+                </div>
+              )}
+              {transaction.netAmount && (
+                <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
+                  <span className="text-gray-900 font-semibold">Net Amount:</span>
+                  <span className="font-bold text-stellar">{transaction.netAmount} {transaction.currency}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        {/* Actions */}
-        <div className="p-6 pt-4 grid grid-cols-2 gap-3">
+        {/* Failure Reason Section */}
+        {transaction.status === 'failed' && transaction.failureReason && (
+          <div className="mx-6 my-2 rounded-2xl bg-red-50 border border-red-200 p-4">
+            <div className="flex items-start gap-2 mb-2">
+              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-red-700 mb-1">
+                  Transaction Failed
+                </div>
+                <p className="text-sm text-red-700">{transaction.failureReason}</p>
+                {transaction.failedAt && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Failed on {new Date(transaction.failedAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refund Information */}
+        {transaction.isRefund && transaction.originalPaymentId && (
+          <div className="mx-6 my-2 rounded-2xl bg-sky-50 border border-sky-200 p-4">
+            <div className="flex items-start gap-2 mb-2">
+              <svg className="w-5 h-5 text-sky-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+              </svg>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-sky-700 mb-1">
+                  Refund Information
+                </div>
+                <p className="text-sm text-sky-700">
+                  This is a refund for transaction {transaction.originalPaymentId}
+                </p>
+                {transaction.refundReason && (
+                  <p className="text-xs text-sky-600 mt-1">Reason: {transaction.refundReason}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="p-6 pt-4 space-y-3">
           <button
             id="download-receipt-btn"
             onClick={() => onDownloadReceipt(transaction.id)}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-gray-800 transition-all"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-gray-800 transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                 d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            Receipt
+            Download Receipt
           </button>
+
+          {transaction.status === 'failed' && onRetryPayment && (
+            <button
+              id="retry-payment-btn"
+              onClick={() => onRetryPayment(transaction.id)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-stellar text-white rounded-2xl text-sm font-bold hover:bg-stellar/90 transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Retry Payment
+            </button>
+          )}
+
           <button
             id="close-detail-btn"
             onClick={onClose}
-            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl text-sm font-bold hover:bg-gray-200 transition-all"
+            className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl text-sm font-bold hover:bg-gray-200 transition-all"
           >
             Close
           </button>
