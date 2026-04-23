@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePaymentHistory } from '../hooks/usePaymentHistory';
 import PaymentHistoryList from '../components/payment/PaymentHistoryList';
 import PaymentFilters from '../components/payment/PaymentFilters';
-import TransactionDetail from '../components/payment/TransactionDetail';
+import { TransactionDetail } from '../components/payment/TransactionDetail';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
 import { generatePaymentReceipt } from '../utils/pdf-receipt';
 import { retryPayment } from '../services/payment.service';
 import type { PaymentTransaction } from '../types';
@@ -23,6 +25,15 @@ const PaymentHistory: React.FC = () => {
     handleSort,
     setCurrentPage,
   } = usePaymentHistory();
+
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
 
   const [selectedTransaction, setSelectedTransaction] = useState<PaymentTransaction | null>(null);
 
@@ -94,18 +105,29 @@ const PaymentHistory: React.FC = () => {
         </div>
 
         {/* Payment History List */}
-        <PaymentHistoryList
-          transactions={transactions}
-          analytics={analytics}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalResults={totalResults}
-          onSort={handleSort}
-          onPageChange={setCurrentPage}
-          onSelectTransaction={handleTransactionClick}
-        />
+        {showSkeleton ? (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+              <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-6" />
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} variant="history" />)}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <PaymentHistoryList
+             transactions={transactions}
+             analytics={analytics}
+             sortField={sortField}
+             sortDirection={sortDirection}
+             currentPage={currentPage}
+             totalPages={totalPages}
+             totalResults={totalResults}
+             onSort={handleSort}
+             onPageChange={setCurrentPage}
+             onSelectTransaction={handleTransactionClick}
+            />
+        )}
 
         {/* Transaction Detail Modal */}
         <TransactionDetail

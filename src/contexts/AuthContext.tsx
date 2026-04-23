@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
 import * as authService from '../services/auth.service';
+import { TOKEN_KEY, REFRESH_TOKEN } from '../config/app.config';
 
 export interface MFAPendingState {
   mfa_token: string;
@@ -9,9 +10,15 @@ export interface MFAPendingState {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  mfaPending: MFAPendingState | null;
+  login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
+  completeMFAChallenge: (totp: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => Promise<void>;
   logout: () => Promise<void>;
+  clearError: () => void;
   /** Refresh the stored user object (e.g. after enabling/disabling MFA) */
   refreshUser: () => Promise<void>;
 }
@@ -20,19 +27,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 function persistSession(user: User, token: string, refreshToken: string) {
   localStorage.setItem('mm_user', JSON.stringify(user));
-  localStorage.setItem('mm_token', token);
-  localStorage.setItem('mm_refresh_token', refreshToken);
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(REFRESH_TOKEN, refreshToken);
 }
 
 function clearSession() {
   localStorage.removeItem('mm_user');
-  localStorage.removeItem('mm_token');
-  localStorage.removeItem('mm_refresh_token');
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mfaPending, setMfaPending] = useState<MFAPendingState | null>(null);
 
   useEffect(() => {
@@ -42,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const restoreSession = async () => {
       try {
         const stored = localStorage.getItem('mm_user');
-        const token = localStorage.getItem('mm_token');
+        const token = localStorage.getItem(TOKEN_KEY);
         if (stored && token) {
           // Optimistically restore user from storage while we verify with backend
           setUser(JSON.parse(stored));
@@ -66,15 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<{ mfaRequired: boolean }> => {
-    const result = await authService.login(email, password);
-    if ('mfa_required' in result && result.mfa_required) {
-      setMfaPending({ mfa_token: result.mfa_token });
-      return { mfaRequired: true };
+    setError(null);
+    try {
+      const result = await authService.login(email, password);
+      if ('mfa_required' in result && result.mfa_required) {
+        setMfaPending({ mfa_token: result.mfa_token });
+        return { mfaRequired: true };
+      }
+      const { user, token, refreshToken } = result as authService.MFALoginResponse;
+      persistSession(user, token, refreshToken);
+      setUser(user);
+      return { mfaRequired: false };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      setError(errorMessage);
+      throw err;
     }
-    const { user, token, refreshToken } = result as authService.MFALoginResponse;
-    persistSession(user, token, refreshToken);
-    setUser(user);
-    return { mfaRequired: false };
   };
 
   const completeMFAChallenge = async (totp: string) => {
@@ -86,9 +101,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => {
-    const { user, token, refreshToken } = await authService.register(firstName, lastName, email, password, role);
-    persistSession(user, token, refreshToken);
-    setUser(user);
+    setError(null);
+    try {
+      const { user, token, refreshToken } = await authService.register(firstName, lastName, email, password, role);
+      persistSession(user, token, refreshToken);
+      setUser(user);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      setError(errorMessage);
+      throw err;
+    }
   };
 
   const logout = async () => {
@@ -96,6 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession();
     setMfaPending(null);
     setUser(null);
+    setError(null);
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   const refreshUser = async () => {
@@ -105,7 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, mfaPending, login, completeMFAChallenge, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isAuthenticated: !!user,
+      isLoading: loading,
+      error, 
+      mfaPending, 
+      login, 
+      completeMFAChallenge, 
+      register, 
+      logout, 
+      clearError, 
+      refreshUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );

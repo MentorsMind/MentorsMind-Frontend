@@ -44,7 +44,7 @@ const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </div>
 );
 
-const TransactionDetail: React.FC<TransactionDetailProps> = ({
+export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   transaction,
   onClose,
   onDownloadReceipt,
@@ -157,6 +157,8 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
                 d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
             </svg>
           </a>
+        </div>
+
         {/* Amount Breakdown Section */}
         {(transaction.grossAmount || transaction.netAmount) && (
           <div className="mx-6 my-2 rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-3">

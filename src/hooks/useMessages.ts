@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Message, Conversation, SendMessageRequest, SearchMessagesRequest } from '../services/messaging.service';
-import MessagingService from '../services/messaging.service';
-
-const messagingService = new MessagingService();
+import { useCallback, useMemo, useState } from 'react';
+import type { Message, Conversation } from '../services/messaging.service';
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
@@ -143,7 +140,7 @@ export const useMessages = () => {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const activeConversation = useMemo(() => {
@@ -201,6 +198,11 @@ export const useMessages = () => {
         })),
       };
 
+      // Store previous state for rollback
+      const prevMessages = { ...messages };
+      const prevConversations = [...conversations];
+
+      // Optimistic update
       setMessages((current) => ({
         ...current,
         [activeConversationId]: [...(current[activeConversationId] || []), newMessage],
@@ -213,8 +215,27 @@ export const useMessages = () => {
             : conv
         )
       );
+
+      try {
+        // Simulate API call
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Randomly fail 10% of the time for demonstration
+            if (Math.random() < 0.1) reject(new Error('Network error: Failed to send message'));
+            else resolve(true);
+          }, 1000);
+        });
+      } catch (err) {
+        // Rollback on failure
+        setMessages(prevMessages);
+        setConversations(prevConversations);
+        setError(err instanceof Error ? err.message : 'Failed to send message');
+        
+        // In a real app, you would use a toast notification here
+        console.error('Optimistic update failed, rolled back:', err);
+      }
     },
-    [activeConversationId]
+    [activeConversationId, messages, conversations]
   );
 
   const searchMessages = useCallback(

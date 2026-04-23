@@ -132,6 +132,15 @@ export interface PaymentTransaction {
   timestamp?: string;
 }
 
+export interface PaymentAnalytics {
+  totalSpent: number;
+  totalCompleted: number;
+  totalPending: number;
+  totalRefunded: number;
+  totalFailed: number;
+  transactionCount: number;
+}
+
 export interface PaymentHistoryResponse {
   data: PaymentTransaction[];
   pagination: {

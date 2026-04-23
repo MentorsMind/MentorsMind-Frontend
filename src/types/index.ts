@@ -1,14 +1,14 @@
 import type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate } from './goals.types.js';
+import type { PaymentStatus } from './payment.types';
 
 export type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate };
+export * from './payment.types';
 
 // Global shared types
 
 export type Priority = 'high' | 'medium' | 'low';
 export type UserRole = 'mentor' | 'learner' | 'admin';
 export type SessionStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
-export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type EscrowStatus = 'active' | 'released' | 'disputed' | 'refunded';
 export type AssetType = 'XLM' | 'USDC' | 'PYUSD';
 
 export interface User {
@@ -21,6 +21,14 @@ export interface User {
   createdAt: string;
   /** Whether the user has MFA (TOTP) enabled */
   mfaEnabled?: boolean;
+}
+
+export interface AuthState {
+  user: User | null;
+  loading: boolean;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error?: string | null;
 }
 
 export interface Mentor extends User {

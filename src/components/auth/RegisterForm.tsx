@@ -7,7 +7,7 @@ import Alert from '../ui/Alert';
 import OAuthButtons from './OAuthButtons';
 
 export default function RegisterForm() {
-  const { register } = useAuth();
+  const { register, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
   const [error, setError] = useState('');
@@ -19,6 +19,7 @@ export default function RegisterForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    clearError();
     if (!form.firstName || !form.lastName || !form.email || !form.password) { setError('Please fill in all fields.'); return; }
     if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
@@ -26,7 +27,7 @@ export default function RegisterForm() {
       await register(form.firstName, form.lastName, form.email, form.password, form.role);
       navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
     } catch {
-      setError('Registration failed. Please try again.');
+      // Error is already set in context, just handle navigation
     } finally {
       setLoading(false);
     }
@@ -42,6 +43,7 @@ export default function RegisterForm() {
         </div>
 
         {error && <Alert type="error" className="mb-4">{error}</Alert>}
+        {authError && <Alert type="error" className="mb-4">{authError}</Alert>}
 
         {/* OAuth Buttons */}
         <OAuthButtons mode="register" disabled={loading} />

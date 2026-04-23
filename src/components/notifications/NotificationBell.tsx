@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Bell } from 'lucide-react'
-import useNotifications from '../../hooks/useNotifications'
+import { useNotifications } from '../../hooks/useNotifications'
 import NotificationBadge from './NotificationBadge'
 import NotificationItem from './NotificationItem'
+import type { Notification } from '../../types'
 
 function isSameDay(d1: Date, d2: Date) {
   return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
@@ -26,10 +27,10 @@ export const NotificationBell: React.FC = () => {
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
 
-  const groups: { title: string; items: typeof notifications }[] = [
-    { title: 'Today', items: [] as any },
-    { title: 'Yesterday', items: [] as any },
-    { title: 'Older', items: [] as any },
+  const groups: { title: string; items: Notification[] }[] = [
+    { title: 'Today', items: [] },
+    { title: 'Yesterday', items: [] },
+    { title: 'Older', items: [] },
   ]
 
   for (const n of notifications) {
@@ -40,7 +41,7 @@ export const NotificationBell: React.FC = () => {
   }
 
   const handleMarkAll = () => {
-    notifications.forEach((n) => { if (!n.read) markRead(n.id) })
+    notifications.forEach((n: Notification) => { if (!n.isRead) markRead(n.id) })
   }
 
   return (
@@ -73,7 +74,7 @@ export const NotificationBell: React.FC = () => {
               <div key={g.title}>
                 <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">{g.title}</div>
                 <div className="divide-y">
-                  {g.items.map((n) => (
+                  {g.items.map((n: Notification) => (
                     <NotificationItem key={n.id} n={n} />
                   ))}
                 </div>

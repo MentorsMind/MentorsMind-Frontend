@@ -1,10 +1,12 @@
 import type { Session } from '../types';
 import Badge from '../components/ui/Badge';
 import NoteEditor from '../components/learner/NoteEditor';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
-  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'error', rescheduled: 'warning',
+const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'danger', rescheduled: 'warning',
 };
 
 const MOCK: Session[] = [
@@ -14,12 +16,24 @@ const MOCK: Session[] = [
 
 export default function SessionHistory() {
   const [activeNotes, setActiveNotes] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
 
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-900">Session History</h1>
       <div className="space-y-3">
-        {MOCK.map(s => (
+        {showSkeleton ? (
+          <>
+            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} variant="booking" />)}
+          </>
+        ) : MOCK.map(s => (
           <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>

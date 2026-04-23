@@ -147,10 +147,9 @@ api.interceptors.response.use(
       error.response.status >= 500 &&
       originalReq._retry < MAX_RETRIES
     ) {
-      originalReq._retry++;
-
-      // void immediate retry
+      // Increment before sleep so backoff uses correct retry count
       await sleep(getBackOffDelay(originalReq._retry));
+      originalReq._retry++;
 
       return api(originalReq);
     }

@@ -1,33 +1,48 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/navigation/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import SkipNavigation from './components/a11y/SkipNavigation';
-import ErrorBoundary from './components/ErrorBoundary';
+import LoadingAnimation from './components/animations/LoadingAnimation';
 
-// Pages
-import LandingPage from './pages/LandingPage';
-import MentorSearch from './pages/MentorSearch';
-import MentorDashboard from './pages/MentorDashboard';
-import MentorProfile from './pages/MentorProfile';
-import MentorWallet from './pages/MentorWallet';
-import MentorOnboarding from './pages/MentorOnboarding';
-import LearnerDashboard from './pages/LearnerDashboard';
-import LearnerProfile from './pages/LearnerProfile';
-import LearnerOnboarding from './pages/LearnerOnboarding';
-import SessionHistory from './pages/SessionHistory';
-import PaymentHistory from './pages/PaymentHistory';
-import CheckoutPage from './pages/CheckoutPage';
-import LearningGoals from './pages/LearningGoals';
-import OAuthCallback from './components/auth/OAuthCallback';
+// Lazy load pages for code splitting
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const MentorSearch = lazy(() => import('./pages/MentorSearch'));
+const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
+const MentorProfile = lazy(() => import('./pages/MentorProfile'));
+const MentorWallet = lazy(() => import('./pages/MentorWallet'));
+const MentorOnboarding = lazy(() => import('./pages/MentorOnboarding'));
+const LearnerDashboard = lazy(() => import('./pages/LearnerDashboard'));
+const LearnerProfile = lazy(() => import('./pages/LearnerProfile'));
+const LearnerOnboarding = lazy(() => import('./pages/LearnerOnboarding'));
+const SessionHistory = lazy(() => import('./pages/SessionHistory'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const LearningGoals = lazy(() => import('./pages/LearningGoals'));
+const Settings = lazy(() => import('./pages/Settings'));
+const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
+const Messages = lazy(() => import('./pages/Messages'));
+const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
 
-export default function App() {
+// Loading component for Suspense
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <LoadingAnimation size="lg" />
+  </div>
+);
+
+import { RoleBasedRoute } from './components/navigation/RoleBasedRoute';
+import { useAuth } from './hooks/useAuth';
+
+function AppRoutes() {
+  const auth = useAuth();
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <SkipNavigation />
-        <main id="main-content">
+    <BrowserRouter>
+      <SkipNavigation />
+      <main id="main-content">
+        <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
@@ -46,6 +61,7 @@ export default function App() {
             <Route path="/mentor/wallet" element={<ProtectedRoute><DashboardLayout><MentorWallet /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
 
             {/* Learner routes */}
             <Route path="/learner" element={<ProtectedRoute><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
@@ -59,11 +75,35 @@ export default function App() {
             {/* Checkout */}
             <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
 
+            {/* Admin routes */}
+            <Route 
+              path="/admin/analytics" 
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminAnalytics />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              } 
+            />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </main>
-      </BrowserRouter>
+        </Suspense>
+      </main>
+    </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <AppRoutes />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

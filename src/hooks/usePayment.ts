@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useWallet } from './useWallet';
-import PaymentService, { type PaymentRequest } from '../services/payment.service';
+import { createPayment, pollPaymentStatus, type PaymentRequest } from '../services/payment.service';
 import { STELLAR_CONFIG, getAsset } from '../config/stellar.config';
 import type { 
   PaymentDetails, 
@@ -127,7 +127,6 @@ export const usePayment = (details: PaymentDetails) => {
       );
 
       // Create payment record on backend
-      const paymentService = new PaymentService();
       const paymentRequest: PaymentRequest = {
         sessionId: details.sessionId,
         mentorId: details.mentorId,
@@ -136,10 +135,10 @@ export const usePayment = (details: PaymentDetails) => {
         transactionHash: transaction.hash,
       };
 
-      const paymentResponse = await paymentService.createPayment(paymentRequest);
+      const paymentResponse = await createPayment(paymentRequest);
 
       // Poll for payment confirmation
-      const finalStatus = await paymentService.pollPaymentStatus(
+      const finalStatus = await pollPaymentStatus(
         paymentResponse.paymentId,
         (status) => {
           if (status.status === 'failed') {

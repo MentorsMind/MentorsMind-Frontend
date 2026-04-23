@@ -1,5 +1,5 @@
-import React from 'react';
 import { RefreshCw, AlertTriangle, TrendingUp } from 'lucide-react';
+import { SkeletonCard } from '../animations/SkeletonLoader';
 import type { ParsedBalance } from '../../hooks/useHorizon';
 
 interface WalletBalanceProps {
@@ -31,6 +31,10 @@ export function WalletBalance({
   const xlmAmount = xlmBalance ? parseFloat(xlmBalance.balance) : 0;
   const showReserveWarning = xlmAmount > 0 && availableXlm < 2;
 
+  if (loading && balances.length === 0) {
+    return <SkeletonCard variant="wallet" className="bg-gradient-to-br from-stellar to-stellar-light" />;
+  }
+
   return (
     <div className="bg-gradient-to-br from-stellar to-stellar-light rounded-3xl p-6 text-white shadow-xl shadow-stellar/20">
       {/* Header */}
@@ -39,13 +43,9 @@ export function WalletBalance({
           <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">
             Total Balance
           </p>
-          {loading ? (
-            <div className="h-10 w-36 bg-white/20 rounded-xl animate-pulse" />
-          ) : (
-            <p className="text-4xl font-bold tabular-nums">
-              ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          )}
+          <p className="text-4xl font-bold tabular-nums">
+            ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
         </div>
         <button
           onClick={onRefresh}
@@ -78,11 +78,7 @@ export function WalletBalance({
 
       {/* Asset list */}
       <div className="space-y-2">
-        {loading && balances.length === 0
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-white/10 rounded-2xl animate-pulse" />
-            ))
-          : balances.map(b => (
+        {balances.map(b => (
               <div
                 key={`${b.assetCode}-${b.assetIssuer ?? 'native'}`}
                 className="flex items-center justify-between bg-white/10 backdrop-blur rounded-2xl px-4 py-3"

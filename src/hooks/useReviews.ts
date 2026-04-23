@@ -77,7 +77,8 @@ export const useReviews = (mentorId: string) => {
     };
   }, [reviews]);
 
-  const addReview = (reviewData: Omit<Review, 'id' | 'date' | 'helpfulCount' | 'mentorId'>) => {
+  const addReview = async (reviewData: Omit<Review, 'id' | 'date' | 'helpfulCount' | 'mentorId'>) => {
+    const prevReviews = [...reviews];
     const review: Review = {
       ...reviewData,
       mentorId,
@@ -86,7 +87,25 @@ export const useReviews = (mentorId: string) => {
       date: new Date().toISOString().split('T')[0],
       helpfulCount: 0,
     };
+
+    // Optimistic update
     setReviews(prev => [review, ...prev]);
+
+    try {
+      // Simulate API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() < 0.1) reject(new Error('Failed to submit review'));
+          else resolve(true);
+        }, 1500);
+      });
+    } catch (err) {
+      // Rollback
+      setReviews(prevReviews);
+      console.error('Failed to submit review:', err);
+      // In a real app, show a toast error
+      alert(err instanceof Error ? err.message : 'Failed to submit review');
+    }
   };
 
   const voteHelpful = (reviewId: string) => {
