@@ -7,6 +7,7 @@ import { TOKEN_KEY, REFRESH_TOKEN } from '../../config/app.config';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
+import OAuthButtons from './OAuthButtons';
 
 export default function LoginForm() {
   const { login, error: authError, clearError } = useAuth();
@@ -68,6 +69,9 @@ export default function LoginForm() {
         </div>
 
         {displayError && <Alert type="error" className="mb-4">{displayError}</Alert>}
+
+        {/* OAuth Buttons */}
+        <OAuthButtons mode="login" disabled={loading || passkeyLoading} />
 
         {/* Passkey / biometric sign-in */}
         {!checkingSupport && isSupported && (

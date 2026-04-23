@@ -42,6 +42,12 @@ export default function SessionHistory() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
+                <Link
+                  to={`/sessions/${s.id}`}
+                  className="text-xs font-semibold text-indigo-600 hover:underline"
+                >
+                  Details
+                </Link>
                 <button onClick={() => setActiveNotes(activeNotes === s.id ? null : s.id)}
                   className="text-xs text-indigo-600 hover:underline">Notes</button>
               </div>

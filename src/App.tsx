@@ -49,6 +49,8 @@ function AppRoutes() {
             <Route path="/mentors" element={<MentorSearch />} />
             <Route path="/onboarding/mentor" element={<MentorOnboarding />} />
             <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
+            {/* OAuth callback */}
+            <Route path="/auth/callback" element={<OAuthCallback />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
 
@@ -70,8 +72,15 @@ function AppRoutes() {
             <Route path="/learner/payments" element={<ProtectedRoute><DashboardLayout><PaymentHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
 
-            {/* Checkout */}
-            <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+                {/* Checkout */}
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <CheckoutPage />
+                    </ProtectedRoute>
+                  }
+                />
 
             {/* Admin routes */}
             <Route 

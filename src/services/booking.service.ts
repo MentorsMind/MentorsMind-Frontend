@@ -51,6 +51,11 @@ export async function cancelBooking(id: string): Promise<Session> {
   return data.data;
 }
 
+export async function regenerateMeetingLink(id: string): Promise<Session> {
+  const { data } = await api.post(`/bookings/${id}/meeting-link/regenerate`);
+  return data.data ?? data;
+}
+
 export async function completeBooking(id: string): Promise<Session> {
   const { data } = await api.post(`/bookings/${id}/complete`);
   return data.data;
