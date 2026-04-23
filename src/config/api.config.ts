@@ -16,5 +16,11 @@ export const apiConfig = {
     payments: "/payments",
     conversations: "/conversations",
     goals: "/goals",
+    account: {
+      profile: "users/me",
+      avatar: "users/me/avatar",
+      password: "auth/change-password",
+      sessions: "auth/sessions",
+    },
   },
 };

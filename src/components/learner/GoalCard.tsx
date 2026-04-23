@@ -3,8 +3,8 @@ import type { Goal } from '../../types';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
-import { GoalsService } from '../../services/goals.service';
-import { SessionService } from '../../services/session.service';
+import GoalsService from '../../services/goals.service';
+import SessionService from '../../services/session.service';
 import type { Session } from '../../types';
 
 interface GoalCardProps {

@@ -105,7 +105,7 @@ export const generatePaymentReceipt = (transaction: ReceiptData): void => {
     addText('AMOUNT BREAKDOWN', margin + 5, yPosition, { size: 12, style: 'bold' });
     yPosition += 15;
 
-    const breakdown = [
+    const breakdown: [string, string, boolean?][] = [
       ['Gross Amount:', `${transaction.fullBreakdown.baseAmount} ${transaction.currency}`],
       ['Platform Fee:', `${transaction.fullBreakdown.platformFeeAmount} ${transaction.currency} (${transaction.fullBreakdown.platformFeePercentage}%)`],
       ['Network Fee:', `${transaction.fullBreakdown.networkFeeAmount} ${transaction.currency}`],
