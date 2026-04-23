@@ -41,8 +41,13 @@ export async function getBooking(id: string): Promise<Session> {
   return data.data;
 }
 
-export async function listBookings(): Promise<Session[]> {
-  const { data } = await api.get('/bookings');
+export async function listBookings(params?: ListBookingsParams): Promise<Session[]> {
+  const { data } = await api.get('/bookings', { params });
+  return data.data;
+}
+
+export async function listBookingsPaged(params?: ListBookingsParams): Promise<BookingsPage> {
+  const { data } = await api.get('/bookings', { params: { ...params, limit: params?.limit ?? 10 } });
   return data.data;
 }
 
