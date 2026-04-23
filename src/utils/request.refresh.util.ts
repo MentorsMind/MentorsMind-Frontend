@@ -1,5 +1,5 @@
 import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import AuthService from "../services/auth.service";
+import { refreshToken as authRefreshToken } from "../services/auth.service";
 import { triggerGlobalLogout } from "./global.logout.utils";
 import { tokenStorage } from "./token.storage.utils";
 
@@ -10,7 +10,6 @@ type Queue = {
 
 let isRefreshing = false;
 let failedQueue: Array<Queue> = [];
-const authService = new AuthService();
 
 const processQueue = (err: unknown, token: string | null = null) => {
   failedQueue.forEach((q) => {
@@ -57,9 +56,9 @@ export async function initTokenRefresh(api: AxiosInstance) {
           throw new Error("No refesh token available");
         }
 
-        const { accessToken, refreshToken } = await authService.refreshToken();
+        const { token: accessToken, refreshToken: newRefreshToken } = await authRefreshToken(rt);
         // Update token
-        tokenStorage.setTokens(accessToken, refreshToken);
+        tokenStorage.setTokens(accessToken, newRefreshToken);
 
         // Retry queued request with the new token
         processQueue(null, accessToken);

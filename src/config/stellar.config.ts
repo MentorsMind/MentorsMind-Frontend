@@ -25,12 +25,20 @@ export const STELLAR_CONFIG = {
       icon: '🅿️',
     },
   },
-  contractId: process.env.STELLAR_CONTRACT_ID || 'CA...', // Escrow contract ID
-  platformFeeAccount: process.env.PLATFORM_FEE_ACCOUNT || 'GA...', // Platform fee collection account
+  contractId: import.meta.env.VITE_ESCROW_CONTRACT_ID ?? '', // Escrow contract ID
+  platformFeeAccount: import.meta.env.VITE_PLATFORM_FEE_ACCOUNT ?? '', // Platform fee collection account
   escrowTimeout: 30 * 1000, // 30 seconds for ledger close
   pollingInterval: 2000, // Poll every 2 seconds
   maxPollingAttempts: 30, // Max 60 seconds polling
 } as const;
+
+const requiredEnv: Array<[string, string]> = [
+  ['VITE_ESCROW_CONTRACT_ID', STELLAR_CONFIG.contractId],
+  ['VITE_PLATFORM_FEE_ACCOUNT', STELLAR_CONFIG.platformFeeAccount],
+];
+requiredEnv.forEach(([key, value]) => {
+  if (!value) console.error(`[stellar.config] Missing required env var: ${key}`);
+});
 
 export const getHorizonServer = () => new Horizon.Server(STELLAR_CONFIG.horizonUrl);
 

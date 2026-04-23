@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Message, Conversation } from '../services/messaging.service';
-import MessagingService from '../services/messaging.service';
-
-const messagingService = new MessagingService();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,9 +180,8 @@ export const useMessages = () => {
   const [messages, setMessages] = useState<Record<string, EnhancedMessage[]>>(INITIAL_MESSAGES);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<EnhancedMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchResults, setSearchResults] = useState<Message[]>([]);
+  const [isLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Typing indicators: set of conversation IDs where the other user is typing
@@ -357,10 +353,14 @@ export const useMessages = () => {
         })),
       };
 
-      // 1. Optimistically add message
-      setMessages((prev) => ({
-        ...prev,
-        [activeConversationId]: [...(prev[activeConversationId] ?? []), optimisticMsg],
+      // Store previous state for rollback
+      const prevMessages = { ...messages };
+      const prevConversations = [...conversations];
+
+      // Optimistic update
+      setMessages((current) => ({
+        ...current,
+        [activeConversationId]: [...(current[activeConversationId] || []), newMessage],
       }));
       setConversations((prev) =>
         prev.map((c) =>
@@ -370,30 +370,26 @@ export const useMessages = () => {
         )
       );
 
-      // 2. Simulate server round-trip (replace with real API call)
-      await new Promise((r) => setTimeout(r, 400));
-
-      const confirmedId = `msg-${Date.now()}`;
-      setMessages((prev) => ({
-        ...prev,
-        [activeConversationId]: (prev[activeConversationId] ?? []).map((m) =>
-          m.id === tempId
-            ? { ...m, id: confirmedId, status: 'sent' as MessageStatus, optimistic: false }
-            : m
-        ),
-      }));
-
-      // 3. Simulate delivered after another short delay
-      setTimeout(() => {
-        setMessages((prev) => ({
-          ...prev,
-          [activeConversationId]: (prev[activeConversationId] ?? []).map((m) =>
-            m.id === confirmedId ? { ...m, status: 'delivered' as MessageStatus } : m
-          ),
-        }));
-      }, 1200);
+      try {
+        // Simulate API call
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Randomly fail 10% of the time for demonstration
+            if (Math.random() < 0.1) reject(new Error('Network error: Failed to send message'));
+            else resolve(true);
+          }, 1000);
+        });
+      } catch (err) {
+        // Rollback on failure
+        setMessages(prevMessages);
+        setConversations(prevConversations);
+        setError(err instanceof Error ? err.message : 'Failed to send message');
+        
+        // In a real app, you would use a toast notification here
+        console.error('Optimistic update failed, rolled back:', err);
+      }
     },
-    [activeConversationId]
+    [activeConversationId, messages, conversations]
   );
 
   // ── Search ────────────────────────────────────────────────────────────────

@@ -199,7 +199,22 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
   const [escrows, setEscrows] = useState<EscrowContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [, setTick] = useState(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Drive re-renders every second so countdown displays update
+  useEffect(() => {
+    countdownIntervalRef.current = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+
+    return () => {
+      if (countdownIntervalRef.current !== null) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Fetch escrows (mock implementation)
   const fetchEscrows = useCallback(async () => {

@@ -20,7 +20,6 @@ export interface WidgetConfig {
 export interface DashboardState {
   isSidebarOpen: boolean;
   isSidebarCollapsed: boolean;
-  theme: 'light' | 'dark';
   role: UserRole;
   widgets: WidgetConfig[];
   searchQuery: string;

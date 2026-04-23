@@ -1,15 +1,25 @@
-const ratings = [
-  { stars: 5, count: 42 },
-  { stars: 4, count: 18 },
-  { stars: 3, count: 6 },
-  { stars: 2, count: 2 },
-  { stars: 1, count: 1 },
-];
+interface RatingBreakdownProps {
+  ratingSummary?: {
+    average: number;
+    total: number;
+    breakdown: Array<{ stars: number; count: number }>;
+  };
+}
 
-const total = ratings.reduce((sum, r) => sum + r.count, 0);
-const average = ratings.reduce((sum, r) => sum + r.stars * r.count, 0) / total;
+const defaultRatingSummary = {
+  average: 4.9,
+  total: 87,
+  breakdown: [
+    { stars: 5, count: 42 },
+    { stars: 4, count: 18 },
+    { stars: 3, count: 6 },
+    { stars: 2, count: 2 },
+    { stars: 1, count: 1 },
+  ],
+};
 
-export default function RatingBreakdown() {
+export default function RatingBreakdown({ ratingSummary = defaultRatingSummary }: RatingBreakdownProps) {
+  const { average, total, breakdown } = ratingSummary;
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
       <h2 className="text-lg font-bold text-gray-900 mb-6">Ratings</h2>
@@ -24,7 +34,7 @@ export default function RatingBreakdown() {
 
         {/* Bars */}
         <div className="flex-1 space-y-2">
-          {ratings.map((r) => {
+          {breakdown.map((r) => {
             const pct = total > 0 ? (r.count / total) * 100 : 0;
             return (
               <div key={r.stars} className="flex items-center gap-3">

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Star, CheckCircle } from 'lucide-react';
-import type { SessionHistoryItem } from '../../types';
+import type { SessionHistoryItem } from '../../types/session.types';
 import { SkillTagSelector } from '../mentor/SkillTagSelector';
+import FocusTrap from '../a11y/FocusTrap';
+import LiveRegion from '../a11y/LiveRegion';
 
 const SKILL_SUGGESTIONS = [
   'React', 'TypeScript', 'Node.js', 'System Design', 'Stellar', 'Soroban',
@@ -49,6 +51,12 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
       setLoading(false);
     }
   };
+
+  // Announce rating changes to assistive tech
+  const [ratingAnnouncement, setRatingAnnouncement] = useState('');
+  useEffect(() => {
+    if (rating > 0) setRatingAnnouncement(`Rating set to ${rating} out of 5`);
+  }, [rating]);
 
   return (
     <div
@@ -118,35 +126,39 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
               </p>
             </div>
 
-            <div className="space-y-5 p-6">
-              {/* Star rating */}
-              <div>
-                <label className="mb-2 block text-sm font-bold text-gray-900 dark:text-white">
-                  Rating <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-1" role="group" aria-label="Star rating">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      aria-label={`${star} star${star > 1 ? 's' : ''}`}
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHovered(star)}
-                      onMouseLeave={() => setHovered(0)}
-                      className="text-3xl transition-transform hover:scale-110 focus:outline-none"
-                    >
-                      <Star
-                        className={`h-8 w-8 ${
-                          star <= (hovered || rating)
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
+            <FocusTrap active>
+              <div className="space-y-5 p-6">
+                {/* Star rating */}
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-gray-900 dark:text-white">
+                    Rating <span className="text-red-500">*</span>
+                  </label>
+                  <div role="radiogroup" aria-label="Star rating" className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        role="radio"
+                        aria-checked={rating === star}
+                        aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHovered(star)}
+                        onMouseLeave={() => setHovered(0)}
+                        className="text-3xl transition-transform hover:scale-110 focus:outline-none"
+                      >
+                        <Star
+                          className={`h-8 w-8 ${
+                            star <= (hovered || rating)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {error && <p role="alert" className="mt-1 text-sm text-red-500">{error}</p>}
+                  <LiveRegion message={ratingAnnouncement} politeness="assertive" clearAfter={3000} />
                 </div>
-                {error && <p role="alert" className="mt-1 text-sm text-red-500">{error}</p>}
-              </div>
 
               {/* Written review */}
               <div>
@@ -193,6 +205,7 @@ const PostSessionReview: React.FC<PostSessionReviewProps> = ({
                 </button>
               </div>
             </div>
+            </FocusTrap>
           </form>
         )}
       </div>
