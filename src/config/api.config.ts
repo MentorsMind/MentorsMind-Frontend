@@ -15,5 +15,6 @@ export const apiConfig = {
     mentors: "/mentors",
     payments: "/payments",
     conversations: "/conversations",
+    goals: "/goals",
   },
 };

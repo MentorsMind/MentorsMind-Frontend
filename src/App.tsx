@@ -19,6 +19,7 @@ import LearnerOnboarding from './pages/LearnerOnboarding';
 import SessionHistory from './pages/SessionHistory';
 import PaymentHistory from './pages/PaymentHistory';
 import CheckoutPage from './pages/CheckoutPage';
+import LearningGoals from './pages/LearningGoals';
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
             {/* Learner routes */}
             <Route path="/learner" element={<ProtectedRoute><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/dashboard" element={<ProtectedRoute><DashboardLayout><LearnerDashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/goals" element={<ProtectedRoute><DashboardLayout><LearningGoals /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/profile" element={<ProtectedRoute><DashboardLayout><LearnerProfile /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/payments" element={<ProtectedRoute><DashboardLayout><PaymentHistory /></DashboardLayout></ProtectedRoute>} />
