@@ -1,9 +1,13 @@
-import { useNavigate } from 'react-router-dom';
-import { useBookingHistory, type TabKey, type StatusFilter } from '../hooks/useBookingHistory';
-import SessionHistoryCard from '../components/session/SessionHistoryCard';
-import Button from '../components/ui/Button';
+import type { Session } from '../types';
+import Badge from '../components/ui/Badge';
+import NoteEditor from '../components/learner/NoteEditor';
+import { useState, useEffect } from 'react';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
-// ─── Empty states ─────────────────────────────────────────────────────────────
+const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'danger', rescheduled: 'warning',
+};
 
 function EmptyState({ tab }: { tab: TabKey }) {
   const navigate = useNavigate();
@@ -35,44 +39,45 @@ function EmptyState({ tab }: { tab: TabKey }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SessionHistory() {
-  const {
-    tab, switchTab,
-    filters, updateFilter,
-    bookings, totalCount, hasMore, loadMore,
-    isLoading, isInDisputeWindow,
-  } = useBookingHistory();
+  const [activeNotes, setActiveNotes] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleLeaveReview = (id: string) => alert(`Leave review for booking ${id}`);
-  const handleOpenDispute = (id: string) => alert(`Open dispute for booking ${id}`);
-  const handleViewReceipt = (id: string) => alert(`View receipt for booking ${id}`);
-
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: 'upcoming', label: 'Upcoming' },
-    { key: 'past',     label: 'Past' },
-  ];
+  const showSkeleton = useMinimumLoading(isLoading, 300);
 
   return (
-    <div className="max-w-3xl space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Sessions</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage and review your mentoring sessions</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200">
-        {tabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => switchTab(key)}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === key
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {label}
-          </button>
+    <div className="space-y-6 max-w-3xl">
+      <h1 className="text-2xl font-bold text-gray-900">Session History</h1>
+      <div className="space-y-3">
+        {showSkeleton ? (
+          <>
+            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} variant="booking" />)}
+          </>
+        ) : MOCK.map(s => (
+          <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{new Date(s.scheduledAt).toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{s.duration} min · {s.price} {s.asset}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
+                <Link
+                  to={`/sessions/${s.id}`}
+                  className="text-xs font-semibold text-indigo-600 hover:underline"
+                >
+                  Details
+                </Link>
+                <button onClick={() => setActiveNotes(activeNotes === s.id ? null : s.id)}
+                  className="text-xs text-indigo-600 hover:underline">Notes</button>
+              </div>
+            </div>
+            {activeNotes === s.id && <NoteEditor sessionId={s.id} />}
+          </div>
         ))}
       </div>
 

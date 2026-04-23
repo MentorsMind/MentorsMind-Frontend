@@ -3,6 +3,7 @@ import { useMentorSessions } from '../hooks/useMentorSessions';
 import SessionList from '../components/mentor/SessionList';
 import SessionDetail from '../components/mentor/SessionDetail';
 import { Link, useNavigate } from 'react-router-dom'; // Assuming React Router setup
+import EmptyState from '../components/ui/EmptyState';
 
 const MentorSessions: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
   const { data, refresh } = useMentorSessions();
@@ -68,13 +69,24 @@ const MentorSessions: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) =
 
       {/* Content */}
       <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <SessionList
-            sessions={data[activeTab]}
-            type={activeTab}
-            onOpenDetail={handleOpenDetail}
-          />
-        </div>
+          <div className="lg:col-span-2 space-y-8">
+            {data.loading ? (
+              <div className="p-6">Loading…</div>
+            ) : data[activeTab].length === 0 ? (
+              <EmptyState
+                title={activeTab === 'upcoming' ? 'No upcoming sessions' : 'No sessions found'}
+                description={activeTab === 'upcoming' ? 'You have no upcoming bookings.' : 'No sessions in this list.'}
+                ctaLabel="Refresh"
+                onCta={() => refresh()}
+              />
+            ) : (
+              <SessionList
+                sessions={data[activeTab]}
+                type={activeTab}
+                onOpenDetail={handleOpenDetail}
+              />
+            )}
+          </div>
 
         {/* Quick Stats Sidebar */}
         <div className="space-y-6">

@@ -1,13 +1,15 @@
 import React from 'react';
 import { Sun, Moon, Monitor, Type } from 'lucide-react';
-import type { AppearanceSettings as AppearanceSettingsType, Theme, FontSize } from '../../hooks/useSettings';
+import type { AppearanceSettings as AppearanceSettingsType, FontSize } from '../../hooks/useSettings';
+import type { ThemePreference } from '../../contexts/ThemeContext';
+import { useTheme } from '../../hooks/useTheme';
 
 interface AppearanceSettingsProps {
   settings: AppearanceSettingsType;
   onChange: (updates: Partial<AppearanceSettingsType>) => void;
 }
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: React.ReactNode }[] = [
   { value: 'light', label: 'Light', icon: <Sun className="w-5 h-5" /> },
   { value: 'dark', label: 'Dark', icon: <Moon className="w-5 h-5" /> },
   { value: 'system', label: 'System', icon: <Monitor className="w-5 h-5" /> },
@@ -26,6 +28,8 @@ const FONT_SAMPLE_SIZE: Record<FontSize, string> = {
 };
 
 const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ settings, onChange }) => {
+  const { preference, setTheme } = useTheme();
+
   return (
     <div className="space-y-8">
       {/* Theme */}
@@ -38,9 +42,10 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ settings, onCha
           {THEME_OPTIONS.map(opt => (
             <button
               key={opt.value}
-              onClick={() => onChange({ theme: opt.value })}
+              onClick={() => setTheme(opt.value)}
+              aria-pressed={preference === opt.value}
               className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
-                settings.theme === opt.value
+                preference === opt.value
                   ? 'border-stellar bg-stellar/5 text-stellar'
                   : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}
@@ -51,7 +56,7 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({ settings, onCha
           ))}
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          {settings.theme === 'system' ? 'Follows your device\'s system preference.' : `Always uses ${settings.theme} mode.`}
+          {preference === 'system' ? 'Follows your device\'s system preference.' : `Always uses ${preference} mode.`}
         </p>
       </section>
 

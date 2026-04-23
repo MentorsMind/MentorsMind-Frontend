@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { deriveKeypairFromMnemonic, validateMnemonic } from '../../utils/stellar.utils';
 
 interface WalletImportProps {
   onImport: (secretKey: string, nickname?: string) => Promise<void>;
@@ -20,24 +21,29 @@ export const WalletImport = ({ onImport, onCancel }: WalletImportProps) => {
 
   const handleImport = async () => {
     setError(null);
+    setLoading(true);
     
-    if (importMethod === 'secret') {
-      if (!validateSecretKey(secretKey)) {
-        setError('Invalid secret key format. Secret keys should start with "S" and be 56 characters long.');
-        return;
+    try {
+      let finalSecretKey = '';
+
+      if (importMethod === 'secret') {
+        if (!validateSecretKey(secretKey)) {
+          throw new Error('Invalid secret key format. Secret keys should start with "S" and be 56 characters long.');
+        }
+        finalSecretKey = secretKey;
+      } else {
+        if (!validateMnemonic(mnemonic)) {
+          throw new Error('Invalid mnemonic phrase. Please check the words and try again.');
+        }
+        const keypair = deriveKeypairFromMnemonic(mnemonic);
+        finalSecretKey = keypair.secret();
       }
       
-      setLoading(true);
-      try {
-        await onImport(secretKey, nickname || undefined);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to import wallet');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // TODO: Implement mnemonic import
-      setError('Mnemonic import is not yet implemented');
+      await onImport(finalSecretKey, nickname || undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import wallet');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,27 +1,85 @@
-import MetricCard from '../components/charts/MetricCard';
-import PaymentHistory from './PaymentHistory';
+import { useEarnings } from '../hooks/useEarnings';
+import EarningsSummary from '../components/earnings/EarningsSummary';
+import EarningsChart from '../components/earnings/EarningsChart';
+import SessionTable from '../components/earnings/SessionTable';
+import EmptyState from '../components/earnings/EmptyState';
 
 export default function MentorWallet() {
+  const {
+    summary,
+    chartSeries,
+    sessions,
+    allSortedSessions,
+    totalSessions,
+    loading,
+    error,
+    retry,
+    chartRange,
+    setChartRange,
+    page,
+    setPage,
+    sortKey,
+    sortDir,
+    setSort,
+    exportCSV,
+    currency,
+  } = useEarnings();
+
+  const hasData = sessions.length > 0 || allSortedSessions.length > 0;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard title="Available Balance" value="1,240.00" prefix="$" icon="💰" />
-        <MetricCard title="In Escrow" value="360.00" prefix="$" icon="🔒" />
-        <MetricCard title="Total Earned" value="8,420.00" prefix="$" icon="📈" />
-      </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-        <h2 className="font-semibold text-gray-900">Stellar Wallet</h2>
-        <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
-          <span className="text-2xl">⭐</span>
-          <div>
-            <p className="text-xs text-gray-500">Public Key</p>
-            <p className="text-xs font-mono text-gray-700">GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</p>
-          </div>
+      <h1 className="text-2xl font-bold text-text">Earnings &amp; Payouts</h1>
+
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center justify-between gap-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+          <span>{error}</span>
+          <button
+            onClick={retry}
+            className="shrink-0 font-semibold underline hover:no-underline"
+          >
+            Retry
+          </button>
         </div>
-        <button className="text-sm text-indigo-600 hover:underline">Connect Freighter Wallet</button>
-      </div>
-      <PaymentHistory />
+      )}
+
+      {/* Summary cards — always visible */}
+      <EarningsSummary summary={summary} loading={loading} />
+
+      {/* Loading skeleton below summary when no data yet */}
+      {loading && !hasData && (
+        <div className="space-y-4">
+          <div className="bg-surface rounded-xl h-64 animate-pulse" aria-hidden="true" />
+          <div className="bg-surface rounded-xl h-48 animate-pulse" aria-hidden="true" />
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && allSortedSessions.length === 0 && <EmptyState />}
+
+      {/* Chart + table */}
+      {allSortedSessions.length > 0 && (
+        <>
+          <EarningsChart
+            series={chartSeries}
+            range={chartRange}
+            onRangeChange={setChartRange}
+            currency={currency}
+          />
+          <SessionTable
+            sessions={sessions}
+            allSessions={allSortedSessions}
+            totalSessions={totalSessions}
+            page={page}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={setSort}
+            onPageChange={setPage}
+            onExport={exportCSV}
+          />
+        </>
+      )}
     </div>
   );
 }

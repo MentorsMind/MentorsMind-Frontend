@@ -4,10 +4,9 @@ import type { PaymentFiltersState } from '../../hooks/usePaymentHistory';
 
 interface PaymentFiltersProps {
   filters: PaymentFiltersState;
-  onUpdateFilter: (patch: Partial<PaymentFiltersState>) => void;
+  onUpdateFilters: (patch: Partial<PaymentFiltersState>) => void;
   onToggleStatus: (status: PaymentStatus) => void;
-  onClear: () => void;
-  totalResults: number;
+  onClearFilters: () => void;
 }
 
 const ALL_STATUSES: PaymentStatus[] = ['completed', 'pending', 'failed', 'refunded'];
@@ -37,10 +36,9 @@ const STATUS_CONFIG: Record<PaymentStatus, { label: string; activeClass: string;
 
 const PaymentFilters: React.FC<PaymentFiltersProps> = ({
   filters,
-  onUpdateFilter,
+  onUpdateFilters,
   onToggleStatus,
-  onClear,
-  totalResults,
+  onClearFilters,
 }) => {
   const hasActiveFilters =
     filters.search || filters.dateFrom || filters.dateTo || filters.statuses.length > 0;
@@ -61,7 +59,7 @@ const PaymentFilters: React.FC<PaymentFiltersProps> = ({
           id="payment-search"
           type="text"
           value={filters.search}
-          onChange={e => onUpdateFilter({ search: e.target.value })}
+          onChange={e => onUpdateFilters({ search: e.target.value })}
           placeholder="Search by mentor name or TX hash…"
           className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar placeholder:text-gray-400 transition-all"
         />
@@ -77,7 +75,7 @@ const PaymentFilters: React.FC<PaymentFiltersProps> = ({
             id="payment-date-from"
             type="date"
             value={filters.dateFrom}
-            onChange={e => onUpdateFilter({ dateFrom: e.target.value })}
+            onChange={e => onUpdateFilters({ dateFrom: e.target.value })}
             className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all"
           />
         </div>
@@ -89,7 +87,7 @@ const PaymentFilters: React.FC<PaymentFiltersProps> = ({
             id="payment-date-to"
             type="date"
             value={filters.dateTo}
-            onChange={e => onUpdateFilter({ dateTo: e.target.value })}
+            onChange={e => onUpdateFilters({ dateTo: e.target.value })}
             className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all"
           />
         </div>
@@ -102,7 +100,7 @@ const PaymentFilters: React.FC<PaymentFiltersProps> = ({
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => onUpdateFilter({ statuses: [] })}
+            onClick={() => onUpdateFilters({ statuses: [] })}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
               filters.statuses.length === 0
                 ? 'bg-gray-900 text-white shadow-gray-200'
@@ -134,12 +132,12 @@ const PaymentFilters: React.FC<PaymentFiltersProps> = ({
       {/* Footer row */}
       <div className="flex items-center justify-between pt-1">
         <span className="text-xs text-gray-400 font-semibold">
-          {totalResults} result{totalResults !== 1 ? 's' : ''}
+          {filters.statuses.length > 0 || filters.search || filters.dateFrom || filters.dateTo ? 'Filtered results' : 'All transactions'}
         </span>
         {hasActiveFilters && (
           <button
             id="clear-filters-btn"
-            onClick={onClear}
+            onClick={onClearFilters}
             className="text-xs font-bold text-stellar hover:underline underline-offset-4 transition-all"
           >
             Clear filters

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { SkeletonCard } from '../animations/SkeletonLoader';
 import type { Notification } from '../../types';
 
 interface NotificationCenterProps {
@@ -10,6 +11,16 @@ interface NotificationCenterProps {
 
 export default function NotificationCenter({ notifications, onMarkRead, onMarkAllRead, unreadCount }: NotificationCenterProps) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Simulate loading when opening
+  useEffect(() => {
+    if (open) {
+      setLoading(true);
+      const timer = setTimeout(() => setLoading(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   return (
     <div className="relative">
@@ -26,12 +37,16 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
         <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-            {unreadCount > 0 && (
+            {unreadCount > 0 && !loading && (
               <button onClick={onMarkAllRead} className="text-xs text-indigo-600 hover:underline">Mark all read</button>
             )}
           </div>
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-1">
+                {[1, 2, 3].map(i => <SkeletonCard key={i} variant="notification" />)}
+              </div>
+            ) : notifications.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">No notifications</p>
             ) : notifications.map(n => (
               <div key={n.id} onClick={() => onMarkRead(n.id)}

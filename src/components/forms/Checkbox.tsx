@@ -15,11 +15,11 @@ export default function Checkbox({ label, checked, onChange, disabled, error }: 
           checked={checked}
           onChange={e => onChange(e.target.checked)}
           disabled={disabled}
-          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
         />
-        <span className="text-sm text-gray-700">{label}</span>
+        <span className="text-sm text-text">{label}</span>
       </label>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

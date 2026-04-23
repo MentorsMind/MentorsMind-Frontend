@@ -26,9 +26,9 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
   }, ref) => {
     const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 resize-y';
     const stateClasses = hasError
-      ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200';
-    const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white';
+      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+      : 'border-border focus:border-primary focus:ring-primary/20';
+    const disabledClasses = disabled ? 'bg-surface cursor-not-allowed' : 'bg-background';
 
     const currentLength = typeof value === 'string' ? value.length : 0;
 
@@ -47,7 +47,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
         />
         
         {showCharCount && maxLength && (
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
+          <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
             {currentLength}/{maxLength}
           </div>
         )}
