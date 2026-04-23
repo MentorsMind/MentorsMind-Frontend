@@ -52,7 +52,7 @@ export async function register(
   return data.data;
 }
 
-export async function refreshToken(token: string): Promise<{ token: string }> {
+export async function refreshToken(token: string): Promise<{ token: string; refreshToken: string }> {
   const { data } = await api.post('/auth/refresh', { refreshToken: token });
   return data.data;
 }

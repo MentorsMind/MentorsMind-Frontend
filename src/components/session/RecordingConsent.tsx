@@ -36,8 +36,6 @@ const RecordingConsent: React.FC<RecordingConsentProps> = ({
           <span className="h-2 w-2 rounded-full bg-red-500" />
           Recording Consent
         </div>
-      </FocusTrap>
-
         <h2 id="recording-consent-title" className="mt-4 text-2xl font-black text-gray-950">
           {roleLabel(request.requesterRole)} wants to {actionLabel}. Allow?
         </h2>
@@ -73,6 +71,7 @@ const RecordingConsent: React.FC<RecordingConsentProps> = ({
           </button>
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 };

@@ -87,6 +87,9 @@ function AppRoutes() {
               } 
             />
 
+            {/* Settings Redirect */}
+            <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
