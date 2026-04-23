@@ -6,6 +6,7 @@ import { usePasskey } from '../../hooks/usePasskey';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
+import OAuthButtons from './OAuthButtons';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -66,6 +67,9 @@ export default function LoginForm() {
         </div>
 
         {displayError && <Alert type="error" className="mb-4">{displayError}</Alert>}
+
+        {/* OAuth Buttons */}
+        <OAuthButtons mode="login" disabled={loading || passkeyLoading} />
 
         {/* Passkey / biometric sign-in */}
         {!checkingSupport && isSupported && (
