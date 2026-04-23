@@ -49,6 +49,8 @@ function AppRoutes() {
             <Route path="/mentors" element={<MentorSearch />} />
             <Route path="/onboarding/mentor" element={<MentorOnboarding />} />
             <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
+            {/* OAuth callback */}
+            <Route path="/auth/callback" element={<OAuthCallback />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
 

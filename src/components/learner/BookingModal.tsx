@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SessionTypeSelector from './SessionTypeSelector';
-import AvailabilityPicker from './AvailabilityPicker';
+import EnhancedAvailabilityPicker from './EnhancedAvailabilityPicker';
+import TimezoneSelector from './TimezoneSelector';
+import BookingSummaryModal from './BookingSummaryModal';
 import BookingConfirmation from './BookingConfirmation';
 import PaymentModal from '../payment/PaymentModal';
 import { useBooking } from '../../hooks/useBooking';
@@ -38,13 +40,29 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
   const [step, setStep] = useState<BookingStep>('details');
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string>('');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setStep('details');
       setPaymentOpen(false);
       setPaymentCompleted(false);
+      setShowSummaryModal(false);
+      setIdempotencyKey('');
+      setIsSubmitting(false);
       reset();
+    } else {
+      // Auto-detect timezone when modal opens
+      try {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setUserTimezone(detected);
+      } catch (error) {
+        console.error('Failed to detect timezone:', error);
+        setUserTimezone('UTC');
+      }
     }
   }, [isOpen, reset]);
 
@@ -62,13 +80,28 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
     onClose();
   };
 
+  const handleShowSummary = () => {
+    // Generate idempotency key before showing summary
+    const key = crypto.randomUUID();
+    setIdempotencyKey(key);
+    setShowSummaryModal(true);
+  };
+
+  const handleConfirmFromSummary = () => {
+    setShowSummaryModal(false);
+    setIsSubmitting(true);
+    setPaymentOpen(true);
+  };
+
   const handlePaymentSuccess = async (transactionHash: string, sessionId?: string) => {
     await confirmBooking(transactionHash, sessionId);
     setPaymentCompleted(true);
+    setIsSubmitting(false);
   };
 
   const handlePaymentClose = () => {
     setPaymentOpen(false);
+    setIsSubmitting(false);
   };
 
   const handleDownloadInvite = () => {
@@ -203,14 +236,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
                   </div>
 
                   <div>
+                    <TimezoneSelector
+                      value={userTimezone}
+                      onChange={setUserTimezone}
+                      mentorTimezone={mentor.timezone}
+                    />
+                  </div>
+
+                  <div>
                     <label className="mb-3 block text-sm font-bold text-gray-900">
                       Availability calendar
                     </label>
-                    <AvailabilityPicker
+                    <EnhancedAvailabilityPicker
                       groupedAvailability={groupedAvailability}
                       selectedDateKey={selectedDateKey}
                       selectedSlotId={draft.selectedSlot?.id}
                       onSelect={selectSlot}
+                      userTimezone={userTimezone}
+                      mentorTimezone={mentor.timezone}
                     />
                   </div>
 
@@ -254,16 +297,18 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
                     <button
                       type="button"
                       onClick={() => setStep('details')}
-                      className="rounded-2xl border border-gray-100 px-6 py-4 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
+                      disabled={isSubmitting}
+                      className="rounded-2xl border border-gray-100 px-6 py-4 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Back
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPaymentOpen(true)}
-                      className="rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark"
+                      onClick={handleShowSummary}
+                      disabled={isSubmitting}
+                      className="rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Proceed to payment
+                      Review & Confirm
                     </button>
                   </div>
                 </div>
@@ -342,6 +387,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
           </div>
         </div>
       </div>
+
+      {draft.selectedSlot && pricing && (
+        <BookingSummaryModal
+          isOpen={showSummaryModal}
+          draft={draft}
+          pricing={pricing}
+          mentorName={mentor.name}
+          userTimezone={userTimezone}
+          mentorTimezone={mentor.timezone}
+          onConfirm={handleConfirmFromSummary}
+          onCancel={() => setShowSummaryModal(false)}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {paymentDetails && (
         <PaymentModal
