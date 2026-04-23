@@ -1,19 +1,23 @@
 interface ProfileHeaderProps {
   name: string;
   bio: string;
+  hourlyRate: number;
+  currency: string;
   joinDate: string;
   sessionCount: number;
   learnerCount: number;
-  verified: boolean;
+  verificationStatus: 'approved' | 'pending' | 'rejected';
 }
 
 export default function ProfileHeader({
   name,
   bio,
+  hourlyRate,
+  currency,
   joinDate,
   sessionCount,
   learnerCount,
-  verified,
+  verificationStatus,
 }: ProfileHeaderProps) {
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 flex flex-col items-center text-center gap-4">
@@ -25,18 +29,28 @@ export default function ProfileHeader({
       {/* Name + Badge */}
       <div className="flex items-center gap-2">
         <h1 className="text-2xl font-bold text-gray-900">{name}</h1>
-        {verified && (
+        {verificationStatus === 'approved' && (
           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
             ✓ Verified
           </span>
         )}
+        {verificationStatus === 'pending' && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">
+            ⏳ Verification Pending
+          </span>
+        )}
+      </div>
+
+      {/* Tagline/Bio */}
+      <p className="text-gray-600 max-w-xl">{bio}</p>
+
+      {/* Hourly Rate */}
+      <div className="text-2xl font-bold text-stellar">
+        ${hourlyRate}/{currency === 'XLM' ? 'XLM' : 'hr'}
       </div>
 
       {/* Join date */}
       <p className="text-sm text-gray-400">Member since {joinDate}</p>
-
-      {/* Bio */}
-      <p className="text-gray-600 max-w-xl">{bio}</p>
 
       {/* Stats */}
       <div className="flex gap-8 mt-2">

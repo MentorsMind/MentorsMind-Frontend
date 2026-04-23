@@ -20,6 +20,7 @@ export const ROUTES = {
   GOVERNANCE: '/governance',
   PROPOSAL_DETAIL: '/governance/proposals/:id',
   CREDIT_SCORE: '/credit-score',
+  GOALS: '/learner/goals',
 } as const;
 
 export interface RouteConfig {
@@ -32,7 +33,7 @@ export interface RouteConfig {
 
 export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
-  { path: ROUTES.MENTOR_ANALYTICS, label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
+  { path: ROUTES.GOALS, label: 'Learning Goals', protected: true, roles: ['learner'], icon: 'Target' },
   { path: ROUTES.LEARNER_ANALYTICS, label: 'Learning Analytics', protected: true, roles: ['learner'], icon: 'LineChart' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
   { path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },

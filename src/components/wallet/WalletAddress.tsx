@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { flushSync } from 'react-dom';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface WalletAddressProps {
   publicKey: string;
@@ -8,39 +9,7 @@ interface WalletAddressProps {
 
 export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
   const [copied, setCopied] = useState(false);
-  const [qrCode, setQrCode] = useState<string>('');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    // Generate QR code
-    // TODO: Use a proper QR code library like qrcode or qr-code-styling
-    generateSimpleQR(publicKey);
-  }, [publicKey]);
-
-  const generateSimpleQR = (text: string) => {
-    // Placeholder for QR code generation
-    // In production, use: import QRCode from 'qrcode'
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    let ctx: CanvasRenderingContext2D | null = null;
-    try {
-      ctx = canvas.getContext('2d');
-    } catch {
-      return;
-    }
-    if (!ctx) return;
-
-    // Simple placeholder pattern
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, 200, 200);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '10px monospace';
-    ctx.fillText('QR Code', 70, 100);
-    ctx.fillText('Placeholder', 60, 115);
-    
-    setQrCode(canvas.toDataURL());
-  };
+  const qrRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(publicKey).catch((err) => {
@@ -66,10 +35,27 @@ export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
   };
 
   const downloadQR = () => {
-    const link = document.createElement('a');
-    link.download = `stellar-wallet-${nickname || 'address'}.png`;
-    link.href = qrCode;
-    link.click();
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    canvas.width = 256;
+    canvas.height = 256;
+
+    img.onload = () => {
+      ctx?.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `stellar-wallet-${nickname || 'address'}.png`;
+      link.href = pngFile;
+      link.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
   return (
@@ -81,12 +67,12 @@ export const WalletAddress = ({ publicKey, nickname }: WalletAddressProps) => {
         )}
 
         <div className="flex justify-center mb-6">
-          <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-            <canvas
-              ref={canvasRef}
-              width={200}
-              height={200}
-              className="block"
+          <div ref={qrRef} className="bg-white p-4 rounded-lg border-2 border-gray-200">
+            <QRCodeSVG
+              value={publicKey}
+              size={200}
+              level="H"
+              includeMargin={true}
             />
           </div>
         </div>

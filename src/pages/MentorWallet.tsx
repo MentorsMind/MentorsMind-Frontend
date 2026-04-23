@@ -29,11 +29,11 @@ export default function MentorWallet() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Earnings &amp; Payouts</h1>
+      <h1 className="text-2xl font-bold text-text">Earnings &amp; Payouts</h1>
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center justify-between gap-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+        <div className="flex items-center justify-between gap-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
           <span>{error}</span>
           <button
             onClick={retry}
@@ -50,8 +50,8 @@ export default function MentorWallet() {
       {/* Loading skeleton below summary when no data yet */}
       {loading && !hasData && (
         <div className="space-y-4">
-          <div className="bg-gray-200 rounded-xl h-64 animate-pulse" aria-hidden="true" />
-          <div className="bg-gray-200 rounded-xl h-48 animate-pulse" aria-hidden="true" />
+          <div className="bg-surface rounded-xl h-64 animate-pulse" aria-hidden="true" />
+          <div className="bg-surface rounded-xl h-48 animate-pulse" aria-hidden="true" />
         </div>
       )}
 

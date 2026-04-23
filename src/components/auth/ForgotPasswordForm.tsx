@@ -19,8 +19,8 @@ export default function ForgotPasswordForm({ onBack }: { onBack?: () => void }) 
   if (sent) return (
     <div className="text-center space-y-4">
       <div className="text-5xl">📧</div>
-      <h3 className="text-lg font-semibold text-gray-900">Check your email</h3>
-      <p className="text-sm text-gray-500">We sent a reset link to <strong>{email}</strong></p>
+      <h3 className="text-lg font-semibold text-text">Check your email</h3>
+      <p className="text-sm text-muted-foreground">We sent a reset link to <strong>{email}</strong></p>
       <Button variant="outline" onClick={onBack} className="w-full">Back to login</Button>
     </div>
   );
@@ -28,13 +28,13 @@ export default function ForgotPasswordForm({ onBack }: { onBack?: () => void }) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Reset password</h2>
-        <p className="text-sm text-gray-500 mt-1">Enter your email and we'll send a reset link.</p>
+        <h2 className="text-xl font-bold text-text">Reset password</h2>
+        <p className="text-sm text-muted-foreground mt-1">Enter your email and we'll send a reset link.</p>
       </div>
       <Alert type="info">Password reset links expire after 1 hour.</Alert>
       <Input label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" />
       <Button type="submit" loading={loading} className="w-full">Send reset link</Button>
-      {onBack && <button type="button" onClick={onBack} className="w-full text-sm text-gray-500 hover:text-gray-700">← Back to login</button>}
+      {onBack && <button type="button" onClick={onBack} className="w-full text-sm text-muted-foreground hover:text-text">← Back to login</button>}
     </form>
   );
 }

@@ -4,7 +4,6 @@ import { DashboardState, UserRole, WidgetConfig } from '../types/dashboard.types
 interface DashboardContextType extends DashboardState {
   toggleSidebar: () => void;
   toggleSidebarCollapse: () => void;
-  toggleTheme: () => void;
   setRole: (role: UserRole) => void;
   setSearchQuery: (query: string) => void;
   updateWidgets: (widgets: WidgetConfig[]) => void;
@@ -42,7 +41,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return {
       isSidebarOpen: window.innerWidth >= 1024,
       isSidebarCollapsed: false,
-      theme: 'light',
       role: 'learner',
       widgets: DEFAULT_WIDGETS,
       searchQuery: '',
@@ -53,18 +51,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       isSidebarCollapsed: state.isSidebarCollapsed,
-      theme: state.theme,
       role: state.role,
       widgets: state.widgets,
     }));
-    
-    // Apply theme
-    if (state.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [state.theme, state.role, state.isSidebarCollapsed, state.widgets]);
+  }, [state.role, state.isSidebarCollapsed, state.widgets]);
 
   const toggleSidebar = useCallback(() => {
     setState((prev) => ({ ...prev, isSidebarOpen: !prev.isSidebarOpen }));
@@ -72,10 +62,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const toggleSidebarCollapse = useCallback(() => {
     setState((prev) => ({ ...prev, isSidebarCollapsed: !prev.isSidebarCollapsed }));
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setState((prev) => ({ ...prev, theme: prev.theme === 'light' ? 'dark' : 'light' }));
   }, []);
 
   const setRole = useCallback((role: UserRole) => {
@@ -107,7 +93,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ...state,
     toggleSidebar,
     toggleSidebarCollapse,
-    toggleTheme,
     setRole,
     setSearchQuery,
     updateWidgets,
@@ -117,7 +102,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     state,
     toggleSidebar,
     toggleSidebarCollapse,
-    toggleTheme,
     setRole,
     setSearchQuery,
     updateWidgets,

@@ -22,22 +22,26 @@ export default function PaymentModal({ isOpen, onClose, mentor, sessionDuration,
   const [asset, setAsset] = useState<AssetType>('XLM');
   const [step, setStep] = useState<Step>('review');
   const [txHash, setTxHash] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const sessionPrice = (mentor.hourlyRate * sessionDuration) / 60;
   const platformFee = sessionPrice * PLATFORM_FEE;
   const total = sessionPrice + platformFee;
 
   const handlePay = async () => {
+    if (isSubmitting || step === 'processing') return;
+    setIsSubmitting(true);
     setStep('processing');
     // Simulate Stellar transaction
     await new Promise(r => setTimeout(r, 2500));
     const mockHash = 'TX' + Math.random().toString(36).substring(2, 18).toUpperCase();
     setTxHash(mockHash);
+    setIsSubmitting(false);
     setStep('success');
     onSuccess?.(mockHash);
   };
 
-  const handleClose = () => { setStep('review'); onClose(); };
+  const handleClose = () => { setStep('review'); setIsSubmitting(false); onClose(); };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={step === 'review' ? 'Confirm Payment' : undefined} size="md">
@@ -89,7 +93,9 @@ export default function PaymentModal({ isOpen, onClose, mentor, sessionDuration,
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
-            <Button onClick={handlePay} className="flex-1">Pay {total.toFixed(2)} {asset}</Button>
+            <Button onClick={handlePay} disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? 'Processing…' : `Pay ${total.toFixed(2)} ${asset}`}
+            </Button>
           </div>
         </div>
       )}

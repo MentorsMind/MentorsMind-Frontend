@@ -1,8 +1,10 @@
+import { ReactNode } from 'react';
+
 interface MetricCardProps {
   title: string;
   value: string | number;
   change?: number; // percentage
-  icon?: string;
+  icon?: ReactNode;
   prefix?: string;
   suffix?: string;
 }

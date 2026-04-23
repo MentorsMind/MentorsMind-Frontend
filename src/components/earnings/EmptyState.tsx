@@ -4,7 +4,7 @@ export default function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center text-center py-20 px-4">
       {/* Wallet icon */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-full border border-gray-100 shadow-sm text-gray-400">
+      <div className="mb-6 p-4 bg-surface rounded-full border border-border shadow-sm text-muted-foreground">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-10 h-10"
@@ -27,11 +27,11 @@ export default function EmptyState() {
         </svg>
       </div>
 
-      <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">
+      <h3 className="text-2xl font-black text-text mb-3 tracking-tight">
         No earnings yet
       </h3>
 
-      <p className="text-gray-500 font-medium max-w-md mb-8 leading-relaxed">
+      <p className="text-muted-foreground font-medium max-w-md mb-8 leading-relaxed">
         Payouts are processed via Stellar after each session is completed and confirmed.
         Complete your first session to start earning.
       </p>

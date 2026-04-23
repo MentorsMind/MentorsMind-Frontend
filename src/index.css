@@ -1,5 +1,40 @@
 @import "tailwindcss";
 
+/* ── Theme token definitions ── */
+:root {
+  --color-background:             #ffffff;
+  --color-surface:                #f9fafb;
+  --color-border:                 #e5e7eb;
+  --color-primary:                #5B3FFF;
+  --color-primary-foreground:     #ffffff;
+  --color-secondary:              #f3f4f6;
+  --color-secondary-foreground:   #111827;
+  --color-muted:                  #f3f4f6;
+  --color-muted-foreground:       #6b7280;
+  --color-accent:                 #ede9fe;
+  --color-accent-foreground:      #4c1d95;
+  --color-destructive:            #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-text:                   #111827;
+}
+
+.dark {
+  --color-background:             #0f172a;
+  --color-surface:                #1e293b;
+  --color-border:                 #334155;
+  --color-primary:                #7B61FF;
+  --color-primary-foreground:     #ffffff;
+  --color-secondary:              #1e293b;
+  --color-secondary-foreground:   #f1f5f9;
+  --color-muted:                  #1e293b;
+  --color-muted-foreground:       #94a3b8;
+  --color-accent:                 #312e81;
+  --color-accent-foreground:      #c7d2fe;
+  --color-destructive:            #f87171;
+  --color-destructive-foreground: #0f172a;
+  --color-text:                   #f1f5f9;
+}
+
 @theme {
   --color-primary-50: #f0f9ff;
   --color-primary-100: #e0f2fe;
@@ -17,11 +52,40 @@
   --color-stellar-dark: #3B1FDF;
 
   --font-sans: "Inter", "system-ui", "sans-serif";
+
+  /* ── Token-mapped utility colors ── */
+  --color-background:             var(--color-background);
+  --color-surface:                var(--color-surface);
+  --color-border:                 var(--color-border);
+  --color-primary-DEFAULT:        var(--color-primary);
+  --color-primary-foreground:     var(--color-primary-foreground);
+  --color-secondary-DEFAULT:      var(--color-secondary);
+  --color-secondary-foreground:   var(--color-secondary-foreground);
+  --color-muted-DEFAULT:          var(--color-muted);
+  --color-muted-foreground:       var(--color-muted-foreground);
+  --color-accent-DEFAULT:         var(--color-accent);
+  --color-accent-foreground:      var(--color-accent-foreground);
+  --color-destructive-DEFAULT:    var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-text:                   var(--color-text);
 }
 
 @layer base {
   @reference "tailwindcss";
   body {
     @apply min-h-screen bg-gray-50 text-gray-900 antialiased;
+  }
+
+  /* ── Global theme transition ── */
+  *, *::before, *::after {
+    transition-property: background-color, color, border-color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0ms;
+    }
   }
 }

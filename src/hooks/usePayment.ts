@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useWallet } from './useWallet';
-import PaymentService, { type PaymentRequest } from '../services/payment.service';
+import { createPayment, pollPaymentStatus, type PaymentRequest } from '../services/payment.service';
 import { STELLAR_CONFIG, getAsset } from '../config/stellar.config';
 import type { 
   PaymentDetails, 
@@ -18,6 +18,7 @@ export const usePayment = (details: PaymentDetails) => {
   const [state, setState] = useState<PaymentState>({
     step: wallet ? 'method' : 'connect',
     selectedAsset: 'XLM',
+    isSubmitting: false,
   });
 
   const assets = useMemo((): StellarAsset[] => {
@@ -76,6 +77,9 @@ export const usePayment = (details: PaymentDetails) => {
   }, [connectWalletHook]);
 
   const processPayment = useCallback(async () => {
+    // Guard against double-submission
+    if (state.isSubmitting || state.step === 'processing') return;
+
     if (!selectedAssetData) {
       setState(prev => ({ 
         ...prev, 
@@ -109,7 +113,7 @@ export const usePayment = (details: PaymentDetails) => {
       }
     }
 
-    setState(prev => ({ ...prev, step: 'processing', error: undefined }));
+    setState(prev => ({ ...prev, step: 'processing', isSubmitting: true, error: undefined }));
 
     try {
       // Send payment to escrow account (this would be the platform's escrow account)
@@ -123,7 +127,6 @@ export const usePayment = (details: PaymentDetails) => {
       );
 
       // Create payment record on backend
-      const paymentService = new PaymentService();
       const paymentRequest: PaymentRequest = {
         sessionId: details.sessionId,
         mentorId: details.mentorId,
@@ -132,10 +135,10 @@ export const usePayment = (details: PaymentDetails) => {
         transactionHash: transaction.hash,
       };
 
-      const paymentResponse = await paymentService.createPayment(paymentRequest);
+      const paymentResponse = await createPayment(paymentRequest);
 
       // Poll for payment confirmation
-      const finalStatus = await paymentService.pollPaymentStatus(
+      const finalStatus = await pollPaymentStatus(
         paymentResponse.paymentId,
         (status) => {
           if (status.status === 'failed') {
@@ -152,12 +155,14 @@ export const usePayment = (details: PaymentDetails) => {
         setState(prev => ({ 
           ...prev, 
           step: 'success', 
+          isSubmitting: false,
           transactionHash: finalStatus.transactionHash 
         }));
       } else {
         setState(prev => ({ 
           ...prev, 
           step: 'error', 
+          isSubmitting: false,
           error: 'Payment confirmation timeout.' 
         }));
       }
@@ -167,19 +172,21 @@ export const usePayment = (details: PaymentDetails) => {
       setState(prev => ({ 
         ...prev, 
         step: 'error', 
+        isSubmitting: false,
         error: error instanceof Error ? error.message : 'Payment failed.' 
       }));
     }
-  }, [breakdown.totalAmount, selectedAssetData, state.selectedAsset, wallet, connectWallet, sendPayment, details]);
+  }, [breakdown.totalAmount, selectedAssetData, state.selectedAsset, state.isSubmitting, state.step, wallet, connectWallet, sendPayment, details]);
 
   const retry = useCallback(() => {
-    setState(prev => ({ ...prev, step: 'review', error: undefined }));
+    setState(prev => ({ ...prev, step: 'review', isSubmitting: false, error: undefined }));
   }, []);
 
   const reset = useCallback(() => {
     setState({
       step: 'method',
       selectedAsset: 'XLM',
+      isSubmitting: false,
     });
   }, []);
 
