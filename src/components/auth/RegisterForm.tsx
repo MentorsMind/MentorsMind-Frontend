@@ -6,7 +6,12 @@ import Button from '../ui/Button';
 import Alert from '../ui/Alert';
 import OAuthButtons from './OAuthButtons';
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  onSuccess?: () => void;
+  onLogin?: () => void;
+}
+
+export default function RegisterForm({ onSuccess, onLogin }: RegisterFormProps) {
   const { register, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
@@ -25,7 +30,11 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       await register(form.firstName, form.lastName, form.email, form.password, form.role);
-      navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
+      }
     } catch {
       // Error is already set in context, just handle navigation
     } finally {
@@ -70,9 +79,15 @@ export default function RegisterForm() {
           <Button type="submit" loading={loading} className="w-full">Create Account</Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+          <button
+            type="button"
+            onClick={onLogin}
+            className="text-primary font-medium hover:underline"
+          >
+            Sign in
+          </button>
         </p>
       </div>
     </div>

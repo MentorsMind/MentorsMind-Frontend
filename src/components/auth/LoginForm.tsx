@@ -9,7 +9,13 @@ import Button from '../ui/Button';
 import Alert from '../ui/Alert';
 import OAuthButtons from './OAuthButtons';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onSuccess?: () => void;
+  onForgotPassword?: () => void;
+  onRegister?: () => void;
+}
+
+export default function LoginForm({ onSuccess, onForgotPassword, onRegister }: LoginFormProps) {
   const { login, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const { isSupported, checkingSupport, authenticate, status: passkeyStatus, error: passkeyError, clearError: clearPasskeyError } = usePasskey();
@@ -31,6 +37,8 @@ export default function LoginForm() {
       const { mfaRequired } = await login(email, password);
       if (mfaRequired) {
         navigate('/auth/mfa-challenge');
+      } else if (onSuccess) {
+        onSuccess();
       } else {
         navigate('/learner/dashboard');
       }
@@ -122,9 +130,15 @@ export default function LoginForm() {
           />
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">
-              Forgot password?
-            </Link>
+            {onForgotPassword ? (
+              <button type="button" onClick={onForgotPassword} className="text-sm text-indigo-600 hover:underline">
+                Forgot password?
+              </button>
+            ) : (
+              <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+                Forgot password?
+              </Link>
+            )}
           </div>
 
           <Button type="submit" loading={loading} className="w-full">
@@ -134,9 +148,15 @@ export default function LoginForm() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don't have an account?{' '}
-          <Link to="/register" className="text-indigo-600 font-medium hover:underline">
-            Sign up
-          </Link>
+          {onRegister ? (
+            <button type="button" onClick={onRegister} className="text-indigo-600 font-medium hover:underline">
+              Sign up
+            </button>
+          ) : (
+            <Link to="/register" className="text-indigo-600 font-medium hover:underline">
+              Sign up
+            </Link>
+          )}
         </p>
       </div>
     </div>

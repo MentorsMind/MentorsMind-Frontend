@@ -19,6 +19,8 @@ interface AuthContextType {
   completeMFAChallenge: (totp: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => Promise<void>;
   logout: () => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
   clearError: () => void;
   /** Refresh the stored user object (e.g. after enabling/disabling MFA) */
   refreshUser: () => Promise<void>;
@@ -121,6 +123,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setError(null);
   };
+  
+  const verifyEmail = async (token: string) => {
+    setError(null);
+    try {
+      await authService.verifyEmail(token);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Email verification failed.';
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
+  const resendVerification = async () => {
+    setError(null);
+    try {
+      await authService.resendVerification();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to resend verification email.';
+      setError(errorMessage);
+      throw err;
+    }
+  };
 
   const clearError = () => {
     setError(null);
@@ -144,6 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeMFAChallenge, 
       register, 
       logout, 
+      verifyEmail,
+      resendVerification,
       clearError, 
       refreshUser 
     }}>
