@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { tokenStorage } from '../../utils/token.storage.utils';
 
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
@@ -46,8 +47,7 @@ export default function OAuthCallback() {
 
           // Store session
           localStorage.setItem('mm_user', JSON.stringify(parsedUser));
-          localStorage.setItem('mm_token', token);
-          localStorage.setItem('mm_refresh_token', refreshToken);
+          tokenStorage.setTokens(token, refreshToken);
 
           // Redirect based on role
           const redirectPath =

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
 import * as authService from '../services/auth.service';
 import { TOKEN_KEY, REFRESH_TOKEN } from '../config/app.config';
+import { tokenStorage } from '../utils/token.storage.utils';
 
 export interface MFAPendingState {
   mfa_token: string;
@@ -30,14 +31,12 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 function persistSession(user: User, token: string, refreshToken: string) {
   localStorage.setItem('mm_user', JSON.stringify(user));
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(REFRESH_TOKEN, refreshToken);
+  tokenStorage.setTokens(token, refreshToken);
 }
 
 function clearSession() {
   localStorage.removeItem('mm_user');
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN);
+  tokenStorage.clearTokens();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -53,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const restoreSession = async () => {
       try {
         const stored = localStorage.getItem('mm_user');
-        const token = localStorage.getItem(TOKEN_KEY);
+        const token = tokenStorage.getAccessToken();
         if (stored && token) {
           // Optimistically restore user from storage while we verify with backend
           setUser(JSON.parse(stored));

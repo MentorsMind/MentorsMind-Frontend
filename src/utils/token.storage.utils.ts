@@ -14,7 +14,7 @@ export const tokenStorage = {
   hasTokens() {
     return !!this.getAccessToken() && !!this.getRefreshToken();
   },
-  cleaTokens() {
+  clearTokens() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN);
   },

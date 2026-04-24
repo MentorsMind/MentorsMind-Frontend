@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
+import { tokenStorage } from '../../utils/token.storage.utils';
 
 interface ConnectedAccount {
   provider: 'google' | 'github';
@@ -51,7 +52,7 @@ export default function ConnectedAccounts() {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('mm_token')}`,
+            Authorization: `Bearer ${tokenStorage.getAccessToken()}`,
           },
         }
       );

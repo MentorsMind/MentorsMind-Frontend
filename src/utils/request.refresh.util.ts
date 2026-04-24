@@ -24,7 +24,7 @@ const flushQueue = (err: unknown, token: string | null = null) => {
 };
 
 const clearAndLogout = () => {
-  tokenStorage.cleaTokens();
+  tokenStorage.clearTokens();
   triggerGlobalLogout();
 };
 

@@ -82,22 +82,19 @@ api.interceptors.request.use((config) => {
 
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     if (config.method !== "get") {
-      requestQueue.push({
-        config,
-        resolve: (val: any) => val,
-        reject: (err: any) => err,
+      return new Promise((resolve, reject) => {
+        requestQueue.push({ config, resolve, reject });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("api-network-error", {
+              detail: {
+                message:
+                  "You are offline. Your changes will be saved and synced once you reconnect.",
+              },
+            }),
+          );
+        }
       });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("api-network-error", {
-            detail: {
-              message:
-                "You are offline. Your changes will be saved and synced once you reconnect.",
-            },
-          }),
-        );
-      }
-      return Promise.reject(new Error("OFFLINE"));
     }
   }
   startSlowTimer();
