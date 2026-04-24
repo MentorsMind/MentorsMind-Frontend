@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 // Types for filter state
 export type AvailabilityFilter = "all" | "today" | "this_week";
 
-export type SortOption = "rating" | "price_low" | "price_high" | "newest";
+export type SortOption = "rating" | "price_low" | "price_high" | "newest" | "closest_timezone";
 
 export type ViewMode = "grid" | "list";
 
@@ -18,6 +18,9 @@ export interface SearchFiltersState {
   availabilityDays: string[];
   languages: string[];
   timezone?: string;
+  timezoneRegions: string[];
+  similarToMine: boolean;
+  availableNow: boolean;
   verifiedOnly: boolean;
   sortBy: SortOption;
 }
@@ -73,6 +76,9 @@ const DEFAULT_FILTERS: SearchFiltersState = {
   availabilityDays: [],
   languages: [],
   timezone: undefined,
+  timezoneRegions: [],
+  similarToMine: false,
+  availableNow: false,
   verifiedOnly: false,
   sortBy: "rating",
 };
@@ -91,6 +97,9 @@ const FILTER_TO_URL_PARAMS: Record<keyof SearchFiltersState, string> = {
   availabilityDays: "days",
   languages: "languages",
   timezone: "timezone",
+  timezoneRegions: "tz_regions",
+  similarToMine: "similar_tz",
+  availableNow: "available_now",
   verifiedOnly: "verified",
   sortBy: "sort",
 };
@@ -148,6 +157,18 @@ export const useSearchFilters = () => {
     const timezone = searchParams.get(FILTER_TO_URL_PARAMS.timezone);
     if (timezone) filters.timezone = timezone;
 
+    // Parse timezone regions
+    const tzRegions = searchParams.get(FILTER_TO_URL_PARAMS.timezoneRegions);
+    if (tzRegions) filters.timezoneRegions = tzRegions.split(",").filter(Boolean);
+
+    // Parse similar to mine
+    const similarTz = searchParams.get(FILTER_TO_URL_PARAMS.similarToMine);
+    if (similarTz === "true") filters.similarToMine = true;
+
+    // Parse available now
+    const availableNow = searchParams.get(FILTER_TO_URL_PARAMS.availableNow);
+    if (availableNow === "true") filters.availableNow = true;
+
     // Parse verified only
     const verified = searchParams.get(FILTER_TO_URL_PARAMS.verifiedOnly);
     if (verified === "true") filters.verifiedOnly = true;
@@ -156,7 +177,7 @@ export const useSearchFilters = () => {
     const sort = searchParams.get(FILTER_TO_URL_PARAMS.sortBy);
     if (
       sort &&
-      ["rating", "price_low", "price_high", "newest"].includes(sort)
+      ["rating", "price_low", "price_high", "newest", "closest_timezone"].includes(sort)
     ) {
       filters.sortBy = sort as SortOption;
     }
@@ -191,6 +212,12 @@ export const useSearchFilters = () => {
       params.set(FILTER_TO_URL_PARAMS.languages, filters.languages.join(","));
     if (filters.timezone)
       params.set(FILTER_TO_URL_PARAMS.timezone, filters.timezone);
+    if (filters.timezoneRegions.length > 0)
+      params.set(FILTER_TO_URL_PARAMS.timezoneRegions, filters.timezoneRegions.join(","));
+    if (filters.similarToMine)
+      params.set(FILTER_TO_URL_PARAMS.similarToMine, "true");
+    if (filters.availableNow)
+      params.set(FILTER_TO_URL_PARAMS.availableNow, "true");
     if (filters.verifiedOnly)
       params.set(FILTER_TO_URL_PARAMS.verifiedOnly, "true");
     if (filters.sortBy !== "rating")
@@ -243,6 +270,9 @@ export const useSearchFilters = () => {
     if (filters.availabilityDays.length > 0) count++;
     if (filters.languages.length > 0) count++;
     if (filters.timezone) count++;
+    if (filters.timezoneRegions.length > 0) count++;
+    if (filters.similarToMine) count++;
+    if (filters.availableNow) count++;
     if (filters.verifiedOnly) count++;
     return count;
   }, [filters]);
@@ -271,6 +301,10 @@ export const useSearchFilters = () => {
     if (filters.languages.length > 0)
       params.set("languages", filters.languages.join(","));
     if (filters.timezone) params.set("timezone", filters.timezone);
+    if (filters.timezoneRegions.length > 0)
+      params.set("tz_regions", filters.timezoneRegions.join(","));
+    if (filters.similarToMine) params.set("similar_tz", "true");
+    if (filters.availableNow) params.set("available_now", "true");
     if (filters.verifiedOnly) params.set("verified", "true");
     if (filters.sortBy !== "rating") params.set("sort", filters.sortBy);
 
