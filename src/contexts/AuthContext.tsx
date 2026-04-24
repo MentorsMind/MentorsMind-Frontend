@@ -25,6 +25,8 @@ interface AuthContextType {
   clearError: () => void;
   /** Refresh the stored user object (e.g. after enabling/disabling MFA) */
   refreshUser: () => Promise<void>;
+  /** Patch the stored user object locally (e.g. after avatar upload) */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -155,6 +157,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mm_user', JSON.stringify(freshUser));
   };
 
+  const updateUser = (patch: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      localStorage.setItem('mm_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -170,7 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verifyEmail,
       resendVerification,
       clearError, 
-      refreshUser 
+      refreshUser,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>
