@@ -1,15 +1,29 @@
 import { useState, useMemo } from 'react';
 import type { Review, RatingStats } from '../types';
 
+export interface ExtendedReview extends Review {
+  reviewerName?: string;
+  date: string;
+  isVerified?: boolean;
+  isFlagged?: boolean;
+  mentorResponse?: {
+    text: string;
+    date: string;
+  };
+}
+
 // Mock data generator
-const generateMockReviews = (): Review[] => [
+const generateMockReviews = (): ExtendedReview[] => [
   {
     id: '1',
+    sessionId: 's1',
+    learnerId: 'u1',
     mentorId: 'm1',
     reviewerId: 'u1',
     reviewerName: 'Alex Johnson',
     rating: 5,
     comment: 'Exceptional guidance on blockchain architecture. Very clear explanation of Stellar smart contracts.',
+    createdAt: '2025-10-15T00:00:00Z',
     date: '2025-10-15',
     helpfulCount: 12,
     isVerified: true,
@@ -20,11 +34,14 @@ const generateMockReviews = (): Review[] => [
   },
   {
     id: '2',
+    sessionId: 's2',
+    learnerId: 'u2',
     mentorId: 'm1',
     reviewerId: 'u2',
     reviewerName: 'Sarah Smith',
     rating: 4,
     comment: 'Solid session, helped me debug my wallet integration. A bit fast-paced but very knowledgeable.',
+    createdAt: '2025-11-02T00:00:00Z',
     date: '2025-11-02',
     helpfulCount: 5,
     isVerified: true,
@@ -32,11 +49,14 @@ const generateMockReviews = (): Review[] => [
   },
   {
     id: '3',
+    sessionId: 's3',
+    learnerId: 'u3',
     mentorId: 'm1',
     reviewerId: 'u3',
     reviewerName: 'John Doe',
     rating: 3,
     comment: 'Good overall but I expected more hands-on practice. The theory part was too long.',
+    createdAt: '2025-11-20T00:00:00Z',
     date: '2025-11-20',
     helpfulCount: 2,
     isVerified: false,
@@ -44,7 +64,7 @@ const generateMockReviews = (): Review[] => [
 ];
 
 export const useReviews = (mentorId: string) => {
-  const [reviews, setReviews] = useState<Review[]>(generateMockReviews());
+  const [reviews, setReviews] = useState<ExtendedReview[]>(generateMockReviews());
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const REVIEWS_PER_PAGE = 5;
@@ -77,14 +97,15 @@ export const useReviews = (mentorId: string) => {
     };
   }, [reviews]);
 
-  const addReview = async (reviewData: Omit<Review, 'id' | 'date' | 'helpfulCount' | 'mentorId'>) => {
+  const addReview = async (reviewData: Omit<ExtendedReview, 'id' | 'date' | 'helpfulCount' | 'mentorId' | 'createdAt'>) => {
     const prevReviews = [...reviews];
-    const review: Review = {
+    const review: ExtendedReview = {
       ...reviewData,
       mentorId,
       reviewerId: reviewData.reviewerId || 'anon-' + Math.random().toString(36).substr(2, 5),
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
       helpfulCount: 0,
     };
 
@@ -110,7 +131,7 @@ export const useReviews = (mentorId: string) => {
 
   const voteHelpful = (reviewId: string) => {
     setReviews(prev => prev.map(r => 
-      r.id === reviewId ? { ...r, helpfulCount: r.helpfulCount + 1 } : r
+      r.id === reviewId ? { ...r, helpfulCount: (r.helpfulCount || 0) + 1 } : r
     ));
   };
 

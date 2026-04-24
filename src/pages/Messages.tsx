@@ -20,6 +20,7 @@ const Messages: React.FC = () => {
     sendMessage,
     searchMessages,
     clearSearch,
+    createConversation,
   } = useMessages();
 
   const [isLoading, setIsLoading] = useState(true);

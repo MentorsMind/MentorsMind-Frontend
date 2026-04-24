@@ -99,8 +99,8 @@ export interface EscrowDisputeRequest {
 
 // ── Payment History & Transaction Types ──────────────────────────────────────
 
-export type PaymentType = 'deposit' | 'payment' | 'refund';
-export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
+export type PaymentType = 'deposit' | 'payment' | 'refund' | 'session' | 'subscription' | 'fee';
+export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded' | 'processing';
 
 export interface PaymentTransaction {
   id: string;
@@ -115,6 +115,8 @@ export interface PaymentTransaction {
   description: string;
   sessionId: string;
   sessionTopic: string;
+  transactionType?: PaymentType;
+  memo?: string;
   // Fee breakdown
   grossAmount?: number;
   platformFee?: number;

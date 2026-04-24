@@ -1,42 +1,44 @@
 import { useState, useEffect, useMemo } from 'react';
 import MentorCard from '../components/mentor/MentorCard';
-import { TimeZoneFilter } from '../components/mentor/filters/TimeZoneFilter';
-import { MentorMapView } from '../components/mentor/MentorMapView';
-import PaymentModal from '../components/payment/PaymentModal';
+import BookingModal from '../components/learner/BookingModal';
+import MentorFilterSidebar, { type MentorFilters } from '../components/search/MentorFilterSidebar';
+import MentorCardSkeleton from '../components/search/MentorCardSkeleton';
 import Input from '../components/ui/Input';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
 import { useMinimumLoading } from '../hooks/useMinimumLoading';
 import { timezoneService } from '../services/timezone.service';
 import { isMentorAvailableNow, parseTimezoneOffset } from '../utils/timezone.utils';
 import type { Mentor } from '../types';
-import type { TimezoneProximityFilter } from '../types/timezone.types';
+import { searchMentors, type MentorSearchParams } from '../services/mentor.service';
 
-// Mock data
-const MOCK_MENTORS: Mentor[] = [
-  { id: '1', email: 'alice@example.com', name: 'Alice Chen', role: 'mentor', bio: 'Senior Rust & Blockchain engineer with 8 years experience. Soroban smart contract specialist.', skills: ['Rust', 'Soroban', 'Stellar', 'WebAssembly'], hourlyRate: 120, currency: 'USDC', rating: 4.9, reviewCount: 87, sessionCount: 312, isVerified: true, timezone: 'America/Los_Angeles', languages: ['English', 'Mandarin'], createdAt: '' },
-  { id: '2', email: 'bob@example.com', name: 'Bob Martinez', role: 'mentor', bio: 'Full-stack developer specializing in React, TypeScript, and Node.js. 6 years building production apps.', skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'], hourlyRate: 90, currency: 'XLM', rating: 4.7, reviewCount: 54, sessionCount: 198, isVerified: true, timezone: 'America/New_York', languages: ['English', 'Spanish'], createdAt: '' },
-  { id: '3', email: 'priya@example.com', name: 'Priya Sharma', role: 'mentor', bio: 'Machine learning engineer at a top AI lab. Expert in Python, TensorFlow, and data science.', skills: ['Python', 'TensorFlow', 'ML', 'Data Science'], hourlyRate: 150, currency: 'USDC', rating: 5.0, reviewCount: 32, sessionCount: 145, isVerified: true, timezone: 'Asia/Kolkata', languages: ['English', 'Hindi'], createdAt: '' },
-  { id: '4', email: 'james@example.com', name: 'James Okafor', role: 'mentor', bio: 'DevOps and cloud architect. AWS certified. Kubernetes, Docker, and CI/CD expert.', skills: ['AWS', 'Kubernetes', 'Docker', 'DevOps'], hourlyRate: 110, currency: 'USDC', rating: 4.8, reviewCount: 61, sessionCount: 220, isVerified: false, timezone: 'Europe/Paris', languages: ['English'], createdAt: '' },
-  { id: '5', email: 'yuki@example.com', name: 'Yuki Tanaka', role: 'mentor', bio: 'Smart contract auditor and DeFi protocol developer. 5 years in the Stellar ecosystem.', skills: ['Soroban', 'Rust', 'DeFi', 'Security Auditing'], hourlyRate: 130, currency: 'XLM', rating: 4.6, reviewCount: 28, sessionCount: 89, isVerified: true, timezone: 'Asia/Tokyo', languages: ['English', 'Japanese'], createdAt: '' },
-  { id: '6', email: 'fatima@example.com', name: 'Fatima Al-Hassan', role: 'mentor', bio: 'Cryptography researcher and blockchain security expert. PhD in Computer Science.', skills: ['Cryptography', 'Security Auditing', 'Rust', 'Stellar'], hourlyRate: 140, currency: 'USDC', rating: 4.9, reviewCount: 41, sessionCount: 167, isVerified: true, timezone: 'Africa/Cairo', languages: ['English', 'Arabic'], createdAt: '' },
+const ALL_SKILLS = [
+  'Rust',
+  'React',
+  'TypeScript',
+  'Python',
+  'Soroban',
+  'Stellar',
+  'Node.js',
+  'AWS',
+  'ML',
+  'Docker',
+  'Kubernetes',
+  'PostgreSQL',
+  'TensorFlow',
+  'Data Science',
+  'DevOps',
+  'WebAssembly',
 ];
 
-// Availability slots per mentor (realistic working hours in their timezone)
-const MENTOR_AVAILABILITY: Record<string, { dayOfWeek: number; startHour: number; endHour: number }[]> = {
-  '1': [1,2,3,4,5].map(d => ({ dayOfWeek: d, startHour: 9, endHour: 18 })),
-  '2': [1,2,3,4,5].map(d => ({ dayOfWeek: d, startHour: 10, endHour: 19 })),
-  '3': [1,3,5].map(d => ({ dayOfWeek: d, startHour: 10, endHour: 20 })),
-  '4': [2,4].map(d => ({ dayOfWeek: d, startHour: 14, endHour: 22 })),
-  '5': [1,2,3,4,5].map(d => ({ dayOfWeek: d, startHour: 9, endHour: 17 })),
-  '6': [0,1,2,3,4,5,6].map(d => ({ dayOfWeek: d, startHour: 8, endHour: 20 })),
-};
-
-const ALL_SKILLS = ['Rust', 'React', 'TypeScript', 'Python', 'Soroban', 'Stellar', 'Node.js', 'AWS', 'ML', 'Docker'];
+const ITEMS_PER_PAGE = 12;
 
 export default function MentorSearch() {
-  const [query, setQuery] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [maxPrice, setMaxPrice] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'rating' | 'price' | 'timezone'>('rating');
@@ -54,88 +56,74 @@ export default function MentorSearch() {
 
   const showSkeleton = useMinimumLoading(isLoading, 300);
 
-  const toggleSkill = (s: string) =>
-    setSelectedSkills(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const fetchMentors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: MentorSearchParams = {
+        q: query || undefined,
+        skills: filters.skills.length > 0 ? filters.skills.join(',') : undefined,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : undefined,
+        maxPrice: filters.maxPrice < 500 ? filters.maxPrice : undefined,
+        minRating: filters.minRating > 0 ? filters.minRating : undefined,
+        page,
+        limit: ITEMS_PER_PAGE,
+      };
 
-  const filtered = useMemo(() => {
-    let result = MOCK_MENTORS.filter(m => {
-      const matchQuery = !query || m.name.toLowerCase().includes(query.toLowerCase()) || m.skills.some(s => s.toLowerCase().includes(query.toLowerCase()));
-      const matchSkills = selectedSkills.length === 0 || selectedSkills.every(s => m.skills.includes(s));
-      const matchPrice = !maxPrice || m.hourlyRate <= Number(maxPrice);
-      return matchQuery && matchSkills && matchPrice;
-    });
-
-    // Similar to mine: ±3 hours
-    if (timezoneFilter.similarToMine) {
-      result = timezoneService.getNearbyMentors(result, 3);
+      const result = await searchMentors(params);
+      setMentors(result.mentors);
+      setTotal(result.total);
+    } catch (error) {
+      console.error('Failed to fetch mentors:', error);
+      setMentors([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
     }
+  }, [query, filters, page]);
 
-    // Available now: cross-reference current time against availability slots
-    if (timezoneFilter.availableNow) {
-      result = result.filter(m => {
-        const slots = MENTOR_AVAILABILITY[m.id] ?? [];
-        return isMentorAvailableNow(m.timezone, slots);
-      });
-    }
+  useEffect(() => {
+    fetchMentors();
+  }, [fetchMentors]);
 
-    // Region filter
-    if (timezoneFilter.selectedRegions.length > 0) {
-      result = result.filter(m => {
-        const region = m.timezone.split('/')[0];
-        return timezoneFilter.selectedRegions.some(r => {
-          if (r === 'Americas') return m.timezone.startsWith('America');
-          if (r === 'Europe') return m.timezone.startsWith('Europe');
-          if (r === 'Africa') return m.timezone.startsWith('Africa');
-          if (r === 'Asia/Pacific') return m.timezone.startsWith('Asia') || m.timezone.startsWith('Australia') || m.timezone.startsWith('Pacific');
-          return false;
-        });
-      });
-    }
+  useEffect(() => {
+    // Update URL params when filters change
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (filters.skills.length > 0) params.set('skills', filters.skills.join(','));
+    if (filters.minPrice > 0) params.set('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice < 500) params.set('maxPrice', filters.maxPrice.toString());
+    if (filters.minRating > 0) params.set('minRating', filters.minRating.toString());
+    if (filters.availableOnly) params.set('available', 'true');
+    if (page > 1) params.set('page', page.toString());
+    setSearchParams(params, { replace: true });
+  }, [query, filters, page, setSearchParams]);
 
-    // Specific timezone filter
-    if (timezoneFilter.selectedTimezone) {
-      const targetOffset = parseTimezoneOffset(timezoneFilter.selectedTimezone);
-      result = result.filter(m => Math.abs(parseTimezoneOffset(m.timezone) - targetOffset) < 0.5);
-    }
+  const handleSearch = (value: string) => {
+    setQuery(value);
+    setPage(1);
+  };
 
-    // Sorting
-    if (sortBy === 'timezone') {
-      result = timezoneService.sortByClosestTimezone(result);
-    } else if (sortBy === 'rating') {
-      result = [...result].sort((a, b) => b.rating - a.rating);
-    } else if (sortBy === 'price') {
-      result = [...result].sort((a, b) => a.hourlyRate - b.hourlyRate);
-    }
+  const handleFiltersChange = (newFilters: MentorFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
 
-    return result;
-  }, [query, selectedSkills, maxPrice, timezoneFilter, sortBy]);
-
-  // Compute isAvailableNow per mentor for card display
-  const availabilityMap = useMemo(() =>
-    Object.fromEntries(
-      MOCK_MENTORS.map(m => [m.id, isMentorAvailableNow(m.timezone, MENTOR_AVAILABILITY[m.id] ?? [])])
-    ), []);
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Find a Mentor</h1>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <Input placeholder="Search by name or skill..." value={query} onChange={e => setQuery(e.target.value)} />
+              <Input
+                placeholder="Search by name or skill..."
+                value={query}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
             </div>
-            <Input placeholder="Max price (per hour)" type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="md:w-48" />
-          </div>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {ALL_SKILLS.map(s => (
-              <button key={s} onClick={() => toggleSkill(s)}
-                className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors
-                  ${selectedSkills.includes(s) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'}`}>
-                {s}
-              </button>
-            ))}
           </div>
         </div>
       </div>
@@ -220,7 +208,11 @@ export default function MentorSearch() {
       </div>
 
       {bookingMentor && (
-        <PaymentModal isOpen={!!bookingMentor} onClose={() => setBookingMentor(null)} mentor={bookingMentor} sessionDuration={60} />
+        <BookingModal
+          isOpen={!!bookingMentor}
+          onClose={() => setBookingMentor(null)}
+          mentor={bookingMentor as any}
+        />
       )}
     </div>
   );

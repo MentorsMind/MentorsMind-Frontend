@@ -41,14 +41,24 @@ export async function getBooking(id: string): Promise<Session> {
   return data.data;
 }
 
-export async function listBookings(): Promise<Session[]> {
-  const { data } = await api.get('/bookings');
+export async function listBookings(params?: ListBookingsParams): Promise<Session[]> {
+  const { data } = await api.get('/bookings', { params });
+  return data.data;
+}
+
+export async function listBookingsPaged(params?: ListBookingsParams): Promise<BookingsPage> {
+  const { data } = await api.get('/bookings', { params: { ...params, limit: params?.limit ?? 10 } });
   return data.data;
 }
 
 export async function cancelBooking(id: string): Promise<Session> {
   const { data } = await api.delete(`/bookings/${id}`);
   return data.data;
+}
+
+export async function regenerateMeetingLink(id: string): Promise<Session> {
+  const { data } = await api.post(`/bookings/${id}/meeting-link/regenerate`);
+  return data.data ?? data;
 }
 
 export async function completeBooking(id: string): Promise<Session> {

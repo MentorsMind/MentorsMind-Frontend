@@ -43,18 +43,13 @@ const parseTime = (time: string) => {
   return { hour, minute };
 };
 
-const toIso = (date: Date) => {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-};
-
-const formatSlotLabel = (start: Date, end: Date) => {
-  return `${start.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  })} - ${end.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  })}`;
+const formatSlotLabel = (localStart: Date, localEnd: Date, mentorTz: string) => {
+  const localLabel = `${localStart.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} – ${localEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+  const mentorStart = toZonedTime(localStart, mentorTz);
+  const mentorTimeStr = mentorStart.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const viewerTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (viewerTz === mentorTz) return localLabel;
+  return `${localLabel} (${mentorTimeStr} ${mentorTz})`;
 };
 
 const createCalendarInvite = (booking: Omit<BookingConfirmationDetails, 'calendarInvite' | 'learnerCalendarEvent'>) => {
@@ -85,48 +80,53 @@ const createCalendarInvite = (booking: Omit<BookingConfirmationDetails, 'calenda
 
 const buildAvailabilitySlots = (mentor: MentorProfile, duration: number) => {
   const slots: AvailabilitySlot[] = [];
+  const mentorTz = mentor.availability.timezone;
   const now = new Date();
 
   for (let offset = 0; offset < 14; offset += 1) {
-    const day = new Date(now);
-    day.setDate(now.getDate() + offset);
-    day.setHours(0, 0, 0, 0);
+    // Build the candidate date in the mentor's timezone
+    const mentorNow = toZonedTime(now, mentorTz);
+    const mentorDay = new Date(mentorNow);
+    mentorDay.setDate(mentorNow.getDate() + offset);
+    mentorDay.setHours(0, 0, 0, 0);
 
-    const dayName = day.toLocaleDateString('en-US', { weekday: 'long' });
-    if (!mentor.availability.days.includes(dayName)) {
-      continue;
-    }
+    const dayName = mentorDay.toLocaleDateString('en-US', { weekday: 'long' });
+    if (!mentor.availability.days.includes(dayName)) continue;
 
     mentor.availability.timeSlots.forEach((range, rangeIndex) => {
       const [startText, endText] = range.split('-');
-      const startTime = parseTime(startText);
-      const endTime = parseTime(endText);
+      const startTime = parseTime(startText.trim());
+      const endTime = parseTime(endText.trim());
 
       const startMinutes = startTime.hour * 60 + startTime.minute;
       const endMinutes = endTime.hour * 60 + endTime.minute;
 
       for (let minute = startMinutes; minute + duration <= endMinutes; minute += 60) {
-        const start = new Date(day);
-        start.setHours(Math.floor(minute / 60), minute % 60, 0, 0);
-        if (start <= now) {
-          continue;
-        }
+        // Construct the slot start in mentor's timezone, then convert to UTC
+        const mentorSlotStart = new Date(mentorDay);
+        mentorSlotStart.setHours(Math.floor(minute / 60), minute % 60, 0, 0);
+        const utcStart = fromZonedTime(mentorSlotStart, mentorTz);
 
-        const end = new Date(start);
-        end.setMinutes(end.getMinutes() + duration);
+        if (utcStart <= now) continue;
+
+        const utcEnd = new Date(utcStart.getTime() + duration * 60_000);
+
+        // Convert to viewer's local time for display
+        const localStart = new Date(utcStart);
+        const localEnd = new Date(utcEnd);
 
         slots.push({
           id: `${mentor.id}-${offset}-${rangeIndex}-${minute}-${duration}`,
-          start: toIso(start),
-          end: toIso(end),
-          label: formatSlotLabel(start, end),
-          dateLabel: start.toLocaleDateString('en-US', {
+          start: utcStart.toISOString(),
+          end: utcEnd.toISOString(),
+          label: formatSlotLabel(localStart, localEnd, mentorTz),
+          dateLabel: localStart.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
           }),
-          dateKey: toIso(start).split('T')[0],
-          timezone: mentor.availability.timezone,
+          dateKey: `${localStart.getFullYear()}-${pad(localStart.getMonth() + 1)}-${pad(localStart.getDate())}`,
+          timezone: mentorTz,
         });
       }
     });

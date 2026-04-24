@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
+import OAuthButtons from './OAuthButtons';
 
 export default function RegisterForm() {
   const { register, error: authError, clearError } = useAuth();
@@ -43,6 +44,9 @@ export default function RegisterForm() {
 
         {error && <Alert type="error" className="mb-4">{error}</Alert>}
         {authError && <Alert type="error" className="mb-4">{authError}</Alert>}
+
+        {/* OAuth Buttons */}
+        <OAuthButtons mode="register" disabled={loading} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input label="First Name" value={form.firstName} onChange={set('firstName')} placeholder="Jane" required />

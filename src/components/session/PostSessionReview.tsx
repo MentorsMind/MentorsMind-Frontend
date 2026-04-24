@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Star, CheckCircle } from 'lucide-react';
-import type { SessionHistoryItem } from '../../types';
+import type { SessionHistoryItem } from '../../types/session.types';
 import { SkillTagSelector } from '../mentor/SkillTagSelector';
 import FocusTrap from '../a11y/FocusTrap';
 import LiveRegion from '../a11y/LiveRegion';
