@@ -45,6 +45,7 @@ export interface PaymentDetails {
   sessionId?: string;
   sessionTopic: string;
   amount: number; // Base amount in USD or equivalent
+  escrowContractId?: string; // Per-session escrow contract address; falls back to STELLAR_CONFIG.contractId
 }
 
 // ── Escrow Types ─────────────────────────────────────────────────────────────
