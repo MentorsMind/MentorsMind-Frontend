@@ -10,10 +10,10 @@ import {
   Loader2,
   MessageSquareText,
   RefreshCw,
-  UserRound,
   XCircle,
 } from 'lucide-react';
 import { Alert, Badge, Button, Card, Modal, Spinner } from '../components/ui';
+import UserAvatar from '../components/ui/UserAvatar';
 import PostSessionReview from '../components/session/PostSessionReview';
 import api from '../services/api.client';
 import {
@@ -77,17 +77,12 @@ function ParticipantCard({
   return (
     <Card className="h-full">
       <div className="flex items-center gap-4">
-        {participant.avatarUrl ? (
-          <img
-            src={participant.avatarUrl}
-            alt=""
-            className="h-14 w-14 rounded-2xl object-cover"
-          />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-            <UserRound className="h-6 w-6" />
-          </div>
-        )}
+        <UserAvatar
+          avatarUrl={participant.avatarUrl}
+          name={participant.name}
+          size="lg"
+          className="rounded-2xl"
+        />
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
             {title}

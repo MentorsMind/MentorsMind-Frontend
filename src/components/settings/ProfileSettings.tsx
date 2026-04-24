@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Loader2, User as UserIcon } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 import AccountService from '../../services/account.service';
 import type { User } from '../../types';
 import toast from 'react-hot-toast';
+import UserAvatar from '../ui/UserAvatar';
+import { useAuth } from '../../hooks/useAuth';
 
 interface ProfileSettingsProps {
   user: User;
@@ -19,6 +21,7 @@ const TIMEZONES = [
 const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar bg-white';
 
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onDirtyChange, onProfileUpdate }) => {
+  const { updateUser } = useAuth();
   const [formData, setFormData] = useState({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -73,6 +76,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onDirtyChange, 
       if (avatarFile) {
         const res = await accountService.uploadAvatar(avatarFile);
         avatarUrl = res.avatarUrl;
+        // Immediately sync the new URL into the auth context so the navbar updates
+        updateUser({ avatarUrl });
       }
 
       // Update profile
@@ -98,15 +103,13 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onDirtyChange, 
       <div className="flex items-center gap-6 pb-6 border-b border-gray-100">
         <div className="relative group">
           <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-sm flex items-center justify-center">
-            {avatarPreview || user.avatarUrl ? (
-              <img 
-                src={avatarPreview || user.avatarUrl} 
-                alt="Avatar" 
-                className="w-full h-full object-cover"
+              <UserAvatar
+                avatarUrl={avatarPreview ?? user.avatarUrl}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                name={user.name}
+                size="xl"
               />
-            ) : (
-              <UserIcon className="w-10 h-10 text-gray-400" />
-            )}
           </div>
           <button
             type="button"
