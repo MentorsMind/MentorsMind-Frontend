@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import type { Message, Conversation } from '../services/messaging.service';
+import PresenceService from '../services/presence.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
     participantName: 'Diego Alvarez',
     participantAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Diego',
     participantOnline: false,
+    last_seen: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
     unreadCount: 0,
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     lastMessage: {
@@ -183,6 +185,7 @@ export const useMessages = () => {
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [isLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const presenceService = new PresenceService();
 
   // Typing indicators: set of conversation IDs where the other user is typing
   const [typingConversations, setTypingConversations] = useState<Set<string>>(new Set());
@@ -434,6 +437,38 @@ export const useMessages = () => {
     },
     []
   );
+
+  // Fetch presence for conversation partners
+  useEffect(() => {
+    const fetchPresence = async () => {
+      const participantIds = conversations.map(c => c.participantId);
+      if (participantIds.length === 0) return;
+
+      try {
+        const presenceStatuses = await presenceService.getBatchStatus(participantIds);
+        setConversations(prev =>
+          prev.map(c => {
+            const status = presenceStatuses.find(p => p.userId === c.participantId);
+            if (status) {
+              return {
+                ...c,
+                participantOnline: status.online,
+                last_seen: status.last_seen,
+              };
+            }
+            return c;
+          })
+        );
+      } catch (error) {
+        console.error('Failed to fetch presence:', error);
+      }
+    };
+
+    fetchPresence();
+    const interval = setInterval(fetchPresence, 25000); // 25 seconds
+
+    return () => clearInterval(interval);
+  }, [conversations.map(c => c.participantId).join(',')]); // depend on participantIds
 
   // Cleanup typing timers on unmount
   useEffect(() => {

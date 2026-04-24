@@ -28,6 +28,7 @@ export interface Conversation {
   participantName: string;
   participantAvatar?: string;
   participantOnline: boolean;
+  last_seen?: string;
   lastMessage?: Message;
   unreadCount: number;
   updatedAt: string;
