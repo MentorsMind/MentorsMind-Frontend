@@ -6,6 +6,7 @@ import BookingSummaryModal from './BookingSummaryModal';
 import BookingConfirmation from './BookingConfirmation';
 import PaymentModal from '../payment/PaymentModal';
 import { useBooking } from '../../hooks/useBooking';
+import { BOOKING_ENABLED } from '../../config/app.config';
 import type { MentorProfile } from '../../types';
 
 interface BookingModalProps {
@@ -16,7 +17,7 @@ interface BookingModalProps {
 
 type BookingStep = 'details' | 'confirmation' | 'success';
 
-const DURATIONS = [30, 45, 60, 90, 120];
+const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) => {
   const {
@@ -94,7 +95,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
   };
 
   const handlePaymentSuccess = async (transactionHash: string, sessionId?: string) => {
-    await confirmBooking(transactionHash, sessionId);
+    await confirmBooking(transactionHash, sessionId, idempotencyKey);
     setPaymentCompleted(true);
     setIsSubmitting(false);
   };
@@ -130,6 +131,40 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
 
   if (!isOpen || !mentor || !draft) {
     return null;
+  }
+
+  // Show Coming Soon message when booking is disabled
+  if (!BOOKING_ENABLED) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={handleClose} />
+          
+          <div className="relative z-[91] w-full max-w-md overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-2xl p-8 text-center">
+            <div className="mb-6">
+              <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-stellar via-blue-600 to-cyan-500 flex items-center justify-center">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-900 mb-4">Coming Soon</h2>
+            <p className="text-gray-600 mb-6">
+              Booking sessions with {mentor.name} will be available soon. We're working hard to bring you the best mentoring experience.
+            </p>
+            
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-full rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

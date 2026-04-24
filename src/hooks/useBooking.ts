@@ -286,7 +286,7 @@ export const useBooking = (mentor: MentorProfile | null) => {
   }, [mentor]);
 
   const confirmBooking = useCallback(
-    async (paymentTransactionHash?: string, sessionId?: string) => {
+    async (paymentTransactionHash?: string, sessionId?: string, idempotencyKey?: string) => {
       if (!draft?.selectedSlot || !pricing || !mentor) {
         return null;
       }
@@ -295,18 +295,16 @@ export const useBooking = (mentor: MentorProfile | null) => {
       setConfirmError(null);
 
       try {
-        const response = await bookingService.current.create({
-          mentorId: draft.mentorId,
-          sessionType: draft.sessionType,
-          duration: draft.duration,
-          notes: draft.notes,
-          slotStart: draft.selectedSlot.start,
-          slotEnd: draft.selectedSlot.end,
-          timezone: draft.selectedSlot.timezone,
-          totalAmount: pricing.totalAmount,
-          currency: pricing.currency,
-          paymentTransactionHash,
-        });
+        const response = await bookingService.current.create(
+          {
+            mentorId: draft.mentorId,
+            scheduledAt: draft.selectedSlot.start, // ISO 8601 string in UTC
+            durationMinutes: draft.duration,
+            topic: `${SESSION_TYPE_LABELS[draft.sessionType]} Session`,
+            notes: draft.notes,
+          },
+          { idempotencyKey }
+        );
 
         const resolvedId = response.id ?? sessionId ?? '';
         const bookingBase = {
@@ -340,9 +338,14 @@ export const useBooking = (mentor: MentorProfile | null) => {
         setLearnerCalendar((current) => [learnerCalendarEvent, ...current]);
         setConfirmedBooking(confirmation);
         return confirmation;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create booking.';
-        setConfirmError(message);
+      } catch (err: any) {
+        // Handle 409 Conflict (mentor not available at requested time)
+        if (err.status === 409) {
+          setConfirmError('This time slot is no longer available. Please select a different time.');
+        } else {
+          const message = err instanceof Error ? err.message : 'Failed to create booking.';
+          setConfirmError(message);
+        }
         return null;
       } finally {
         setIsConfirming(false);
