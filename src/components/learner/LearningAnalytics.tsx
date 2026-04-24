@@ -3,12 +3,23 @@ import type { LearningAnalytics as AnalyticsType } from '../../types/session.typ
 import MetricCard from '../charts/MetricCard';
 import BarChart from '../charts/BarChart';
 import LineChart from '../charts/LineChart';
+import type { MultiSeriesDataPoint } from '../../types/charts.types';
 
 interface LearningAnalyticsProps {
   analytics: AnalyticsType;
 }
 
 const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ analytics }) => {
+  const sessionFrequencyData: MultiSeriesDataPoint[] = analytics.sessionFrequency.labels.map((label, index) => ({
+    label,
+    sessions: analytics.sessionFrequency.values[index],
+  }));
+
+  const spendingTrendData: MultiSeriesDataPoint[] = analytics.spendingAnalytics.monthlyTrend.map((item) => ({
+    label: item.month,
+    amount: item.amount,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -91,27 +102,15 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ analytics }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BarChart
           title="Session Frequency"
-          data={{
-            labels: analytics.sessionFrequency.labels,
-            datasets: [{
-              label: 'Sessions',
-              data: analytics.sessionFrequency.values,
-              backgroundColor: '#6366f1',
-            }],
-          }}
+          data={sessionFrequencyData}
+          series={[{ key: 'sessions', name: 'Sessions', color: '#6366f1' }]}
         />
 
         <LineChart
           title="Spending Trend"
-          data={{
-            labels: analytics.spendingAnalytics.monthlyTrend.map(m => m.month),
-            datasets: [{
-              label: 'Amount (XLM)',
-              data: analytics.spendingAnalytics.monthlyTrend.map(m => m.amount),
-              borderColor: '#6366f1',
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            }],
-          }}
+          data={spendingTrendData}
+          series={[{ key: 'amount', name: 'Amount (XLM)', color: '#6366f1' }]}
+          valueSuffix=" XLM"
         />
       </div>
     </div>

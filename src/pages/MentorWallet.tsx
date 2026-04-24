@@ -1,112 +1,85 @@
-import React from 'react';
-import { useMentorWallet } from '../hooks/useMentorWallet';
-import WalletDashboard from '../components/mentor/WalletDashboard';
-import EarningsBreakdown from '../components/mentor/EarningsBreakdown';
-import PayoutRequest from '../components/mentor/PayoutRequest';
-import PayoutHistory from '../components/mentor/PayoutHistory';
-import MetricCard from '../components/charts/MetricCard';
+import { useEarnings } from '../hooks/useEarnings';
+import EarningsSummary from '../components/earnings/EarningsSummary';
+import EarningsChart from '../components/earnings/EarningsChart';
+import SessionTable from '../components/earnings/SessionTable';
+import EmptyState from '../components/earnings/EmptyState';
 
-const MentorWallet: React.FC = () => {
+export default function MentorWallet() {
   const {
-    wallet,
-    txFilter, setTxFilter,
-    txOrder, setTxOrder,
-    filteredTx,
-    visiblePayoutRequests,
-    payoutHasMore,
-    payoutLoading,
-    loadMorePayoutRequests,
-    transactionsHasMore,
-    transactionsLoading,
-    loadMoreTransactions,
-    showNoMoreTransactions,
-    payoutAmount, setPayoutAmount,
-    payoutAsset, setPayoutAsset,
-    payoutStatus,
-    requestPayout,
-    copied, copyAddress,
-    exportEarnings,
-  } = useMentorWallet();
+    summary,
+    chartSeries,
+    sessions,
+    allSortedSessions,
+    totalSessions,
+    loading,
+    error,
+    retry,
+    chartRange,
+    setChartRange,
+    page,
+    setPage,
+    sortKey,
+    sortDir,
+    setSort,
+    exportCSV,
+    currency,
+  } = useEarnings();
+
+  const hasData = sessions.length > 0 || allSortedSessions.length > 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-      <div>
-        <h2 className="text-3xl font-bold mb-1">Wallet</h2>
-        <p className="text-gray-500">Manage your Stellar earnings and payouts.</p>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-text">Earnings &amp; Payouts</h1>
 
-      {/* Top row: wallet card + KPIs */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <WalletDashboard wallet={wallet} copied={copied} onCopy={copyAddress} />
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center justify-between gap-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+          <span>{error}</span>
+          <button
+            onClick={retry}
+            className="shrink-0 font-semibold underline hover:no-underline"
+          >
+            Retry
+          </button>
         </div>
-        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-2 gap-4 content-start">
-          <MetricCard
-            title="Total Earned"
-            value={`$${wallet.totalEarned.toLocaleString()}`}
-            change={18.2}
-            changeLabel="vs last month"
-          />
-          <MetricCard
-            title="Available to Withdraw"
-            value={`$${wallet.availableEarnings.toLocaleString()}`}
-            change={5.4}
-            changeLabel="vs last month"
-          />
-          <MetricCard
-            title="Pending Clearance"
-            value={`$${wallet.pendingEarnings.toLocaleString()}`}
-          />
-          <MetricCard
-            title="Forecast Next Month"
-            value={`$${wallet.forecastNextMonth.toLocaleString()}`}
-            change={12.1}
-            changeLabel="projected"
-          />
-        </div>
-      </div>
+      )}
 
-      {/* Payout request + history */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <PayoutRequest
-            availableEarnings={wallet.availableEarnings}
-            pendingEarnings={wallet.pendingEarnings}
-            amount={payoutAmount}
-            asset={payoutAsset}
-            status={payoutStatus}
-            onAmountChange={setPayoutAmount}
-            onAssetChange={setPayoutAsset}
-            onSubmit={requestPayout}
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <PayoutHistory
-            transactions={filteredTx}
-            payoutHistory={visiblePayoutRequests}
-            filter={txFilter}
-            order={txOrder}
-            transactionsHasMore={transactionsHasMore}
-            transactionsLoading={transactionsLoading}
-            payoutHasMore={payoutHasMore}
-            payoutLoading={payoutLoading}
-            showNoMoreTransactions={showNoMoreTransactions}
-            onFilterChange={setTxFilter}
-            onOrderChange={setTxOrder}
-            onLoadMoreTransactions={loadMoreTransactions}
-            onLoadMorePayouts={loadMorePayoutRequests}
-          />
-        </div>
-      </div>
+      {/* Summary cards — always visible */}
+      <EarningsSummary summary={summary} loading={loading} />
 
-      {/* Session earnings breakdown */}
-      <EarningsBreakdown
-        sessions={wallet.sessionEarnings}
-        platformFeeRate={wallet.platformFeeRate}
-        onExport={exportEarnings}
-      />
+      {/* Loading skeleton below summary when no data yet */}
+      {loading && !hasData && (
+        <div className="space-y-4">
+          <div className="bg-surface rounded-xl h-64 animate-pulse" aria-hidden="true" />
+          <div className="bg-surface rounded-xl h-48 animate-pulse" aria-hidden="true" />
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && allSortedSessions.length === 0 && <EmptyState />}
+
+      {/* Chart + table */}
+      {allSortedSessions.length > 0 && (
+        <>
+          <EarningsChart
+            series={chartSeries}
+            range={chartRange}
+            onRangeChange={setChartRange}
+            currency={currency}
+          />
+          <SessionTable
+            sessions={sessions}
+            allSessions={allSortedSessions}
+            totalSessions={totalSessions}
+            page={page}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={setSort}
+            onPageChange={setPage}
+            onExport={exportCSV}
+          />
+        </>
+      )}
     </div>
   );
-};
-
-export default MentorWallet;
+}

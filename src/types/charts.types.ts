@@ -1,12 +1,15 @@
+import type { ReactNode } from 'react';
+import type { AssetCode } from './index';
+
 export interface DataPoint {
   label: string;
   value: number;
-  [key: string]: string | number;
+  color?: string;
 }
 
 export interface MultiSeriesDataPoint {
   label: string;
-  [key: string]: string | number;
+  [key: string]: string | number | null | undefined;
 }
 
 export interface ChartSeries {
@@ -20,29 +23,50 @@ export interface ChartExportOptions {
   filename?: string;
 }
 
-export interface ChartState {
-  isLoading: boolean;
-  error: string | null;
-}
-
 export interface MetricCardData {
   title: string;
   value: string | number;
   change?: number;
   changeLabel?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   prefix?: string;
   suffix?: string;
 }
 
+export interface ChartDatum {
+  date: string;
+  value: number;
+  asset?: AssetCode;
+  category?: string;
+  learner?: string;
+  [key: string]: string | number | AssetCode | undefined;
+}
+
+export interface EarningsMetrics {
+  avgDuration: number;
+  totalSessions: number;
+  platformFees: number;
+  currentPeriodTotal: number;
+  previousPeriodTotal: number;
+  periodChange: number;
+}
+
+export interface AggregatedData {
+  monthlyEarnings: ChartDatum[];
+  weeklySessions: ChartDatum[];
+  topLearners: ChartDatum[];
+  skillBreakdown: ChartDatum[];
+  metrics: EarningsMetrics;
+}
+
 export interface UseChartDataOptions<T> {
   fetchFn: () => Promise<T>;
-  deps?: unknown[];
+  deps?: any[];
 }
 
 export interface UseChartDataResult<T> {
   data: T | null;
   isLoading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }

@@ -41,9 +41,7 @@ const HistoryList: React.FC<HistoryListProps> = ({ sessions }) => {
             )}
           </div>
 
-          <p className="text-sm text-gray-600 mb-2">
-            with {session.mentorName}
-          </p>
+          <p className="text-sm text-gray-600 mb-2">with {session.mentorName}</p>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
             <span>{new Date(session.date).toLocaleDateString()}</span>
@@ -63,6 +61,20 @@ const HistoryList: React.FC<HistoryListProps> = ({ sessions }) => {
               </span>
             ))}
           </div>
+
+          {/* Shared mentor notes */}
+          {session.sharedNotes && (
+            <div className="mt-3 rounded-2xl border border-stellar/20 bg-stellar/5 px-4 py-3">
+              <div className="mb-1 flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wide text-stellar">
+                  Mentor notes
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-gray-600">
+                {session.sharedNotes}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-2">

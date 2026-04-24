@@ -1,41 +1,48 @@
-import React, { useRef, useEffect } from 'react';
-import { trapFocus } from '../../utils/a11y.utils';
+import { useEffect, useRef, ReactNode } from 'react';
+
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 interface FocusTrapProps {
-  children: React.ReactNode;
-  /** Whether the trap is active */
+  children: ReactNode;
   active?: boolean;
-  /** Element to return focus to when trap deactivates */
-  returnFocusRef?: React.RefObject<HTMLElement>;
   className?: string;
 }
 
-/**
- * Traps keyboard focus within its children when `active` is true.
- * Ideal for modals, drawers, and dialogs.
- */
-const FocusTrap: React.FC<FocusTrapProps> = ({
-  children,
-  active = true,
-  returnFocusRef,
-  className,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function FocusTrap({ children, active = true, className }: FocusTrapProps) {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!active || !containerRef.current) return;
-    const cleanup = trapFocus(containerRef.current);
-    return () => {
-      cleanup();
-      returnFocusRef?.current?.focus();
+    if (!active || !ref.current) return;
+    const el = ref.current;
+    // store previously focused element so we can restore focus when trap is removed
+    const previous = document.activeElement as HTMLElement | null;
+
+    const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    // Focus the first focusable element, or the container as a fallback
+    if (first) first.focus(); else { el.tabIndex = -1; el.focus(); }
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (focusable.length === 0) { e.preventDefault(); return; }
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
     };
-  }, [active, returnFocusRef]);
 
-  return (
-    <div ref={containerRef} className={className}>
-      {children}
-    </div>
-  );
-};
+    el.addEventListener('keydown', handler);
 
-export default FocusTrap;
+    return () => {
+      el.removeEventListener('keydown', handler);
+      // restore previous focus
+      try {
+        previous?.focus();
+      } catch {}
+    };
+  }, [active]);
+
+  return <div ref={ref} className={className}>{children}</div>;
+}

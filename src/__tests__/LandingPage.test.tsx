@@ -6,7 +6,7 @@ describe('LandingPage', () => {
   it('renders key sections and CTAs', () => {
     render(<LandingPage />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Get Started/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Get Started/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Explore Features/i)).toBeInTheDocument();
     expect(document.getElementById('features')).toBeInTheDocument();
     expect(document.getElementById('testimonials')).toBeInTheDocument();

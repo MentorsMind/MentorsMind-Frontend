@@ -9,6 +9,7 @@ export interface SessionHistoryItem {
   status: 'completed' | 'cancelled' | 'no-show';
   rating?: number;
   notes?: string;
+  sharedNotes?: string;
   skills: string[];
   amount: number;
   currency: string;
@@ -289,6 +290,12 @@ export interface NoteAttachment {
   sizeLabel: string;
 }
 
+export interface ResourceLink {
+  id: string;
+  title: string;
+  url: string;
+}
+
 export interface NoteVersion {
   id: string;
   savedAt: string;
@@ -310,8 +317,10 @@ export interface LearnerNote {
   content: string;
   tags: string[];
   sharedWithMentor: boolean;
+  sharedWithLearner?: boolean;
   reminder?: string;
   attachments: NoteAttachment[];
+  resourceLinks: ResourceLink[];
   versions: NoteVersion[];
   updatedAt: string;
 }
