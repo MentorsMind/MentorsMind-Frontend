@@ -16,6 +16,13 @@ export interface PaymentBreakdown {
   assetCode: StellarAssetCode;
 }
 
+export interface PaymentQuote {
+  quoteId: string;
+  receiveAmount: number;
+  expiresAt: string; // ISO timestamp
+  maxSlippagePct: number;
+}
+
 export type PaymentStep = 'method' | 'review' | 'processing' | 'success' | 'error';
 
 export interface PaymentState {
@@ -23,6 +30,12 @@ export interface PaymentState {
   selectedAsset: StellarAssetCode;
   transactionHash?: string;
   error?: string;
+  idempotencyKey?: string;
+  quote?: PaymentQuote;
+  quoteSecondsLeft?: number;
+  quoteRefreshing?: boolean;
+  rateUpdated?: boolean;
+  previousReceiveAmount?: number;
 }
 
 export interface PaymentDetails {
