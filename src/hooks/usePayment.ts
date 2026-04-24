@@ -116,8 +116,8 @@ export const usePayment = (details: PaymentDetails) => {
     setState(prev => ({ ...prev, step: 'processing', isSubmitting: true, error: undefined }));
 
     try {
-      // Send payment to escrow account (this would be the platform's escrow account)
-      const escrowAccount = STELLAR_CONFIG.platformFeeAccount; // In real implementation, this would be generated per session
+      // Send payment to the per-session escrow contract
+      const escrowAccount = details.escrowContractId ?? STELLAR_CONFIG.contractId;
       
       const transaction = await sendPayment(
         escrowAccount,
