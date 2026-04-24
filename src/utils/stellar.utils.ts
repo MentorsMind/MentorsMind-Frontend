@@ -1,8 +1,35 @@
+import { Keypair } from '@stellar/stellar-sdk';
+import * as bip39 from 'bip39';
+import { derivePath } from 'ed25519-hd-key';
+
 /**
  * Stellar Utility Functions
  */
 
 export const STELLAR_EXPERT_URL = 'https://stellar.expert/explorer/public';
+
+/**
+ * Validates a BIP39 mnemonic phrase
+ */
+export function validateMnemonic(mnemonic: string): boolean {
+  return bip39.validateMnemonic(mnemonic.trim());
+}
+
+/**
+ * Derives a Stellar Keypair from a BIP39 mnemonic
+ * Uses the default Stellar derivation path: m/44'/148'/0'
+ */
+export function deriveKeypairFromMnemonic(mnemonic: string, index = 0): Keypair {
+  if (!validateMnemonic(mnemonic)) {
+    throw new Error('Invalid mnemonic phrase');
+  }
+
+  const seed = bip39.mnemonicToSeedSync(mnemonic.trim());
+  const path = `m/44'/148'/${index}'`;
+  const { key } = derivePath(path, seed.toString('hex'));
+  
+  return Keypair.fromRawEd25519Seed(key);
+}
 
 /**
  * Formats a crypto amount to a readable string with fixed decimals

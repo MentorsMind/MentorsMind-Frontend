@@ -25,7 +25,6 @@ export interface UseRescheduleOptions {
 export const useReschedule = ({
   sessionId,
   currentTime,
-  mentorId,
   onRescheduleSubmit,
   onRescheduleResponse,
 }: UseRescheduleOptions) => {
@@ -57,7 +56,7 @@ export const useReschedule = ({
           sessionId,
           requestedBy: 'learner',
           originalTime: currentTime,
-          proposedTime: proposedSlot.start,
+          proposedTime: proposedSlot.startTime,
           proposedSlot,
           status: 'pending',
           createdAt: new Date().toISOString(),

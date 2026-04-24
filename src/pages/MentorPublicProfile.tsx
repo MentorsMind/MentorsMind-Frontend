@@ -4,56 +4,86 @@ import ProfileHeader from '../components/mentor/ProfileHeader';
 import RatingBreakdown from '../components/mentor/RatingBreakdown';
 import PublicAvailability from '../components/mentor/PublicAvailability';
 import ReviewsList from '../components/mentor/ReviewsList';
+import { EndorsementSection } from '../components/profile/EndorsementSection';
 import { useShare } from '../hooks/useShare';
+import { useEndorsements } from '../hooks/useEndorsements';
 import { applyMetaTags, buildMentorProfileMeta } from '../utils/og-meta.utils';
-
-const mentor = {
-  id: 'm1',
-  name: 'John Doe',
-  bio: 'Senior software engineer with 8+ years of experience in frontend development. Passionate about React, TypeScript, and helping developers level up their skills.',
-  rating: 4.9,
-  joinDate: 'January 2023',
-  sessionCount: 142,
-  learnerCount: 89,
-  verified: true,
-  skills: ['React', 'TypeScript', 'Node.js', 'GraphQL', 'Tailwind CSS', 'Next.js'],
-  languages: ['English', 'Spanish'],
-  pricing: [
-    { type: '1-on-1 Session', amount: '$20 / hr' },
-    { type: 'Code Review', amount: '$15 / session' },
-    { type: 'Mock Interview', amount: '$30 / session' },
-  ],
-};
+import {
+  getPublicUserProfile,
+  getMentorRatingSummary,
+  getMentorAvailability,
+  getMentorVerificationStatus,
+  type PublicUserProfile,
+  type RatingSummary,
+  type AvailabilitySlot,
+  type VerificationStatus
+} from '../services/mentor.service';
 
 export default function MentorPublicProfile() {
   const { id } = useParams<{ id: string }>();
   const { share } = useShare();
   const [shareStatus, setShareStatus] = useState('');
+  const [mentor, setMentor] = useState<PublicUserProfile | null>(null);
+  const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null);
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const mentorId = id ?? mentor.id;
+  const mentorId = id ?? 'm1';
+
+  useEffect(() => {
+    const fetchMentorData = async () => {
+      try {
+        setLoading(true);
+        const [profileData, ratingData, availabilityData, verificationData] = await Promise.all([
+          getPublicUserProfile(mentorId),
+          getMentorRatingSummary(mentorId),
+          getMentorAvailability(mentorId),
+          getMentorVerificationStatus(mentorId),
+        ]);
+
+        setMentor(profileData);
+        setRatingSummary(ratingData);
+        setAvailability(availabilityData);
+        setVerificationStatus(verificationData);
+      } catch (err) {
+        setError('Failed to load mentor profile');
+        console.error('Error fetching mentor data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMentorData();
+  }, [mentorId]);
+
   const profileUrl = `${window.location.origin}/mentors/${mentorId}`;
   const sessionInviteToken = useMemo(() => `${mentorId}-${Date.now().toString(36)}`, [mentorId]);
   const sessionInviteUrl = `${window.location.origin}/sessions/join/${sessionInviteToken}`;
 
   useEffect(() => {
-    document.title = `${mentor.name} | Mentor Profile`;
-    const cleanupMeta = applyMetaTags(
-      buildMentorProfileMeta({
-        id: mentorId,
-        name: mentor.name,
-        bio: mentor.bio,
-        rating: mentor.rating,
-        skills: mentor.skills,
-      })
-    );
+    if (mentor) {
+      document.title = `${mentor.name} | Mentor Profile`;
+      const cleanupMeta = applyMetaTags(
+        buildMentorProfileMeta({
+          id: mentorId,
+          name: mentor.name,
+          bio: mentor.bio,
+          rating: mentor.rating,
+          skills: mentor.skills,
+        })
+      );
 
-    return () => {
-      document.title = 'MentorMinds Stellar';
-      cleanupMeta();
-    };
-  }, [mentorId]);
+      return () => {
+        document.title = 'MentorMinds Stellar';
+        cleanupMeta();
+      };
+    }
+  }, [mentor, mentorId]);
 
   const handleShareProfile = async () => {
+    if (!mentor) return;
     try {
       const result = await share({
         title: `${mentor.name} on MentorMinds`,
@@ -68,6 +98,7 @@ export default function MentorPublicProfile() {
   };
 
   const handleShareSessionInvite = async () => {
+    if (!mentor) return;
     try {
       const result = await share({
         title: 'MentorMinds Session Invite',
@@ -88,6 +119,38 @@ export default function MentorPublicProfile() {
     cancelRequest,
     toggleEndorsement,
   } = useEndorsements(true);
+
+  const handleBookSession = () => {
+    const availabilityElement = document.getElementById('availability');
+    if (availabilityElement) {
+      availabilityElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-24 w-24 rounded-full bg-gray-200 mx-auto"></div>
+            <div className="h-8 bg-gray-200 rounded mx-auto w-48"></div>
+            <div className="h-4 bg-gray-200 rounded mx-auto w-64"></div>
+            <div className="h-6 bg-gray-200 rounded mx-auto w-24"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !mentor || !verificationStatus) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
+          <p className="text-gray-600">{error || 'Mentor not found'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
@@ -112,10 +175,12 @@ export default function MentorPublicProfile() {
       <ProfileHeader
         name={mentor.name}
         bio={mentor.bio}
+        hourlyRate={mentor.hourlyRate}
+        currency={mentor.currency}
         joinDate={mentor.joinDate}
         sessionCount={mentor.sessionCount}
-        learnerCount={mentor.learnerCount}
-        verified={mentor.verified}
+        learnerCount={89} // This would need to be added to the API
+        verificationStatus={verificationStatus.verificationStatus}
       />
 
       <EndorsementSection
@@ -128,9 +193,9 @@ export default function MentorPublicProfile() {
         onCancelRequest={cancelRequest}
       />
 
-      <RatingBreakdown />
+      <RatingBreakdown ratingSummary={ratingSummary || undefined} />
 
-      <PublicAvailability />
+      <PublicAvailability availability={availability} />
 
       <ReviewsList />
 
@@ -163,13 +228,29 @@ export default function MentorPublicProfile() {
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Pricing</h2>
         <ul className="space-y-3">
-          {mentor.pricing.map((p) => (
-            <li key={p.type} className="flex items-center justify-between rounded-2xl bg-gray-50 px-5 py-3">
-              <span className="text-sm font-medium text-gray-700">{p.type}</span>
-              <span className="text-sm font-bold text-stellar">{p.amount}</span>
-            </li>
-          ))}
+          <li className="flex items-center justify-between rounded-2xl bg-gray-50 px-5 py-3">
+            <span className="text-sm font-medium text-gray-700">1-on-1 Session</span>
+            <span className="text-sm font-bold text-stellar">${mentor.hourlyRate} / hr</span>
+          </li>
+          <li className="flex items-center justify-between rounded-2xl bg-gray-50 px-5 py-3">
+            <span className="text-sm font-medium text-gray-700">Code Review</span>
+            <span className="text-sm font-bold text-stellar">${Math.round(mentor.hourlyRate * 0.67)} / session</span>
+          </li>
+          <li className="flex items-center justify-between rounded-2xl bg-gray-50 px-5 py-3">
+            <span className="text-sm font-medium text-gray-700">Mock Interview</span>
+            <span className="text-sm font-bold text-stellar">${Math.round(mentor.hourlyRate * 1.33)} / session</span>
+          </li>
         </ul>
+      </div>
+
+      {/* Sticky CTA Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleBookSession}
+          className="rounded-2xl bg-stellar px-8 py-4 text-lg font-bold text-white shadow-lg hover:bg-stellar-dark transition-all transform hover:scale-105"
+        >
+          Book a Session
+        </button>
       </div>
 
     </div>

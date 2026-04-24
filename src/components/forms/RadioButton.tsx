@@ -35,16 +35,16 @@ export const RadioButton = forwardRef<HTMLInputElement, RadioButtonProps>(
           />
           <div className={`w-5 h-5 border-2 rounded-full transition-all ${
             checked
-              ? 'border-blue-600 peer-focus:ring-2 peer-focus:ring-blue-200'
-              : 'border-gray-300 peer-focus:ring-2 peer-focus:ring-blue-200'
+              ? 'border-primary peer-focus:ring-2 peer-focus:ring-primary/20'
+              : 'border-border peer-focus:ring-2 peer-focus:ring-primary/20'
           }`}>
             {checked && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-blue-600 rounded-full" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-primary rounded-full" />
             )}
           </div>
         </div>
         {label && (
-          <span className="ml-2 text-sm text-gray-700 select-none">
+          <span className="ml-2 text-sm text-text select-none">
             {label}
           </span>
         )}

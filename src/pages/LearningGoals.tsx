@@ -1,81 +1,140 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGoals } from '../hooks/useGoals';
-import GoalSetting from '../components/learner/GoalSetting';
+import GoalCard from '../components/learner/GoalCard';
 import GoalTemplates from '../components/learner/GoalTemplates';
-import MilestoneTracker from '../components/learner/MilestoneTracker';
-import type { Goal, GoalStatus, GoalCategory } from '../types';
+import AddGoalModal from '../components/learner/AddGoalModal';
+import GoalEditModal from '../components/learner/GoalEditModal';
+import type { Goal, GoalTemplate } from '../types';
 
-const STATUS_STYLES: Record<GoalStatus, string> = {
-  active: 'bg-blue-50 text-blue-600',
-  completed: 'bg-emerald-50 text-emerald-600',
-  paused: 'bg-gray-100 text-gray-500',
-  overdue: 'bg-red-50 text-red-500',
-};
-
-const CATEGORY_ICONS: Record<GoalCategory, string> = {
-  technical: '💻', career: '💼', project: '🚀', certification: '🎓', 'soft-skills': '🗣️',
-};
-
-const BADGES: Record<number, { icon: string; label: string }> = {
-  1: { icon: '🌱', label: 'First Goal' },
-  3: { icon: '🔥', label: 'On a Roll' },
-  5: { icon: '⭐', label: 'Goal Setter' },
-  10: { icon: '🏆', label: 'Champion' },
-};
-
-const FILTERS: { label: string; value: GoalStatus | 'all' }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Active', value: 'active' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Paused', value: 'paused' },
-  { label: 'Overdue', value: 'overdue' },
-];
+// Empty state SVG illustration — clean goal/goal tracking theme
+const EmptyStateIllustration = () => (
+  <svg viewBox="0 0 200 160" className="w-48 h-40 mx-auto opacity-90" aria-hidden="true">
+    <rect x="20" y="20" width="160" height="120" rx="12" fill="#f3f4f6" />
+    <circle cx="60" cy="60" r="20" fill="#e0e7ff" />
+    <path d="M60 54 L64 58 L56 58 Z" fill="white" />
+    <rect x="100" y="50" width="60" height="12" rx="6" fill="#d1d5db" />
+    <rect x="100" y="70" width="40" height="8" rx="4" fill="#e5e7eb" />
+    <rect x="20" y="100" width="80" height="12" rx="6" fill="#d1d5db" />
+    <rect x="20" y="118" width="60" height="8" rx="4" fill="#e5e7eb" />
+    <rect x="20" y="138" width="70" height="8" rx="4" fill="#e5e7eb" />
+    {/* Star decoration */}
+    <text x="140" y="130" fontSize="24" fill="#a5b4fc">★</text>
+  </svg>
+);
 
 const LearningGoals: React.FC = () => {
   const {
-    filteredGoals, stats,
-    editingGoal, setEditingGoal,
-    filterStatus, setFilterStatus,
-    addGoal, updateGoal, deleteGoal,
-    toggleMilestone, applyTemplate,
+    goals,
+    activeGoals,
+    completedGoals,
+    stats,
+    filterStatus,
+    setFilterStatus,
+    loading,
+    error,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    applyTemplate,
+    refresh,
   } = useGoals();
 
-  const [showForm, setShowForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
-  const earnedBadge = BADGES[stats.completed];
-
-  const handleSave = (data: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingGoal) {
-      updateGoal(editingGoal.id, data);
-      setEditingGoal(null);
-    } else {
-      addGoal(data);
-      setShowForm(false);
-    }
+  const handleSave = async (data: { title: string; description: string; deadline: string; category: any }) => {
+    // Create basic SMART defaults when user only provides minimal fields
+    const now = new Date().toISOString().split('T')[0];
+    await addGoal({
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      status: 'active',
+      specific: data.description,
+      measurable: 'Track progress via milestones',
+      achievable: 'With mentor guidance',
+      relevant: 'Aligned with learning objectives',
+      timeBound: `Complete by ${new Date(data.deadline).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+      deadline: data.deadline,
+      milestones: [],
+      userId: '',
+      sharedWithMentor: false,
+      reminderEnabled: false,
+      notes: '',
+    });
   };
+
+  const handleEditSave = async (updatedGoal: Goal) => {
+    await updateGoal(updatedGoal.id, {
+      title: updatedGoal.title,
+      description: updatedGoal.description,
+      deadline: updatedGoal.deadline,
+      category: updatedGoal.category,
+      specific: updatedGoal.specific,
+      measurable: updatedGoal.measurable,
+      achievable: updatedGoal.achievable,
+      relevant: updatedGoal.relevant,
+      timeBound: updatedGoal.timeBound,
+      notes: updatedGoal.notes,
+    });
+    setEditingGoal(null);
+  };
+
+  // Filter display based on tab
+  let displayGoals = goals;
+  if (filterStatus === 'active') displayGoals = activeGoals;
+  if (filterStatus === 'completed') displayGoals = completedGoals;
+  if (filterStatus === 'overdue') {
+    const now = new Date().toISOString().split('T')[0];
+    displayGoals = goals.filter(g => g.status === 'active' && g.deadline < now);
+  }
+
+  const hasAnyGoals = goals.length > 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center text-gray-500">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-stellar border-t-transparent mx-auto mb-3"></div>
+          <p>Loading your goals...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-500 mb-2">{error}</p>
+        <button onClick={refresh} className="text-stellar hover:underline">
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold mb-1">Learning Goals</h2>
-          <p className="text-gray-500">Set SMART goals and track your progress.</p>
+          <p className="text-gray-500">Set goals, track progress, and link mentoring sessions.</p>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => { setShowTemplates((t: boolean) => !t); setShowForm(false); setEditingGoal(null); }}
+            onClick={() => { setShowTemplates(t => !t); setShowAddModal(false); }}
             className="px-4 py-2.5 border-2 border-stellar/20 text-stellar font-bold rounded-xl text-sm hover:bg-stellar/5 transition-all"
           >
             Templates
           </button>
           <button
-            onClick={() => { setShowForm((t: boolean) => !t); setShowTemplates(false); setEditingGoal(null); }}
+            onClick={() => { setShowAddModal(true); setShowTemplates(false); }}
             className="px-4 py-2.5 bg-stellar text-white font-bold rounded-xl text-sm hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95"
           >
-            + New Goal
+            + Add Goal
           </button>
         </div>
       </div>
@@ -95,35 +154,30 @@ const LearningGoals: React.FC = () => {
         ))}
       </div>
 
-      {/* Badge notification */}
-      {earnedBadge && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3" role="status">
-          <span className="text-2xl">{earnedBadge.icon}</span>
-          <div>
-            <p className="text-sm font-bold text-amber-800">Badge Earned: {earnedBadge.label}</p>
-            <p className="text-xs text-amber-600">You've completed {stats.completed} goal{stats.completed !== 1 ? 's' : ''}. Keep going!</p>
-          </div>
-        </div>
-      )}
-
       {/* Templates panel */}
       {showTemplates && (
-        <GoalTemplates onApply={applyTemplate} onClose={() => setShowTemplates(false)} />
+        <GoalTemplates onApply={(tpl) => { applyTemplate(tpl); setShowTemplates(false); }} onClose={() => setShowTemplates(false)} />
       )}
 
-      {/* New goal form */}
-      {showForm && !editingGoal && (
-        <GoalSetting onSave={handleSave} onCancel={() => setShowForm(false)} initial={null} />
-      )}
+      {/* Add Goal Modal */}
+      <AddGoalModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSave={handleSave} />
 
-      {/* Edit form */}
-      {editingGoal && (
-        <GoalSetting onSave={handleSave} onCancel={() => setEditingGoal(null)} initial={editingGoal} />
-      )}
+      {/* Edit Goal Modal */}
+      <GoalEditModal
+        isOpen={editingGoal !== null}
+        onClose={() => setEditingGoal(null)}
+        goal={editingGoal}
+        onSave={handleEditSave}
+      />
 
       {/* Filter tabs */}
       <div className="flex gap-1.5 flex-wrap">
-        {FILTERS.map(f => (
+        {[
+          { label: 'All', value: 'all' as const },
+          { label: 'Active', value: 'active' as const },
+          { label: 'Completed', value: 'completed' as const },
+          { label: 'Overdue', value: 'overdue' as const },
+        ].map(f => (
           <button
             key={f.value}
             onClick={() => setFilterStatus(f.value)}
@@ -136,147 +190,66 @@ const LearningGoals: React.FC = () => {
         ))}
       </div>
 
-      {/* Goal cards */}
-      {filteredGoals.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-4xl mb-3">🎯</p>
-          <p className="font-semibold">No goals yet</p>
-          <p className="text-sm mt-1">Create a goal or pick a template to get started.</p>
+      {/* Empty state */}
+      {!hasAnyGoals ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <EmptyStateIllustration />
+          <h3 className="text-xl font-bold text-gray-900 mt-6">No goals yet</h3>
+          <p className="text-gray-500 max-w-sm mt-2">
+            Start your learning journey by creating your first goal. Pick a template or add a custom goal.
+          </p>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="px-4 py-2.5 border-2 border-stellar/20 text-stellar font-bold rounded-xl text-sm hover:bg-stellar/5 transition-all"
+            >
+              Browse Templates
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2.5 bg-stellar text-white font-bold rounded-xl text-sm hover:bg-stellar-dark shadow-lg shadow-stellar/20 transition-all active:scale-95"
+            >
+              + Add Your First Goal
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredGoals.map((goal: Goal) => {
-            const completedMilestones = goal.milestones.filter((m: import('../types').Milestone) => m.completed).length;
-            const pct = goal.milestones.length ? Math.round((completedMilestones / goal.milestones.length) * 100) : 0;
-            const isExpanded = expandedGoal === goal.id;
-            const isOverdue = goal.status === 'active' && goal.deadline < new Date().toISOString().split('T')[0];
-
-            return (
-              <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                {/* Card header */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <span className="text-xl mt-0.5 shrink-0">{CATEGORY_ICONS[goal.category]}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="text-sm font-bold text-gray-900">{goal.title}</h3>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${STATUS_STYLES[isOverdue ? 'overdue' : goal.status]}`}>
-                            {isOverdue ? 'overdue' : goal.status}
-                          </span>
-                          {goal.sharedWithMentor && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">Shared</span>
-                          )}
-                          {goal.reminderEnabled && (
-                            <span className="text-[10px]" title="Reminders on" aria-label="Reminders enabled">🔔</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mb-3">{goal.description}</p>
-
-                        {/* Progress bar */}
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${goal.status === 'completed' ? 'bg-emerald-500' : 'bg-stellar'}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-bold text-gray-400 tabular-nums shrink-0">{pct}%</span>
-                        </div>
-                        <p className="text-[11px] text-gray-400 mt-1">
-                          {completedMilestones}/{goal.milestones.length} milestones · Due {goal.deadline}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => setExpandedGoal(isExpanded ? null : goal.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors text-xs font-bold"
-                        aria-expanded={isExpanded}
-                        aria-label={isExpanded ? 'Collapse goal' : 'Expand goal'}
-                      >
-                        {isExpanded ? '▲' : '▼'}
-                      </button>
-                      <button
-                        onClick={() => { setEditingGoal(goal); setShowForm(false); setShowTemplates(false); }}
-                        className="p-2 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-stellar transition-colors text-xs"
-                        aria-label="Edit goal"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => deleteGoal(goal.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors text-xs"
-                        aria-label="Delete goal"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded: SMART details + milestones */}
-                {isExpanded && (
-                  <div className="border-t border-gray-100 p-5 space-y-5 bg-gray-50/50">
-                    {/* SMART breakdown */}
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">SMART Breakdown</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {[
-                          { label: 'Specific', value: goal.specific },
-                          { label: 'Measurable', value: goal.measurable },
-                          { label: 'Achievable', value: goal.achievable },
-                          { label: 'Relevant', value: goal.relevant },
-                          { label: 'Time-Bound', value: goal.timeBound },
-                        ].map(item => (
-                          <div key={item.label} className="bg-white rounded-xl p-3 border border-gray-100">
-                            <p className="text-[10px] font-bold text-stellar uppercase mb-1">{item.label}</p>
-                            <p className="text-xs text-gray-700 leading-relaxed">{item.value || '—'}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Milestones */}
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Milestones</h4>
-                      <MilestoneTracker
-                        milestones={goal.milestones}
-                        onToggle={(mid: string) => toggleMilestone(goal.id, mid)}
-                      />
-                    </div>
-
-                    {/* Notes */}
-                    {goal.notes && (
-                      <div>
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Notes</h4>
-                        <p className="text-xs text-gray-600 leading-relaxed">{goal.notes}</p>
-                      </div>
-                    )}
-
-                    {/* Status controls */}
-                    <div className="flex gap-2 flex-wrap">
-                      {(['active', 'paused', 'completed'] as GoalStatus[]).map(s => (
-                        <button
-                          key={s}
-                          onClick={() => updateGoal(goal.id, { status: s })}
-                          disabled={goal.status === s}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
-                            goal.status === s ? 'bg-stellar text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-stellar/30'
-                          }`}
-                        >
-                          Mark {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+        <>
+          {/* Active goals */}
+          {activeGoals.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-gray-700">Active Goals</h3>
+                <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs font-bold text-gray-600">{activeGoals.length}</span>
               </div>
-            );
-          })}
-        </div>
+              {activeGoals.map(goal => (
+                <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onRefresh={refresh} />
+              ))}
+            </div>
+          )}
+
+          {/* Completed goals section */}
+          {completedGoals.length > 0 && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 group"
+                aria-expanded={showCompleted}
+              >
+                <span className={`text-lg transition-transform duration-200 ${showCompleted ? 'rotate-90' : ''}`}>▶</span>
+                <h3 className="text-sm font-semibold text-gray-700">Completed Goals</h3>
+                <span className="px-2 py-0.5 bg-emerald-100 rounded-full text-xs font-bold text-emerald-700">{completedGoals.length}</span>
+              </button>
+              {showCompleted && (
+                <div className="space-y-4 pl-6 animate-in fade-in slide-in-from-left-2 duration-300">
+                  {completedGoals.map(goal => (
+                    <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onRefresh={refresh} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

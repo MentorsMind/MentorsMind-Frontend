@@ -1,8 +1,8 @@
 import type { Session } from '../../types';
 import Badge from '../ui/Badge';
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
-  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'error', rescheduled: 'warning',
+const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'danger', rescheduled: 'warning',
 };
 
 interface SessionListProps { sessions?: Session[]; }
