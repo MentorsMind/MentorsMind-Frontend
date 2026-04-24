@@ -24,6 +24,14 @@ vi.mock('../components/payment/PaymentModal', () => ({
     ) : null,
 }));
 
+vi.mock('../services/booking.service', () => {
+  return {
+    default: class {
+      create = vi.fn().mockResolvedValue({ id: 'mock-session-id', status: 'success' });
+    }
+  };
+});
+
 import BookingModal from '../components/learner/BookingModal';
 import { useBooking } from '../hooks/useBooking';
 import type { BookingConfirmationDetails, MentorProfile } from '../types';
@@ -56,7 +64,7 @@ const mentor: MentorProfile = {
 };
 
 describe('Booking flow', () => {
-  it('generates availability and learner calendar data from the booking hook', () => {
+  it('generates availability and learner calendar data from the booking hook', async () => {
     const { result } = renderHook(() => useBooking(mentor));
 
     expect(result.current.availability.length).toBeGreaterThan(0);
@@ -67,17 +75,24 @@ describe('Booking flow', () => {
     });
 
     let confirmation: BookingConfirmationDetails | null = null;
-    act(() => {
-      confirmation = result.current.confirmBooking('tx-1234');
+    await act(async () => {
+      confirmation = await result.current.confirmBooking('tx-1234');
     });
 
-    expect(result.current.learnerCalendar).toHaveLength(1);
-    expect(result.current.confirmedBooking?.calendarInvite.filename).toContain('.ics');
-    expect(result.current.confirmedBooking?.paymentTransactionHash).toBe('tx-1234');
+    await waitFor(() => {
+      expect(result.current.learnerCalendar).toHaveLength(1);
+      expect(result.current.confirmedBooking?.calendarInvite.filename).toContain('.ics');
+      expect(result.current.confirmedBooking?.paymentTransactionHash).toBe('tx-1234');
+    });
     expect(confirmation).toBeDefined();
   });
 
   it('completes the booking modal flow through payment and success', async () => {
+    // Mock crypto.randomUUID for the test environment
+    if (!global.crypto.randomUUID) {
+      global.crypto.randomUUID = () => 'mock-uuid' as any;
+    }
+
     render(<BookingModal isOpen={true} mentor={mentor} onClose={() => {}} />);
 
     const slotButton = (await screen.findAllByRole('button')).find((button) =>
@@ -93,14 +108,45 @@ describe('Booking flow', () => {
     fireEvent.click(screen.getByText('Continue to confirmation'));
     expect(screen.getByText('Review everything before paying')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Proceed to payment'));
-    fireEvent.click(await screen.findByText('Confirm mock payment'));
+    fireEvent.click(screen.getByText('Review & Confirm'));
+    fireEvent.click(await screen.findByText('Confirm & Pay', {}, { timeout: 5000 }));
+    fireEvent.click(await screen.findByText('Confirm mock payment', {}, { timeout: 5000 }));
     fireEvent.click(screen.getByText('Close mock payment'));
 
     await waitFor(() => {
       expect(screen.getByText('Booking success')).toBeInTheDocument();
       expect(screen.getByText('Download invite')).toBeInTheDocument();
       expect(screen.getByText(/Added to learner calendar/i)).toBeInTheDocument();
+    }, { timeout: 10000 });
+  });
+
+  it('displays a warning when the confirmation response includes one', async () => {
+    // Mock crypto.randomUUID for the test environment
+    if (!global.crypto.randomUUID) {
+      global.crypto.randomUUID = () => 'mock-uuid' as any;
+    }
+
+    render(<BookingModal isOpen={true} mentor={mentor} onClose={() => {}} />);
+
+    const slotButton = (await screen.findAllByRole('button')).find((button) =>
+      /AM|PM/.test(button.textContent ?? '')
+    );
+    fireEvent.click(slotButton!);
+
+    // Trigger the simulated warning by including 'warning' in the notes
+    fireEvent.change(screen.getByLabelText('Session notes'), {
+      target: { value: 'This is a test with a warning.' },
     });
+
+    fireEvent.click(screen.getByText('Continue to confirmation'));
+    fireEvent.click(screen.getByText('Review & Confirm'));
+    fireEvent.click(await screen.findByText('Confirm & Pay', {}, { timeout: 5000 }));
+    fireEvent.click(await screen.findByText('Confirm mock payment', {}, { timeout: 5000 }));
+    fireEvent.click(screen.getByText('Close mock payment'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Booking Warning')).toBeInTheDocument();
+      expect(screen.getByText(/This session is scheduled during a holiday/i)).toBeInTheDocument();
+    }, { timeout: 10000 });
   });
 });

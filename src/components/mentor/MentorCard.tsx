@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
+import { MentorTimeDisplayCompact } from './MentorTimeDisplay';
 import type { Mentor } from '../../types';
 
 interface MentorCardProps {
   mentor: Mentor;
+  isAvailableNow?: boolean;
   onBook?: (mentor: Mentor) => void;
 }
 
@@ -22,7 +24,7 @@ function StarRating({ rating, reviewCount }: { rating: number; reviewCount: numb
   );
 }
 
-export default function MentorCard({ mentor, onBook }: MentorCardProps) {
+export default function MentorCard({ mentor, isAvailableNow = false, onBook }: MentorCardProps) {
   return (
     <Card hover className="flex flex-col gap-4">
       {/* Header */}
@@ -45,6 +47,15 @@ export default function MentorCard({ mentor, onBook }: MentorCardProps) {
 
       {/* Bio */}
       <p className="text-sm text-gray-600 line-clamp-2">{mentor.bio}</p>
+
+      {/* Timezone Info */}
+      <div className="flex items-center justify-between">
+        <MentorTimeDisplayCompact
+          timezone={mentor.timezone}
+          isAvailableNow={isAvailableNow}
+        />
+        <span className="text-xs text-gray-500">{mentor.timezone}</span>
+      </div>
 
       {/* Skills */}
       <div className="flex flex-wrap gap-1.5">

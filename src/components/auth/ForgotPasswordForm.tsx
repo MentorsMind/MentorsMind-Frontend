@@ -28,7 +28,7 @@ export default function ForgotPasswordForm({ onBack }: { onBack?: () => void }) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-text">Reset password</h2>
+        <h2 className="text-xl font-bold text-text">Forgot password?</h2>
         <p className="text-sm text-muted-foreground mt-1">Enter your email and we'll send a reset link.</p>
       </div>
       <Alert type="info">Password reset links expire after 1 hour.</Alert>

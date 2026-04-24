@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { Session, SessionStatus } from '../types';
+import { getBookingTransactionId } from '../services/dispute.service';
 
 // ─── Extended booking type ────────────────────────────────────────────────────
 
@@ -13,6 +14,7 @@ export interface BookingRecord extends Session {
   /** ISO string of when the session ended; dispute window = 72 h after */
   endedAt?: string;
   receiptUrl?: string;
+  transaction_id?: string | null;
 }
 
 export type TabKey = 'upcoming' | 'past';
@@ -51,21 +53,21 @@ const MOCK: BookingRecord[] = [
     mentorName: 'Nora Chen', mentorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nora',
     learnerName: 'You',
     scheduledAt: d(-3), duration: 60, status: 'completed', price: 80, asset: 'USDC',
-    endedAt: d(-3), hasReview: false, receiptUrl: '#',
+    endedAt: d(-3), hasReview: false, receiptUrl: '#', transaction_id: 'txn-b3',
   },
   {
     id: 'b4', mentorId: 'm1', learnerId: 'l1',
     mentorName: 'Aisha Bello', mentorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha',
     learnerName: 'You',
     scheduledAt: d(-10), duration: 90, status: 'completed', price: 120, asset: 'XLM',
-    endedAt: d(-10), hasReview: true, receiptUrl: '#',
+    endedAt: d(-10), hasReview: true, receiptUrl: '#', transaction_id: 'txn-b4',
   },
   {
     id: 'b5', mentorId: 'm4', learnerId: 'l1',
     mentorName: 'Kwame Asante', mentorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kwame',
     learnerName: 'You',
     scheduledAt: d(-15), duration: 30, status: 'completed', price: 40, asset: 'USDC',
-    endedAt: d(-15), hasReview: false, receiptUrl: '#',
+    endedAt: d(-15), hasReview: false, receiptUrl: '#', transaction_id: null,
   },
   // Past – cancelled
   {
@@ -105,6 +107,7 @@ export function useBookingHistory() {
   const [filters, setFilters] = useState<HistoryFilters>({ status: 'all', dateFrom: '', dateTo: '' });
   const [page, setPage] = useState(1);
   const [isLoading] = useState(false);
+  const [transactionIdsByBooking, setTransactionIdsByBooking] = useState<Record<string, string | null>>({});
 
   const updateFilter = useCallback(<K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) => {
     setFilters((f) => ({ ...f, [key]: value }));
@@ -138,6 +141,16 @@ export function useBookingHistory() {
   }, [tab, filters]);
 
   const paginated = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
+  const bookingsWithTransactions = useMemo(
+    () => paginated.map((booking) => ({
+      ...booking,
+      transaction_id:
+        transactionIdsByBooking[booking.id] !== undefined
+          ? transactionIdsByBooking[booking.id]
+          : (booking.transaction_id ?? null),
+    })),
+    [paginated, transactionIdsByBooking],
+  );
   const hasMore = paginated.length < filtered.length;
 
   const loadMore = useCallback(() => setPage((p) => p + 1), []);
@@ -148,10 +161,56 @@ export function useBookingHistory() {
     return hoursElapsed <= DISPUTE_WINDOW_HOURS;
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const hydrateTransactionIds = async () => {
+      const completedWithoutHydratedTx = bookingsWithTransactions.filter(
+        (booking) =>
+          booking.status === 'completed' &&
+          booking.transaction_id === undefined &&
+          transactionIdsByBooking[booking.id] === undefined,
+      );
+
+      if (completedWithoutHydratedTx.length === 0) {
+        return;
+      }
+
+      const updates = await Promise.all(
+        completedWithoutHydratedTx.map(async (booking) => {
+          try {
+            const detail = await getBookingTransactionId(booking.id);
+            return [booking.id, detail.transaction_id] as const;
+          } catch {
+            return [booking.id, null] as const;
+          }
+        }),
+      );
+
+      if (!mounted || updates.length === 0) {
+        return;
+      }
+
+      setTransactionIdsByBooking((prev) => {
+        const next = { ...prev };
+        updates.forEach(([bookingId, transactionId]) => {
+          next[bookingId] = transactionId;
+        });
+        return next;
+      });
+    };
+
+    void hydrateTransactionIds();
+
+    return () => {
+      mounted = false;
+    };
+  }, [bookingsWithTransactions, transactionIdsByBooking]);
+
   return {
     tab, switchTab,
     filters, updateFilter,
-    bookings: paginated,
+    bookings: bookingsWithTransactions,
     totalCount: filtered.length,
     hasMore,
     loadMore,

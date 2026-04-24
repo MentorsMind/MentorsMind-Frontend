@@ -81,6 +81,7 @@ export function useGoals() {
   const deleteGoal = useCallback(async (id: string) => {
     try {
       await goalsService.deleteGoal(id);
+      // GoalController.delete returns 204 No Content - remove from local state based on request ID
       setGoals(prev => prev.filter(g => g.id !== id));
     } catch (err: any) {
       console.error('Failed to delete goal:', err);

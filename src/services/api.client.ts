@@ -1,7 +1,9 @@
 import type { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { initTokenRefresh } from "../utils/request.refresh.util";
 import { tokenStorage } from "../utils/token.storage.utils";
+import { parseApiError } from "../utils/parse.api.error";
 
 // Use to wait few seconds before retry
 const getBackOffDelay = (retry: number) => {
@@ -156,6 +158,12 @@ api.interceptors.response.use(
 
     // NOTE: Token refresh is handled by initTokenRefresh to avoid
     // multiple competing refresh attempts. Do not perform refresh here.
+
+    // Show a unified error toast for all non-401 errors (401 is handled by
+    // initTokenRefresh which shows "Session expired" only on refresh failure).
+    if (error.response?.status !== 401) {
+      toast.error(parseApiError(error));
+    }
 
     return Promise.reject(error);
   },

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
 import * as authService from '../services/auth.service';
 import { TOKEN_KEY, REFRESH_TOKEN } from '../config/app.config';
@@ -20,6 +21,8 @@ interface AuthContextType {
   completeMFAChallenge: (totp: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => Promise<void>;
   logout: () => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
   clearError: () => void;
   /** Refresh the stored user object (e.g. after enabling/disabling MFA) */
   refreshUser: () => Promise<void>;
@@ -132,6 +135,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setError(null);
   };
+  
+  const verifyEmail = async (token: string) => {
+    setError(null);
+    try {
+      await authService.verifyEmail(token);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Email verification failed.';
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
+  const resendVerification = async () => {
+    setError(null);
+    try {
+      await authService.resendVerification();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to resend verification email.';
+      setError(errorMessage);
+      throw err;
+    }
+  };
 
   const clearError = () => {
     setError(null);
@@ -187,6 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       clearError,
+      verifyEmail,
+      resendVerification,
       refreshUser,
       refreshToken
     }}>
