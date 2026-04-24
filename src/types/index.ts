@@ -1,8 +1,10 @@
 import type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate } from './goals.types.js';
 import type { PaymentStatus } from './payment.types';
+import type { AdminUser, AdminTransaction, AdminSession, AdminPayment, AdminDispute, AdminLog, AdminListResponse } from './admin.types';
 
 export type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate };
 export * from './payment.types';
+export type { AdminUser, AdminTransaction, AdminSession, AdminPayment, AdminDispute, AdminLog, AdminListResponse };
 
 // Global shared types
 
