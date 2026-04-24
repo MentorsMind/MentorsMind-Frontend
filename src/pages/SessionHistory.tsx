@@ -4,6 +4,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import NoteEditor from '../components/learner/NoteEditor';
 import SessionHistoryCard from '../components/session/SessionHistoryCard';
+import DisputeFormModal from '../components/session/DisputeFormModal';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
 import { useBookingHistory, TabKey, StatusFilter } from '../hooks/useBookingHistory';
 import { useFeedback } from '../hooks/useFeedback';
@@ -60,6 +61,7 @@ export default function SessionHistory() {
   const [tab, setTab] = useState<SessionHistoryTab>('upcoming');
 
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<{ id: string, txId: string } | null>(null);
   
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -69,7 +71,11 @@ export default function SessionHistory() {
   const showSkeleton = isLoading || isHookLoading;
 
   const handleLeaveReview = (id: string) => console.log('Leave review', id);
-  const handleOpenDispute = (id: string) => console.log('Open dispute', id);
+  const handleOpenDispute = (id: string, transactionId?: string | null) => {
+    if (transactionId) {
+      setSelectedBookingForDispute({ id, txId: transactionId });
+    }
+  };
   const handleViewReceipt = (url: string) => window.open(url, '_blank');
 
   return (
@@ -192,6 +198,18 @@ export default function SessionHistory() {
         </div>
       )}
       
+      {selectedBookingForDispute && (
+        <DisputeFormModal
+          isOpen={!!selectedBookingForDispute}
+          onClose={() => setSelectedBookingForDispute(null)}
+          bookingId={selectedBookingForDispute.id}
+          transactionId={selectedBookingForDispute.txId}
+          onSuccess={(disputeId) => {
+            navigate(`/disputes/${disputeId}`);
+          }}
+        />
+      )}
+
       {totalCount > 0 && !showSkeleton && tab !== 'feedback' && (
         <p className="text-center text-xs text-gray-400 mt-4">
           Showing {bookings.length} of {totalCount} session{totalCount !== 1 ? 's' : ''}
