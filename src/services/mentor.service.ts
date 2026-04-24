@@ -1,26 +1,35 @@
 import api from './api';
 import type { Mentor, Session, Review } from '../types';
 
+// GET /mentors — cursor-based pagination
+// Response shape: { data: { data: Mentor[], next_cursor: string | null, has_more: boolean, total: number } }
 export interface MentorSearchParams {
   q?: string;
   skills?: string;
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
-  page?: number;
+  cursor?: string;
   limit?: number;
 }
 
-export interface PaginatedMentors {
+export interface CursorPaginatedMentors {
   mentors: Mentor[];
+  next_cursor: string | null;
+  has_more: boolean;
   total: number;
-  page: number;
-  limit: number;
 }
 
-export async function searchMentors(params: MentorSearchParams = {}): Promise<PaginatedMentors> {
+export async function searchMentors(params: MentorSearchParams = {}): Promise<CursorPaginatedMentors> {
   const { data } = await api.get('/mentors', { params });
-  return data.data;
+  // Response: { data: { data: [...], next_cursor, has_more, total } }
+  const payload = data.data;
+  return {
+    mentors: payload.data,
+    next_cursor: payload.next_cursor ?? null,
+    has_more: payload.has_more ?? false,
+    total: payload.total ?? 0,
+  };
 }
 
 export async function getMentor(id: string): Promise<Mentor> {
