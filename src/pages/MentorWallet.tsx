@@ -10,7 +10,16 @@ const MentorWallet: React.FC = () => {
   const {
     wallet,
     txFilter, setTxFilter,
+    txOrder, setTxOrder,
     filteredTx,
+    visiblePayoutRequests,
+    payoutHasMore,
+    payoutLoading,
+    loadMorePayoutRequests,
+    transactionsHasMore,
+    transactionsLoading,
+    loadMoreTransactions,
+    showNoMoreTransactions,
     payoutAmount, setPayoutAmount,
     payoutAsset, setPayoutAsset,
     payoutStatus,
@@ -74,9 +83,18 @@ const MentorWallet: React.FC = () => {
         <div className="lg:col-span-2">
           <PayoutHistory
             transactions={filteredTx}
-            payoutHistory={wallet.payoutHistory}
+            payoutHistory={visiblePayoutRequests}
             filter={txFilter}
+            order={txOrder}
+            transactionsHasMore={transactionsHasMore}
+            transactionsLoading={transactionsLoading}
+            payoutHasMore={payoutHasMore}
+            payoutLoading={payoutLoading}
+            showNoMoreTransactions={showNoMoreTransactions}
             onFilterChange={setTxFilter}
+            onOrderChange={setTxOrder}
+            onLoadMoreTransactions={loadMoreTransactions}
+            onLoadMorePayouts={loadMorePayoutRequests}
           />
         </div>
       </div>
