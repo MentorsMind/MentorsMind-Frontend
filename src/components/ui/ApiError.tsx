@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import * as authService from '../../services/auth.service';
+import { tokenStorage } from '../../utils/token.storage.utils';
 
 interface ApiErrorProps {
   error: any;
@@ -26,11 +27,11 @@ export default function ApiError({ error, onRetry }: ApiErrorProps) {
       (async () => {
         setAttemptingRefresh(true);
         try {
-          const refreshToken = localStorage.getItem('mm_refresh_token');
+          const refreshToken = tokenStorage.getRefreshToken();
           if (!refreshToken) throw new Error('no refresh token');
           const res = await authService.refreshToken(refreshToken);
           if (res?.token) {
-            localStorage.setItem('mm_token', res.token);
+            tokenStorage.setTokens(res.token, res.refreshToken || refreshToken);
             // ask consumer to retry the failed request
             onRetry?.();
             return;

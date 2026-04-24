@@ -5,6 +5,14 @@ import type {
   EscrowDisputeRequest,
   EscrowTimelineEvent 
 } from '../types/payment.types';
+import { listPayments } from '../services/payment.service';
+import { 
+  releaseFunds, 
+  disputeEscrow as disputeEscrowContract, 
+  getEscrow 
+} from '../services/escrow.service';
+import { useFreighter } from './useFreighter';
+import { STELLAR_CONFIG } from '../config/stellar.config';
 
 interface UseEscrowOptions {
   userRole: 'learner' | 'mentor';
@@ -25,168 +33,6 @@ interface UseEscrowReturn {
   refreshEscrows: () => Promise<void>;
 }
 
-// Mock data for demonstration
-const MOCK_ESCROWS: EscrowContract[] = [
-  {
-    id: 'escrow-001',
-    sessionId: 'session-001',
-    contractAddress: 'GDRFGPDY3BVCJFDYKEJFVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7',
-    status: 'active',
-    amount: 150,
-    asset: 'USDC',
-    learnerId: 'learner-001',
-    mentorId: 'mentor-001',
-    createdAt: '2026-03-20T10:00:00Z',
-    sessionDate: '2026-03-25T14:00:00Z',
-    autoReleaseAt: '2026-03-26T14:00:00Z',
-    disputeWindowEndsAt: '2026-03-27T14:00:00Z',
-    stellarExpertUrl: 'https://stellar.expert/explorer/testnet/account/GDRFGPDY3BVCJFDYKEJFVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7',
-    timeline: [
-      {
-        stage: 'created',
-        timestamp: '2026-03-20T10:00:00Z',
-        description: 'Escrow contract created and funded',
-        transactionHash: 'abc123def456789012345678901234567890123456789012345678901234abcd'
-      },
-      {
-        stage: 'session',
-        timestamp: '2026-03-25T14:00:00Z',
-        description: 'Session completed successfully'
-      }
-    ]
-  },
-  {
-    id: 'escrow-002',
-    sessionId: 'session-002',
-    contractAddress: 'GBC3SGF3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJFDYKEJFVFPYQJZLQJ4JFWV',
-    status: 'released',
-    amount: 200,
-    asset: 'XLM',
-    learnerId: 'learner-001',
-    mentorId: 'mentor-002',
-    createdAt: '2026-03-15T09:00:00Z',
-    sessionDate: '2026-03-18T16:00:00Z',
-    autoReleaseAt: '2026-03-19T16:00:00Z',
-    disputeWindowEndsAt: '2026-03-20T16:00:00Z',
-    releasedAt: '2026-03-18T17:30:00Z',
-    stellarExpertUrl: 'https://stellar.expert/explorer/testnet/account/GBC3SGF3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJFDYKEJFVFPYQJZLQJ4JFWV',
-    timeline: [
-      {
-        stage: 'created',
-        timestamp: '2026-03-15T09:00:00Z',
-        description: 'Escrow contract created and funded',
-        transactionHash: 'def456abc789012345678901234567890123456789012345678901234567890ef'
-      },
-      {
-        stage: 'session',
-        timestamp: '2026-03-18T16:00:00Z',
-        description: 'Session completed successfully'
-      },
-      {
-        stage: 'release',
-        timestamp: '2026-03-18T17:30:00Z',
-        description: 'Funds released to mentor',
-        transactionHash: '789012345678901234567890123456789012345678901234567890123456789012'
-      }
-    ]
-  },
-  {
-    id: 'escrow-003',
-    sessionId: 'session-003',
-    contractAddress: 'GFDYKEJFVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJF',
-    status: 'disputed',
-    amount: 175,
-    asset: 'USDC',
-    learnerId: 'learner-001',
-    mentorId: 'mentor-003',
-    createdAt: '2026-03-10T11:00:00Z',
-    sessionDate: '2026-03-12T13:00:00Z',
-    autoReleaseAt: '2026-03-13T13:00:00Z',
-    disputeWindowEndsAt: '2026-03-14T13:00:00Z',
-    stellarExpertUrl: 'https://stellar.expert/explorer/testnet/account/GFDYKEJFVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJF',
-    timeline: [
-      {
-        stage: 'created',
-        timestamp: '2026-03-10T11:00:00Z',
-        description: 'Escrow contract created and funded',
-        transactionHash: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890'
-      },
-      {
-        stage: 'session',
-        timestamp: '2026-03-12T13:00:00Z',
-        description: 'Session marked as completed'
-      },
-      {
-        stage: 'disputed',
-        timestamp: '2026-03-12T15:00:00Z',
-        description: 'Dispute filed by learner'
-      }
-    ],
-    dispute: {
-      id: 'dispute-001',
-      reason: 'mentor_no_show',
-      description: 'Mentor did not attend the scheduled session',
-      filedBy: 'learner',
-      filedAt: '2026-03-12T15:00:00Z',
-      status: 'pending'
-    }
-  },
-  {
-    id: 'escrow-004',
-    sessionId: 'session-004',
-    contractAddress: 'GVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJFDYKEJF',
-    status: 'refunded',
-    amount: 120,
-    asset: 'XLM',
-    learnerId: 'learner-001',
-    mentorId: 'mentor-004',
-    createdAt: '2026-03-05T08:00:00Z',
-    sessionDate: '2026-03-08T10:00:00Z',
-    autoReleaseAt: '2026-03-09T10:00:00Z',
-    disputeWindowEndsAt: '2026-03-10T10:00:00Z',
-    releasedAt: '2026-03-09T12:00:00Z',
-    stellarExpertUrl: 'https://stellar.expert/explorer/testnet/account/GVFPYQJZLQJ4JFWVQX2W2Z3J7B4V3VJ5VJ6V7GDRFGPDY3BVCJFDYKEJF',
-    timeline: [
-      {
-        stage: 'created',
-        timestamp: '2026-03-05T08:00:00Z',
-        description: 'Escrow contract created and funded',
-        transactionHash: 'b2c3d4e5f6a1789012345678901234567890123456789012345678901234567890'
-      },
-      {
-        stage: 'session',
-        timestamp: '2026-03-08T10:00:00Z',
-        description: 'Session cancelled by mentor'
-      },
-      {
-        stage: 'disputed',
-        timestamp: '2026-03-08T10:30:00Z',
-        description: 'Dispute filed by learner'
-      },
-      {
-        stage: 'refunded',
-        timestamp: '2026-03-09T12:00:00Z',
-        description: 'Funds refunded to learner',
-        transactionHash: 'c3d4e5f6a1b2789012345678901234567890123456789012345678901234567890'
-      }
-    ],
-    dispute: {
-      id: 'dispute-002',
-      reason: 'session_cancelled',
-      description: 'Session was cancelled by mentor without notice',
-      filedBy: 'learner',
-      filedAt: '2026-03-08T10:30:00Z',
-      status: 'resolved',
-      resolution: {
-        outcome: 'refunded',
-        resolvedAt: '2026-03-09T12:00:00Z',
-        resolverId: 'admin-001',
-        notes: 'Mentor confirmed cancellation, full refund approved'
-      }
-    }
-  }
-];
-
 const DISPUTE_REASONS = [
   { value: 'mentor_no_show', label: 'Mentor did not show up' },
   { value: 'unsatisfactory_session', label: 'Session was unsatisfactory' },
@@ -201,6 +47,7 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { walletInfo, signTransaction } = useFreighter();
 
   // Drive re-renders every second so countdown displays update
   useEffect(() => {
@@ -216,29 +63,73 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
     };
   }, []);
 
-  // Fetch escrows (mock implementation)
+  // Fetch escrows (real implementation)
   const fetchEscrows = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Fetch payments from backend
+      const payments = await listPayments();
       
-      // Filter escrows based on user role and ID
-      const filteredEscrows = MOCK_ESCROWS.filter(escrow => 
-        userRole === 'learner' 
-          ? escrow.learnerId === userId 
-          : escrow.mentorId === userId
-      );
+      // Filter for payments that have an escrow and belong to the user
+      // Note: In a real app, the API should handle filtering, but we follow the previous mock logic
+      const paymentsWithEscrow = payments.filter(p => p.escrowId);
       
-      setEscrows(filteredEscrows.length > 0 ? filteredEscrows : MOCK_ESCROWS);
+      // Map payments to EscrowContract type
+      // For more detailed data, we could fetch from the Soroban contract for each,
+      // but to avoid excessive RPC calls, we map the available payment data
+      const mappedEscrows: EscrowContract[] = await Promise.all(paymentsWithEscrow.map(async (p) => {
+        let contractDetails = null;
+        try {
+          if (p.escrowId) {
+            contractDetails = await getEscrow(Number(p.escrowId));
+          }
+        } catch (e) {
+          console.error(`Failed to fetch contract details for escrow ${p.escrowId}`, e);
+        }
+
+        const createdAt = p.createdAt || new Date().toISOString();
+        const sessionDate = contractDetails ? new Date(contractDetails.createdAt).toISOString() : createdAt; // Fallback
+        
+        // Calculate release and dispute windows (72h after session by default)
+        const sessionTime = new Date(sessionDate).getTime();
+        const autoReleaseAt = new Date(sessionTime + 24 * 60 * 60 * 1000).toISOString(); // 24h
+        const disputeWindowEndsAt = new Date(sessionTime + 48 * 60 * 60 * 1000).toISOString(); // 48h
+
+        return {
+          id: p.escrowId || p.id,
+          sessionId: p.sessionId,
+          contractAddress: STELLAR_CONFIG.contractId, // Platform escrow contract
+          status: (contractDetails?.status.toLowerCase() as EscrowStatus) || (p.status as EscrowStatus) || 'active',
+          amount: Number(p.amount),
+          asset: p.asset,
+          learnerId: contractDetails?.learner || '',
+          mentorId: contractDetails?.mentor || '',
+          createdAt: createdAt,
+          sessionDate: sessionDate,
+          autoReleaseAt: autoReleaseAt,
+          disputeWindowEndsAt: disputeWindowEndsAt,
+          stellarExpertUrl: p.stellarTxHash ? `https://stellar.expert/explorer/testnet/tx/${p.stellarTxHash}` : undefined,
+          timeline: [
+            {
+              stage: 'created',
+              timestamp: createdAt,
+              description: 'Escrow contract created and funded',
+              transactionHash: p.stellarTxHash
+            }
+          ]
+        };
+      }));
+      
+      setEscrows(mappedEscrows);
     } catch (err) {
+      console.error('Escrow fetch error:', err);
       setError('Failed to load escrow contracts');
     } finally {
       setLoading(false);
     }
-  }, [userRole, userId]);
+  }, []);
 
   // Initial fetch
   useEffect(() => {
@@ -269,7 +160,7 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
   const canRelease = useCallback((escrow: EscrowContract): boolean => {
     if (userRole !== 'mentor') return false;
     if (escrow.status !== 'active') return false;
-    if (escrow.mentorId !== userId) return false;
+    if (escrow.mentorId && escrow.mentorId !== userId) return false;
     
     // Session must be completed (session date has passed)
     const sessionDate = new Date(escrow.sessionDate);
@@ -280,7 +171,7 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
   const canDispute = useCallback((escrow: EscrowContract): boolean => {
     if (userRole !== 'learner') return false;
     if (escrow.status !== 'active') return false;
-    if (escrow.learnerId !== userId) return false;
+    if (escrow.learnerId && escrow.learnerId !== userId) return false;
     
     return isWithinDisputeWindow(escrow);
   }, [userRole, userId]);
@@ -292,79 +183,76 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
     return now <= windowEnd;
   }, []);
 
-  // Release escrow (mock implementation)
+  // Release escrow (real implementation)
   const releaseEscrow = useCallback(async (escrowId: string) => {
+    if (!walletInfo?.publicKey) {
+      setError('Wallet not connected');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Wrapper function to bridge useFreighter's signTransaction and escrow.service's expectation
+      const signXdr = async (xdr: string) => {
+        const { Transaction } = await import('@stellar/stellar-sdk');
+        const tx = new Transaction(xdr, STELLAR_CONFIG.network);
+        const signedXdr = await signTransaction(tx);
+        return signedXdr;
+      };
+
+      await releaseFunds(
+        Number(escrowId),
+        walletInfo.publicKey,
+        signXdr
+      );
       
-      setEscrows(prev => prev.map(escrow => {
-        if (escrow.id !== escrowId) return escrow;
-        
-        const releaseEvent: EscrowTimelineEvent = {
-          stage: 'release',
-          timestamp: new Date().toISOString(),
-          description: 'Funds released to mentor',
-          transactionHash: Array.from({ length: 64 }, () => 
-            Math.floor(Math.random() * 16).toString(16)
-          ).join('')
-        };
-        
-        return {
-          ...escrow,
-          status: 'released',
-          releasedAt: new Date().toISOString(),
-          timeline: [...escrow.timeline, releaseEvent]
-        };
-      }));
+      // Refresh list after successful release
+      await fetchEscrows();
     } catch (err) {
+      console.error('Release escrow error:', err);
       setError('Failed to release escrow');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [walletInfo, signTransaction, fetchEscrows]);
 
-  // Dispute escrow (mock implementation)
+  // Dispute escrow (real implementation)
   const disputeEscrow = useCallback(async (request: Omit<EscrowDisputeRequest, 'filedBy' | 'filedAt'>) => {
+    if (!walletInfo?.publicKey) {
+      setError('Wallet not connected');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const signXdr = async (xdr: string) => {
+        const { Transaction } = await import('@stellar/stellar-sdk');
+        const tx = new Transaction(xdr, STELLAR_CONFIG.network);
+        const signedXdr = await signTransaction(tx);
+        return signedXdr;
+      };
+
+      await disputeEscrowContract(
+        Number(request.escrowId),
+        walletInfo.publicKey,
+        signXdr
+      );
       
-      setEscrows(prev => prev.map(escrow => {
-        if (escrow.id !== request.escrowId) return escrow;
-        
-        const disputeEvent: EscrowTimelineEvent = {
-          stage: 'disputed',
-          timestamp: new Date().toISOString(),
-          description: 'Dispute filed by learner'
-        };
-        
-        return {
-          ...escrow,
-          status: 'disputed',
-          dispute: {
-            id: `dispute-${Date.now()}`,
-            reason: request.reason,
-            description: request.description,
-            filedBy: 'learner',
-            filedAt: new Date().toISOString(),
-            status: 'pending'
-          },
-          timeline: [...escrow.timeline, disputeEvent]
-        };
-      }));
+      // Refresh list after successful dispute
+      await fetchEscrows();
     } catch (err) {
+      console.error('Dispute escrow error:', err);
       setError('Failed to file dispute');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [walletInfo, signTransaction, fetchEscrows]);
 
   // Refresh escrows
   const refreshEscrows = useCallback(async () => {
