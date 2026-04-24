@@ -5,6 +5,7 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import GoalsService from '../../services/goals.service';
 import SessionService from '../../services/session.service';
+import { useAuth } from '../../hooks/useAuth';
 import type { Session } from '../../types';
 
 interface GoalCardProps {
@@ -29,6 +30,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [progressValue, setProgressValue] = useState(goal.progress);
   const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
@@ -48,12 +50,33 @@ export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
   const fetchCompletedSessions = async () => {
     setLoadingSessions(true);
     try {
-      const sessionService = new SessionService();
-      const response = await sessionService.getLearnerSessions({ status: 'completed' });
-      const available = (response.data || []).filter((s: Session) => !goal.linkedSessionIds.includes(s.id));
+      // Fetch from /bookings endpoint as specified in requirements
+      const response = await fetch('/api/bookings');
+      const bookingsData = await response.json();
+      
+      // Filter client-side: mentee_id === currentUserId AND status === 'completed'
+      // Don't filter out already linked sessions - we want to show them with disabled state
+      const available = (bookingsData.data || [])
+        .filter((s: Session) => 
+          s.learnerId === user?.id && 
+          s.status === 'completed'
+        );
+      
       setCompletedSessions(available);
     } catch (err) {
       console.error('Failed to fetch sessions:', err);
+      // Fallback to existing method if bookings endpoint fails
+      try {
+        const sessionService = new SessionService();
+        const response = await sessionService.getLearnerSessions({ status: 'completed' });
+        const available = (response.data || [])
+          .filter((s: Session) => 
+            s.learnerId === user?.id
+          );
+        setCompletedSessions(available);
+      } catch (fallbackErr) {
+        console.error('Failed to fetch sessions with fallback:', fallbackErr);
+      }
     } finally {
       setLoadingSessions(false);
     }
@@ -67,6 +90,8 @@ export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
   const handleLinkSession = async (sessionId: string) => {
     try {
       await goalsService.linkSession(goal.id, sessionId);
+      // Immediately call GET /goals/:id to refetch the updated goal
+      await goalsService.getGoal(goal.id);
       await onRefresh();
       setShowLinkModal(false);
     } catch (err) {
@@ -96,6 +121,8 @@ export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
   const handleDelete = async () => {
     try {
       await goalsService.deleteGoal(goal.id);
+      // GoalController.delete returns 204 No Content - the frontend must remove the goal from local state
+      // based on the request's goal ID, not from the response body
       await onRefresh();
       setShowDeleteConfirm(false);
     } catch (err) {
@@ -363,25 +390,38 @@ export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
             </div>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {completedSessions.map(session => (
-                <div
-                  key={session.id}
-                  onClick={() => handleLinkSession(session.id)}
-                  className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-stellar/50 hover:bg-stellar/5 cursor-pointer transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {session.notes || `Session with Mentor`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(session.scheduledAt).toLocaleDateString()} · {session.duration} min
-                      </p>
+              {completedSessions.map(session => {
+                const isAlreadyLinked = goal.linkedSessionIds.includes(session.id);
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => !isAlreadyLinked && handleLinkSession(session.id)}
+                    className={`p-3 rounded-lg border transition-all ${
+                      isAlreadyLinked 
+                        ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60' 
+                        : 'bg-gray-50 border-gray-200 hover:border-stellar/50 hover:bg-stellar/5 cursor-pointer'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-sm font-medium ${isAlreadyLinked ? 'text-gray-500' : 'text-gray-900'}`}>
+                          {session.notes || `Session with Mentor`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(session.scheduledAt).toLocaleDateString()} · {session.duration} min
+                        </p>
+                      </div>
+                      {isAlreadyLinked ? (
+                        <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                          Already linked
+                        </span>
+                      ) : (
+                        <span className="text-stellar text-lg">+</span>
+                      )}
                     </div>
-                    <span className="text-stellar text-lg">+</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
