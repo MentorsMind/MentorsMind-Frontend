@@ -10,6 +10,7 @@ import type {
   MentorProfile,
 } from '../types';
 import type { PaymentDetails } from '../types/payment.types';
+import { ApiError } from '../services/api.error';
 
 // Helper functions for timezone conversions
 const toZonedTime = (date: Date, timeZone: string) => {
@@ -357,8 +358,12 @@ export const useBooking = (mentor: MentorProfile | null) => {
         setConfirmedBooking(confirmation);
         return confirmation;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create booking.';
-        setConfirmError(message);
+        if (err instanceof ApiError && err.status === 501) {
+          setConfirmError("Booking feature is coming soon! We're still putting the finishing touches on our session scheduler. Please check back later.");
+        } else {
+          const message = err instanceof Error ? err.message : 'Failed to create booking.';
+          setConfirmError(message);
+        }
         return null;
       } finally {
         setIsConfirming(false);

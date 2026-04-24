@@ -10,7 +10,13 @@ const DEFAULT: ProgressItem[] = [
 
 export default function LearningProgress({ items = DEFAULT }: LearningProgressProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Skill Progression Over Time</h2>
+        <p className="text-sm text-gray-500">Progress dashboard with momentum signals</p>
+      </div>
+
+      <div className="space-y-4">
       {items.map(item => {
         const pct = Math.round((item.current / item.target) * 100);
         return (
@@ -27,5 +33,11 @@ export default function LearningProgress({ items = DEFAULT }: LearningProgressPr
         );
       })}
     </div>
-  );
+
+    <div className="pt-4 border-t border-gray-100">
+      <h3 className="text-sm font-bold text-gray-900">Milestone Celebration</h3>
+      <p className="text-xs text-gray-400 mt-1">Celebrate your achievements and growth.</p>
+    </div>
+  </div>
+);
 }
