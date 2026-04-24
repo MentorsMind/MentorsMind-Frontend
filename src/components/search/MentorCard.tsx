@@ -33,6 +33,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
           e.stopPropagation();
           onSave(mentor.id);
         }}
+        aria-label={isSaved ? 'Unsave' : 'Save'}
         className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
           isSaved 
             ? 'bg-stellar text-white' 
@@ -44,7 +45,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
         </svg>
       </button>
 
-      <div className={`${!isGridView ? 'shrink-0' : ''}`}>
+      <div className={`${!isGridView ? 'flex-shrink-0' : ''}`}>
         {/* Avatar */}
         <div className="relative inline-block mb-4">
           {mentor.avatar ? (
@@ -54,7 +55,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
               className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform"
             />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-2xl border-2 border-white shadow-md">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-2xl border-2 border-white shadow-md">
               {mentor.name[0]}
             </div>
           )}
@@ -92,7 +93,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
               key={index}
               className="px-2.5 py-1 bg-gray-50 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-100"
             >
-              {skill}
+              {skill.toUpperCase()}
             </span>
           ))}
           {mentor.skills.length > (isGridView ? 4 : 6) && (

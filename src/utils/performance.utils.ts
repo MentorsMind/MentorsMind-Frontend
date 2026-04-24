@@ -19,33 +19,37 @@ export const buildWebpSource = (src?: string) => {
 };
 
 export const preloadResource = (href: string, as: string, type?: string) => {
-  if (typeof document === 'undefined') return;
-  if (document.head.querySelector(`link[rel="preload"][href="${href}"]`)) return;
+  const doc = (globalThis as any).document as any;
+  if (!doc?.head) return;
+  if (doc.head.querySelector?.(`link[rel="preload"][href="${href}"]`)) return;
 
-  const link = document.createElement('link');
+  const link = doc.createElement('link');
   link.rel = 'preload';
   link.href = href;
   link.as = as;
   if (type) {
     link.type = type;
   }
-  document.head.appendChild(link);
+  doc.head.appendChild(link);
 };
 
 export const preloadCriticalResources = () => {
   preloadResource('/vite.svg', 'image', 'image/svg+xml');
-  if (typeof document !== 'undefined' && !document.head.querySelector('link[rel="preconnect"][href="https://api.dicebear.com"]')) {
-    const preconnect = document.createElement('link');
+  const doc = (globalThis as any).document as any;
+  if (doc?.head && !doc.head.querySelector?.('link[rel="preconnect"][href="https://api.dicebear.com"]')) {
+    const preconnect = doc.createElement('link');
     preconnect.rel = 'preconnect';
     preconnect.href = 'https://api.dicebear.com';
-    document.head.appendChild(preconnect);
+    doc.head.appendChild(preconnect);
   }
 };
 
 export const registerServiceWorker = () => {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+  const win = (globalThis as any).window as any;
+  const nav = (globalThis as any).navigator as any;
+  if (!win?.addEventListener || !nav?.serviceWorker?.register) return;
+  win.addEventListener('load', () => {
+    nav.serviceWorker.register('/sw.js').catch(() => {
       // Ignore service worker registration failures in unsupported environments.
     });
   });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Search, Sliders, CheckCircle2 } from 'lucide-react';
-import type { SearchFilters } from '../../services/search.service';
+import { SearchFilters } from '../../services/search.service';
 
 interface AdvancedSearchProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ isOpen, onClose, filter
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-8 pt-8 pb-6 border-b border-gray-50 flex items-center justify-between bg-linear-to-r from-blue-50/50 to-indigo-50/50">
+        <div className="px-8 pt-8 pb-6 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
           <div>
             <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
               <Sliders className="h-6 w-6 text-blue-600" /> Advanced Discovery

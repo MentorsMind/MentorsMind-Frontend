@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SearchOptions } from "../../services/search.service";
+import { SearchOptions } from '../../services/search.service';
 import { ChevronDown, BarChart3 } from 'lucide-react';
 
 interface SortOptionsProps {

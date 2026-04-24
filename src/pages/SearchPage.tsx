@@ -43,13 +43,13 @@ const SearchPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header Section */}
-      <section className="bg-linear-to-b from-blue-50/50 to-white pt-20 pb-16 px-6">
+      <section className="bg-gradient-to-b from-blue-50/50 to-white pt-20 pb-16 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest mb-6 animate-bounce">
             <Sparkles className="h-4 w-4" /> Discover Mentors & Knowledge
           </div>
           <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-6 tracking-tight">
-            Find exactly what <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">you need</span>
+            Find exactly what <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">you need</span>
           </h1>
           <p className="text-lg text-gray-500 font-medium max-w-2xl mx-auto mb-12">
             Search across our global network of mentors, active learning sessions, and premium educational content.
@@ -95,7 +95,7 @@ const SearchPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Sidebar */}
-          <aside className="lg:w-80 shrink-0 space-y-8">
+          <aside className="lg:w-80 flex-shrink-0 space-y-8">
             <FilterPanel filters={filters} onFilterChange={setFilters} />
             <SavedSearches 
               savedSearches={savedSearches} 
@@ -119,7 +119,7 @@ const SearchPage: React.FC = () => {
 
             {error && (
               <div className="mb-8 p-6 bg-red-50 rounded-3xl border border-red-100 flex items-center gap-4 text-red-700 animate-in shake duration-500">
-                <div className="h-10 w-10 shrink-0 bg-red-100 rounded-xl flex items-center justify-center">
+                <div className="h-10 w-10 flex-shrink-0 bg-red-100 rounded-xl flex items-center justify-center">
                   <span className="text-xl">!</span>
                 </div>
                 <div>

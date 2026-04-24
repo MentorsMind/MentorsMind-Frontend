@@ -1,26 +1,14 @@
-import { useThemeContext } from '../contexts/ThemeContext';
+import { useContext } from 'react';
+import { ThemeContext, type ThemeContextType } from '../contexts/ThemeContext';
 
 /**
- * useTheme
- *
- * Convenience hook that exposes the current theme and helpers.
- *
- * Usage:
- *   const { theme, toggleTheme, isDark } = useTheme();
+ * Returns the current theme context.
+ * Must be used within a `ThemeProvider` — throws otherwise.
  */
-const useTheme = () => {
-  const { theme, toggleTheme, setTheme } = useThemeContext();
-
-  return {
-    /** 'light' | 'dark' */
-    theme,
-    /** true when dark mode is active */
-    isDark: theme === 'dark',
-    /** Flip between light and dark */
-    toggleTheme,
-    /** Explicitly set a theme */
-    setTheme,
-  };
-};
-
-export default useTheme;
+export function useTheme(): ThemeContextType {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return ctx;
+}

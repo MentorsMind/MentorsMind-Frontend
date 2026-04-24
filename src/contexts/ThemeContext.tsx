@@ -1,70 +1,176 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react';
+import toast from 'react-hot-toast';
+import { persistThemePreference } from '../services/theme.service';
 
-type Theme = 'light' | 'dark';
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type ResolvedTheme = 'light' | 'dark';
+
+export interface ThemeContextType {
+  /** The user's stored preference (light | dark | system) */
+  preference: ThemePreference;
+  /** The currently active resolved theme (light | dark) */
+  resolved: ResolvedTheme;
+  /** Change the preference; triggers persistence */
+  setTheme: (preference: ThemePreference) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // 1. Check localStorage for a persisted preference
-    const stored = localStorage.getItem('mentorminds-theme') as Theme | null;
-    if (stored === 'light' || stored === 'dark') return stored;
+const LS_KEY = 'mm_theme_preference';
 
-    // 2. Fall back to the OS/browser preference
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+function readLocalStorage(): ThemePreference | null {
+  try {
+    const stored = localStorage.getItem(LS_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      return stored;
+    }
+  } catch {
+    // SecurityError in private browsing — ignore
+  }
+  return null;
+}
 
-    return 'light';
+function writeLocalStorage(preference: ThemePreference): void {
+  try {
+    localStorage.setItem(LS_KEY, preference);
+  } catch {
+    // SecurityError in private browsing — ignore
+  }
+}
+
+function getSystemPreference(): ResolvedTheme {
+  try {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+  } catch {
+    // matchMedia not supported
+  }
+  return 'light';
+}
+
+function resolveTheme(preference: ThemePreference): ResolvedTheme {
+  if (preference === 'system') return getSystemPreference();
+  return preference;
+}
+
+function applyThemeClass(resolved: ResolvedTheme): void {
+  if (resolved === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────────
+
+const ThemeContext = createContext<ThemeContextType | null>(null);
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+interface ThemeProviderProps {
+  children: ReactNode;
+  /**
+   * Optional initial preference from the authenticated user's profile.
+   * Takes highest priority in the resolution chain.
+   */
+  initialPreference?: ThemePreference;
+  /** Optional user id — when truthy, theme changes are persisted to the backend. */
+  isAuthenticated?: boolean;
+}
+
+export function ThemeProvider({
+  children,
+  initialPreference,
+  isAuthenticated = false,
+}: ThemeProviderProps) {
+  // Resolve initial preference synchronously so the class is applied before paint.
+  const [preference, setPreference] = useState<ThemePreference>(() => {
+    if (initialPreference) return initialPreference;
+    const ls = readLocalStorage();
+    if (ls) return ls;
+    // Fall back to 'system' so runtime OS changes are tracked (getSystemPreference handles matchMedia absence)
+    return 'system';
   });
 
-  // Apply / remove the `dark` class on <html> whenever theme changes
+  const [resolved, setResolved] = useState<ResolvedTheme>(() => resolveTheme(preference));
+
+  // Apply class synchronously on first render (before effects run) via a ref trick.
+  const didApplyInitial = useRef(false);
+  if (!didApplyInitial.current) {
+    applyThemeClass(resolveTheme(preference));
+    didApplyInitial.current = true;
+  }
+
+  // When initialPreference prop changes (e.g. after auth loads), update state.
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    if (initialPreference) {
+      setPreference(initialPreference);
+      const r = resolveTheme(initialPreference);
+      setResolved(r);
+      applyThemeClass(r);
+      writeLocalStorage(initialPreference);
     }
-    localStorage.setItem('mentorminds-theme', theme);
-  }, [theme]);
+  }, [initialPreference]);
 
-  // Keep in sync with OS preference changes (only when no explicit choice is stored)
+  // Listen for OS-level preference changes when the stored preference is 'system'.
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('mentorminds-theme')) {
-        setThemeState(e.matches ? 'dark' : 'light');
-      }
+    if (preference !== 'system') return;
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      const r: ResolvedTheme = e.matches ? 'dark' : 'light';
+      setResolved(r);
+      applyThemeClass(r);
     };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [preference]);
 
-  const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  const setTheme = useCallback(
+    (newPreference: ThemePreference) => {
+      const newResolved = resolveTheme(newPreference);
+
+      // Apply immediately (synchronous DOM update).
+      applyThemeClass(newResolved);
+      setPreference(newPreference);
+      setResolved(newResolved);
+
+      // Always persist to localStorage.
+      writeLocalStorage(newPreference);
+
+      // Persist to backend if authenticated.
+      if (isAuthenticated) {
+        Promise.resolve(persistThemePreference(newPreference)).catch(() => {
+          toast.error("Couldn't save theme preference.");
+        });
+      }
+    },
+    [isAuthenticated]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ preference, resolved, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
-};
+}
 
-// Named export so other files can import from here directly
-export const useThemeContext = (): ThemeContextType => {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useThemeContext must be used inside <ThemeProvider>');
-  return ctx;
-};
+// ─── Export context for useTheme hook ─────────────────────────────────────────
 
-export default ThemeContext;
+export { ThemeContext };
+
+// Re-export useTheme so consumers can import it from either location.
+export { useTheme } from '../hooks/useTheme';

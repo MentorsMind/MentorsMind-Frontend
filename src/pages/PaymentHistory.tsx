@@ -1,9 +1,12 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePaymentHistory } from '../hooks/usePaymentHistory';
-import PaymentFilters from '../components/payment/PaymentFilters';
 import PaymentHistoryList from '../components/payment/PaymentHistoryList';
-import TransactionDetail from '../components/payment/TransactionDetail';
+import PaymentFilters from '../components/payment/PaymentFilters';
+import { TransactionDetail } from '../components/payment/TransactionDetail';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
+import { generatePaymentReceipt } from '../utils/pdf-receipt';
+import { retryPayment } from '../services/payment.service';
 import type { PaymentTransaction } from '../types';
 
 const PaymentHistory: React.FC = () => {
@@ -20,77 +23,120 @@ const PaymentHistory: React.FC = () => {
     toggleStatusFilter,
     clearFilters,
     handleSort,
-    exportCSV,
-    generateReceipt,
     setCurrentPage,
   } = usePaymentHistory();
 
-  const [selectedTx, setSelectedTx] = useState<PaymentTransaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
+
+  const [selectedTransaction, setSelectedTransaction] = useState<PaymentTransaction | null>(null);
+
+  const handleTransactionClick = (transaction: PaymentTransaction) => {
+    setSelectedTransaction(transaction);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedTransaction(null);
+  };
+
+  const handleDownloadReceipt = (transactionId: string) => {
+    // In a real app, you'd fetch the full transaction details from the API
+    // For now, we'll use the transaction from the list
+    const transaction = transactions.find(tx => tx.id === transactionId);
+    if (transaction) {
+      // Mock full breakdown data - in real app this would come from API
+      const receiptData = {
+        ...transaction,
+        fullBreakdown: {
+          baseAmount: transaction.amount,
+          platformFeePercentage: 5,
+          platformFeeAmount: transaction.amount * 0.05,
+          networkFeeAmount: 0.00001,
+          totalDeductions: transaction.amount * 0.05 + 0.00001,
+          netAmount: transaction.amount - (transaction.amount * 0.05 + 0.00001),
+        },
+        stellarDetails: {
+          transactionHash: transaction.stellarTxHash,
+          ledgerSequence: Math.floor(Math.random() * 1000000),
+          timestamp: transaction.date,
+          horizonUrl: `https://horizon-testnet.stellar.org/transactions/${transaction.stellarTxHash}`,
+        },
+      };
+
+      generatePaymentReceipt(receiptData);
+    }
+  };
+
+  const handleRetryPayment = async (transactionId: string) => {
+    try {
+      await retryPayment(transactionId);
+      // In a real app, you'd refresh the data or show a success message
+      alert('Payment retry initiated successfully');
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Failed to retry payment:', error);
+      alert('Failed to retry payment. Please try again.');
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
-
-      {/* Page Header */}
-      <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
-            Payment <span className="text-stellar">History</span>
-          </h1>
-          <p className="text-gray-500 font-medium tracking-wide">
-            All your Stellar transactions in one place.
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 mb-2">Payment History</h1>
+          <p className="text-gray-600">View and manage all your payment transactions</p>
         </div>
 
-        <button
-          id="export-csv-btn"
-          onClick={exportCSV}
-          className="flex items-center gap-2.5 px-6 py-3 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all shadow-lg shadow-gray-200"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          Export CSV
-        </button>
-      </div>
-
-      {/* Two-column layout: filters sidebar + list */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-
-        {/* Filters (sticky sidebar on large screens) */}
-        <div className="lg:col-span-1 lg:sticky lg:top-8">
+        {/* Filters */}
+        <div className="mb-6">
           <PaymentFilters
             filters={filters}
-            onUpdateFilter={updateFilters}
+            onUpdateFilters={updateFilters}
             onToggleStatus={toggleStatusFilter}
-            onClear={clearFilters}
-            totalResults={totalResults}
+            onClearFilters={clearFilters}
           />
         </div>
 
-        {/* Transaction List */}
-        <div className="lg:col-span-3">
+        {/* Payment History List */}
+        {showSkeleton ? (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+              <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-6" />
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} variant="history" />)}
+              </div>
+            </div>
+          </div>
+        ) : (
           <PaymentHistoryList
-            transactions={transactions}
-            analytics={analytics}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalResults={totalResults}
-            onSort={handleSort}
-            onPageChange={setCurrentPage}
-            onSelectTransaction={setSelectedTx}
-          />
-        </div>
-      </div>
+             transactions={transactions}
+             analytics={analytics}
+             sortField={sortField}
+             sortDirection={sortDirection}
+             currentPage={currentPage}
+             totalPages={totalPages}
+             totalResults={totalResults}
+             onSort={handleSort}
+             onPageChange={setCurrentPage}
+             onSelectTransaction={handleTransactionClick}
+            />
+        )}
 
-      {/* Transaction Detail Modal */}
-      <TransactionDetail
-        transaction={selectedTx}
-        onClose={() => setSelectedTx(null)}
-        onDownloadReceipt={generateReceipt}
-      />
+        {/* Transaction Detail Modal */}
+        <TransactionDetail
+          transaction={selectedTransaction}
+          onClose={handleCloseDetail}
+          onDownloadReceipt={handleDownloadReceipt}
+          onRetryPayment={handleRetryPayment}
+        />
+      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import FocusTrap from '../a11y/FocusTrap';
 import { X } from 'lucide-react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -82,15 +83,16 @@ export default function AuthModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="auth-modal-title"
     >
-      <div
-        ref={modalRef}
-        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
-        tabIndex={-1}
-      >
+      <FocusTrap active>
+        <div
+          ref={modalRef}
+          className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-modal-title"
+        >
         <button
           type="button"
           onClick={onClose}
@@ -135,7 +137,8 @@ export default function AuthModal({
             />
           )}
         </div>
-      </div>
+        </div>
+      </FocusTrap>
     </div>
   );
 }

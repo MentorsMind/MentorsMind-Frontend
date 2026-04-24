@@ -14,7 +14,7 @@ export const Breadcrumbs: React.FC = () => {
         {breadcrumbs.map((breadcrumb, index) => (
           <li key={breadcrumb.path} className="flex items-center">
             {index > 0 && (
-              <ChevronRight size={14} className="mx-2 text-gray-400 shrink-0" />
+              <ChevronRight size={14} className="mx-2 text-gray-400 flex-shrink-0" />
             )}
             
             <Link

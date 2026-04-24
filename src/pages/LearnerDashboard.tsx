@@ -1,166 +1,70 @@
-import React, { useEffect } from 'react';
-import { useReminders } from '../hooks/useReminders';
-import { useRecommendations } from '../hooks/useRecommendations';
-import { useDashboard } from '../hooks/useDashboard';
-import { DashboardLayout } from '../layouts/DashboardLayout';
-import { DashboardGrid } from '../components/dashboard/DashboardGrid';
-import { Widget } from '../components/dashboard/Widget';
-import ReminderSettings from '../components/learner/ReminderSettings';
-import UpcomingReminders from '../components/learner/UpcomingReminders';
-import LearningRecommendations from '../components/learner/LearningRecommendations';
-import SessionPrep from '../components/learner/SessionPrep';
-import RecommendedMentors from '../components/learner/RecommendedMentors';
-import type { Session } from '../types';
+import { useState, useEffect } from 'react';
+import MetricCard from '../components/charts/MetricCard';
+import LearningProgress from '../components/learner/LearningProgress';
+import GoalSetting from '../components/learner/GoalSetting';
+import SessionList from '../components/mentor/SessionList';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
-// Mock sessions for demonstration
-const MOCK_SESSIONS: Session[] = [
-  {
-    id: 's1',
-    learnerId: 'l1',
-    learnerName: 'Emma',
-    topic: 'React Design Patterns & Clean Code',
-    startTime: new Date(Date.now() + 3600000 * 2).toISOString(), // 2 hours from now
-    duration: 60,
-    status: 'confirmed',
-    price: 50,
-    currency: 'XLM',
-    meetingLink: 'https://meet.google.com/abc-defg-hij',
-  },
-  {
-    id: 's2',
-    learnerId: 'l1',
-    learnerName: 'Emma',
-    topic: 'Advanced TypeScript: Utility Types',
-    startTime: new Date(Date.now() + 86400000 * 1.5).toISOString(), // 1.5 days from now
-    duration: 45,
-    status: 'pending',
-    price: 40,
-    currency: 'USDC',
-  }
-];
-
-const LearnerDashboard: React.FC = () => {
-  const {
-    settings,
-    upcomingReminders,
-    history,
-    updateSettings,
-    snoozeReminder,
-const LearnerDashboardContent: React.FC = () => {
-  const { 
-    settings, 
-    upcomingReminders, 
-    history, 
-    updateSettings, 
-    snoozeReminder, 
-    dismissReminder,
-    addCustomTime,
-    removeCustomTime
-  } = useReminders(MOCK_SESSIONS);
-
-  const {
-    mentors,
-    isLoading: isLoadingRecommendations,
-    toggleMentorBookmark,
-    setMentorFeedback,
-    dismissMentor,
-    refreshRecommendations,
-  } = useRecommendations();
-  const { setRole, setLoading, widgets } = useDashboard();
-
+export default function LearnerDashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
-    setRole('learner');
-    setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 1000);
+    const timer = setTimeout(() => setIsLoading(false), 1200);
     return () => clearTimeout(timer);
-  }, [setRole, setLoading]);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
 
   return (
-    <div className="p-6 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Learner Dashboard
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">
-            You have {MOCK_SESSIONS.length} upcoming sessions this week.
-          </p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
+      
+      {showSkeleton ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 h-24 animate-pulse" />
+          ))}
         </div>
-        <div className="flex gap-2">
-           <div className="bg-white dark:bg-gray-800 px-6 py-3 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
-             <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center text-green-500 font-bold">128</div>
-             <div className="text-xs">
-               <div className="font-bold text-gray-900 dark:text-white leading-none">XLM</div>
-               <div className="text-gray-400 dark:text-gray-500">Balance</div>
-             </div>
-           </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard title="Sessions Completed" value={16} change={25} icon="✅" />
+          <MetricCard title="Hours Learned" value={24} change={12} icon="⏱️" />
+          <MetricCard title="Goals Achieved" value={3} icon="🎯" />
+          <MetricCard title="Avg Session Rating" value="4.8" icon="⭐" />
         </div>
-      </header>
+      )}
 
-      <DashboardGrid>
-        {widgets.filter(w => w.visible).sort((a, b) => a.order - b.order).map(widget => (
-          <Widget key={widget.id} config={widget}>
-            {widget.id === 'stats' && (
-              <UpcomingReminders 
-                reminders={upcomingReminders}
-                history={history}
-                onSnooze={(id: string) => snoozeReminder(id)}
-                onDismiss={(id: string) => dismissReminder(id)}
-              />
-            )}
-            {widget.id === 'sessions' && <SessionPrep />}
-            {widget.id === 'earnings' && (
-               <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-                <h3 className="text-lg font-bold mb-2 text-white">Next Session Prep</h3>
-                <p className="text-white/80 text-sm mb-4">Review tips to make the most of your time.</p>
-                <button className="w-full py-2 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-50 transition-all">
-                  Prep Toolkit
-                </button>
-              </div>
-            )}
-            {widget.id === 'activity' && (
-              <ReminderSettings 
-                settings={settings}
-                onUpdate={updateSettings}
-                onAddCustomTime={addCustomTime}
-                onRemoveCustomTime={removeCustomTime}
-              />
-            )}
-          </Widget>
-        ))}
-      </DashboardGrid>
-
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Recommended for you</h2>
-            <p className="text-gray-500 text-sm mt-1">Personalized mentor suggestions based on your goals</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">Learning Progress</h2>
+          {showSkeleton ? (
+            <div className="h-48 bg-gray-50 rounded-xl animate-pulse" />
+          ) : (
+            <LearningProgress />
+          )}
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">My Goals</h2>
+          {showSkeleton ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />)}
+            </div>
+          ) : (
+            <GoalSetting />
+          )}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Sessions</h2>
+        {showSkeleton ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2].map(i => <SkeletonCard key={i} variant="booking" />)}
           </div>
-          <button
-            onClick={refreshRecommendations}
-            className="px-4 py-2 text-sm font-medium text-stellar hover:bg-stellar/10 rounded-lg transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-        <RecommendedMentors
-          mentors={mentors}
-          onBookmark={toggleMentorBookmark}
-          onFeedback={setMentorFeedback}
-          onDismiss={dismissMentor}
-          isLoading={isLoadingRecommendations}
-        />
-      </section>
-
-      <LearningRecommendations />
+        ) : (
+          <SessionList />
+        )}
+      </div>
     </div>
   );
-};
-
-const LearnerDashboard: React.FC = () => (
-  <DashboardLayout>
-    <LearnerDashboardContent />
-  </DashboardLayout>
-);
-
-export default LearnerDashboard;
+}

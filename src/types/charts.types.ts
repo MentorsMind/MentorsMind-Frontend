@@ -1,20 +1,26 @@
+import type { ReactNode } from 'react';
 import type { AssetCode } from './index';
 
-export interface ChartDatum {
-  date: string;
+export interface DataPoint {
+  label: string;
   value: number;
-  asset?: AssetCode;
-  category?: string;
-  learner?: string;
+  color?: string;
 }
 
-export interface EarningsMetrics {
-  avgDuration: number; // minutes
-  totalSessions: number;
-  platformFees: number;
-  currentPeriodTotal: number;
-  previousPeriodTotal: number;
-  periodChange: number; // percentage
+export interface MultiSeriesDataPoint {
+  label: string;
+  [key: string]: string | number | null | undefined;
+}
+
+export interface ChartSeries {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+export interface ChartExportOptions {
+  format: 'png' | 'svg';
+  filename?: string;
 }
 
 export interface MetricCardData {
@@ -22,22 +28,45 @@ export interface MetricCardData {
   value: string | number;
   change?: number;
   changeLabel?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   prefix?: string;
   suffix?: string;
 }
 
+export interface ChartDatum {
+  date: string;
+  value: number;
+  asset?: AssetCode;
+  category?: string;
+  learner?: string;
+  [key: string]: string | number | AssetCode | undefined;
+}
+
+export interface EarningsMetrics {
+  avgDuration: number;
+  totalSessions: number;
+  platformFees: number;
+  currentPeriodTotal: number;
+  previousPeriodTotal: number;
+  periodChange: number;
+}
+
+export interface AggregatedData {
+  monthlyEarnings: ChartDatum[];
+  weeklySessions: ChartDatum[];
+  topLearners: ChartDatum[];
+  skillBreakdown: ChartDatum[];
+  metrics: EarningsMetrics;
+}
+
 export interface UseChartDataOptions<T> {
   fetchFn: () => Promise<T>;
-  deps?: unknown[];
-  // cache controls
-  staleTime?: number;
-  gcTime?: number; // v5 (cacheTime in v4)
+  deps?: any[];
 }
 
 export interface UseChartDataResult<T> {
   data: T | null;
   isLoading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }

@@ -1,56 +1,39 @@
-import React, { useMemo, useState } from 'react';
+import { useRef, useState, useEffect, ReactNode } from 'react';
 
 interface VirtualListProps<T> {
   items: T[];
   itemHeight: number;
-  height: number;
+  renderItem: (item: T, index: number) => ReactNode;
+  containerHeight?: number;
   overscan?: number;
-  renderItem: (item: T, index: number) => React.ReactNode;
 }
 
-function VirtualList<T>({
-  items,
-  itemHeight,
-  height,
-  overscan = 3,
-  renderItem,
-}: VirtualListProps<T>) {
+export default function VirtualList<T>({ items, itemHeight, renderItem, containerHeight = 400, overscan = 3 }: VirtualListProps<T>) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
 
-  const { startIndex, endIndex, offsetTop, visibleItems } = useMemo(() => {
-    const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-    const visibleCount = Math.ceil(height / itemHeight) + overscan * 2;
-    const end = Math.min(items.length, start + visibleCount);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = () => setScrollTop(el.scrollTop);
+    el.addEventListener('scroll', handler, { passive: true });
+    return () => el.removeEventListener('scroll', handler);
+  }, []);
 
-    return {
-      startIndex: start,
-      endIndex: end,
-      offsetTop: start * itemHeight,
-      visibleItems: items.slice(start, end),
-    };
-  }, [height, itemHeight, items, overscan, scrollTop]);
+  const totalHeight = items.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(items.length - 1, Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan);
+  const visibleItems = items.slice(startIndex, endIndex + 1);
 
   return (
-    <div
-      style={{ height }}
-      className="overflow-auto"
-      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-      data-testid="virtual-list"
-    >
-      <div style={{ height: items.length * itemHeight, position: 'relative' }}>
-        <div style={{ transform: `translateY(${offsetTop}px)` }}>
-          {visibleItems.map((item, index) => (
-            <div key={startIndex + index} style={{ height: itemHeight }}>
-              {renderItem(item, startIndex + index)}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="sr-only">
-        Rendering items {startIndex + 1} to {endIndex}
+    <div ref={containerRef} style={{ height: containerHeight, overflowY: 'auto' }} className="relative">
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {visibleItems.map((item, i) => (
+          <div key={startIndex + i} style={{ position: 'absolute', top: (startIndex + i) * itemHeight, width: '100%', height: itemHeight }}>
+            {renderItem(item, startIndex + i)}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
-
-export default VirtualList;

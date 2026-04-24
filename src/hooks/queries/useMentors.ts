@@ -1,52 +1,113 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useCallback } from 'react';
 
-export type InfiniteQueryArgs<T> = {
-  fetchFn: ({ pageParam }: { pageParam?: unknown }) => Promise<T>;
-  deps?: unknown[];
-  staleTime?: number;
-  gcTime?: number;
-  isEmpty?: (data: T | unknown) => boolean;
-  enabled?: boolean;
-  getNextPageParam: (lastPage: T, allPages: T[]) => unknown;
-};
+export interface MentorProfile {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  bio: string;
+  title: string;
+  skills: string[];
+  expertise: string[];
+  hourlyRate: number;
+  photoUrl?: string;
+  portfolio: PortfolioItem[];
+  socialLinks: SocialLinks;
+  isVisible: boolean;
+  isVerified: boolean;
+  completionPercentage: number;
+}
 
-export function useMentors<T>({
-  fetchFn,
-  deps = [],
-  staleTime = 1000 * 60, // 1 min default
-  gcTime = 1000 * 60 * 5, // 5 min default
-  isEmpty,
-  enabled = true,
-  getNextPageParam,
-}: InfiniteQueryArgs<T>) {
-  const q = useInfiniteQuery<T>({
-    queryKey: ["mentors", ...deps],
-    queryFn: fetchFn,
-    staleTime,
-    gcTime,
-    enabled,
-    initialPageParam: 0,
-    getNextPageParam,
+export interface PortfolioItem {
+  id: string;
+  title: string;
+  description: string;
+  url?: string;
+  imageUrl?: string;
+  type: 'project' | 'certification' | 'achievement';
+}
+
+export interface SocialLinks {
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  website?: string;
+}
+
+export const useMentorProfile = () => {
+  const [profile, setProfile] = useState<MentorProfile>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    bio: '',
+    title: '',
+    skills: [],
+    expertise: [],
+    hourlyRate: 0,
+    portfolio: [],
+    socialLinks: {},
+    isVisible: true,
+    isVerified: false,
+    completionPercentage: 0,
   });
 
-  const resolvedIsEmpty =
-    q.isSuccess &&
-    (isEmpty
-      ? isEmpty(q.data.pageParams)
-      : !q.data?.pages?.length ||
-        q.data.pages.every((p) => Array.isArray(p) && p.length === 0));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const calculateCompletion = useCallback((data: Partial<MentorProfile>) => {
+    const fields = [
+      data.firstName,
+      data.lastName,
+      data.bio,
+      data.title,
+      data.skills?.length,
+      data.hourlyRate,
+      data.photoUrl,
+      data.portfolio?.length,
+    ];
+    const completed = fields.filter(Boolean).length;
+    return Math.round((completed / fields.length) * 100);
+  }, []);
+
+  const updateProfile = useCallback((updates: Partial<MentorProfile>) => {
+    setProfile((prev: MentorProfile) => {
+      const updated = { ...prev, ...updates };
+      updated.completionPercentage = calculateCompletion(updated);
+      return updated;
+    });
+  }, [calculateCompletion]);
+
+  const saveProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // API call would go here
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return { success: true };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  }, [profile]);
+
+  const addPortfolioItem = useCallback((item: Omit<PortfolioItem, 'id'>) => {
+    const newItem: PortfolioItem = { ...item, id: Date.now().toString() };
+    updateProfile({ portfolio: [...profile.portfolio, newItem] });
+  }, [profile.portfolio, updateProfile]);
+
+  const removePortfolioItem = useCallback((id: string) => {
+    updateProfile({ portfolio: profile.portfolio.filter((item: PortfolioItem) => item.id !== id) });
+  }, [profile.portfolio, updateProfile]);
 
   return {
-    data: q.data,
-    pages: q.data?.pages ?? [],
-    isLoading: q.isLoading,
-    isFetching: q.isFetching,
-    isError: q.isError,
-    isSuccess: q.isSuccess,
-    isEmpty: resolvedIsEmpty,
-    error: q.error,
-    fetchNextPage: () => q.fetchNextPage(),
-    hasNextPage: q.hasNextPage,
-    refetch: () => q.refetch(),
+    profile,
+    loading,
+    error,
+    updateProfile,
+    saveProfile,
+    addPortfolioItem,
+    removePortfolioItem,
   };
-}
+};

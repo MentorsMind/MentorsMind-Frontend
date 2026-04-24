@@ -1,126 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useMentorDashboard } from '../hooks/useMentorDashboard';
-import { useDashboard } from '../hooks/useDashboard';
-import { DashboardLayout } from '../layouts/DashboardLayout';
-import { DashboardGrid } from '../components/dashboard/DashboardGrid';
-import { Widget } from '../components/dashboard/Widget';
-import UpcomingSessions from '../components/mentor/UpcomingSessions';
-import EarningsOverview from '../components/mentor/EarningsOverview';
-import PerformanceMetrics from '../components/mentor/PerformanceMetrics';
-import RecentReviews from '../components/mentor/RecentReviews';
-import ActivityFeed from '../components/mentor/ActivityFeed';
+import MetricCard from '../components/charts/MetricCard';
+import LineChart from '../components/charts/LineChart';
+import SessionList from '../components/mentor/SessionList';
 
-const MentorDashboardContent: React.FC = () => {
-  const {
-    data,
-    confirmSession,
-    cancelSession,
-    rescheduleSession,
-    exportEarningsCSV,
-  } = useMentorDashboard();
+const EARNINGS_DATA = [
+  { month: 'Jan', earnings: 1200 }, { month: 'Feb', earnings: 1800 },
+  { month: 'Mar', earnings: 1500 }, { month: 'Apr', earnings: 2200 },
+  { month: 'May', earnings: 2800 }, { month: 'Jun', earnings: 3100 },
+];
 
-  const { setRole, setLoading, widgets } = useDashboard();
-  const [isAvailable, setIsAvailable] = useState(true);
-
-  useEffect(() => {
-    setRole('mentor');
-    setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, [setRole, setLoading]);
-
+export default function MentorDashboard() {
   return (
-    <div className="p-6">
-      <div className="flex flex-wrap justify-between items-center gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Mentor Dashboard
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
-            Welcome back! Here's what's happening today.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex flex-col items-center justify-center border border-gray-100 dark:border-gray-700">
-            <span className="text-[10px] font-bold text-gray-400 uppercase leading-none">
-              Mar
-            </span>
-            <span className="text-lg font-black text-gray-900 dark:text-white">
-              23
-            </span>
-          </div>
-          <div className="pr-4">
-            <div className="text-xs font-bold text-gray-400 uppercase">
-              Availability
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${isAvailable ? "bg-green-500" : "bg-gray-300"}`}
-              />
-              <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
-                {isAvailable ? "Active Now" : "Offline"}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsAvailable(!isAvailable)}
-            className={`${isAvailable ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"} text-white p-2 rounded-lg hover:opacity-80 transition-all`}
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-            </svg>
-          </button>
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard title="Total Earnings" value="3,100" prefix="$" change={10.7} icon="💰" />
+        <MetricCard title="Sessions This Month" value={12} change={20} icon="📅" />
+        <MetricCard title="Avg Rating" value="4.9" icon="⭐" />
+        <MetricCard title="Total Students" value={48} change={8.3} icon="👥" />
       </div>
-
-      <DashboardGrid>
-        {widgets
-          .filter((w) => w.visible)
-          .sort((a, b) => a.order - b.order)
-          .map((widget) => (
-            <Widget key={widget.id} config={widget}>
-              {widget.id === "stats" && (
-                <PerformanceMetrics metrics={data.performance} />
-              )}
-              {widget.id === "sessions" && (
-                <UpcomingSessions
-                  sessions={data.upcomingSessions}
-                  onConfirm={confirmSession}
-                  onCancel={cancelSession}
-                  onReschedule={rescheduleSession}
-                />
-              )}
-              {widget.id === "earnings" && (
-                <EarningsOverview
-                  earnings={data.earnings}
-                  onExport={exportEarningsCSV}
-                />
-              )}
-              {widget.id === "activity" && (
-                <ActivityFeed activities={data.activities} />
-              )}
-            </Widget>
-          ))}
-      </DashboardGrid>
+      <LineChart data={EARNINGS_DATA} lines={[{ key: 'earnings', label: 'Earnings ($)', color: '#6366f1' }]} xKey="month" title="Monthly Earnings" />
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Sessions</h2>
+        <SessionList />
+      </div>
     </div>
   );
-};
-
-const MentorDashboard: React.FC = () => (
-  <DashboardLayout>
-    <MentorDashboardContent />
-  </DashboardLayout>
-);
-
-export default MentorDashboard;
+}

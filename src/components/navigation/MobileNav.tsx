@@ -37,7 +37,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose, auth, onL
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 md:hidden">
+    <div className="fixed inset-0 z-[60] md:hidden">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity duration-300"

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SearchResultItem, PaginatedResult } from '../../services/search.service';
+import { SearchResultItem, PaginatedResult } from '../../services/search.service';
 import { Star, Clock, User, FileText, Video, Play, ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 
 interface SearchResultsProps {
@@ -85,7 +85,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, loading, onPageC
 
             {item.type === 'content' && (
               <div className="flex items-start gap-4">
-                <div className="relative h-20 w-32 rounded-2xl overflow-hidden ring-4 ring-gray-50 group-hover:ring-blue-50 transition-all shrink-0">
+                <div className="relative h-20 w-32 rounded-2xl overflow-hidden ring-4 ring-gray-50 group-hover:ring-blue-50 transition-all flex-shrink-0">
                   <img src={item.data.thumbnail} alt={item.data.title} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   {item.data.type === 'video' && (
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center">

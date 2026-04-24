@@ -1,214 +1,219 @@
-import React, { useState } from 'react';
-import { useMentorSearch } from '../hooks/useMentorSearch';
-import MentorSearchBar from '../components/search/MentorSearchBar';
-import MentorFilterPanel from '../components/search/MentorFilterPanel';
-import SearchSortOptions from '../components/search/SearchSortOptions';
-import MentorGrid from '../components/search/MentorGrid';
-import MentorCard from '../components/search/MentorCard';
+import { useState, useEffect, useMemo } from 'react';
+import MentorCard from '../components/mentor/MentorCard';
 import BookingModal from '../components/learner/BookingModal';
-import type { MentorProfile } from '../types';
+import MentorFilterSidebar, { type MentorFilters } from '../components/search/MentorFilterSidebar';
+import MentorCardSkeleton from '../components/search/MentorCardSkeleton';
+import Input from '../components/ui/Input';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
+import { timezoneService } from '../services/timezone.service';
+import { isMentorAvailableNow, parseTimezoneOffset } from '../utils/timezone.utils';
+import type { Mentor } from '../types';
+import { searchMentors, type MentorSearchParams } from '../services/mentor.service';
 
-const MentorSearch: React.FC<{ isOnline?: boolean }> = ({ isOnline = true }) => {
-  const {
-    mentors,
-    totalResults,
-    currentPage,
-    totalPages,
-    hasMore,
-    filters,
-    updateFilter,
-    clearFilters,
-    nextPage,
-    prevPage,
-    goToPage,
-    getSuggestions,
-    toggleSaveMentor,
-    isSaved,
-    addRecentlyViewed,
-    getRecommendations,
-    getRecentlyViewedMentors,
-  } = useMentorSearch();
+const ALL_SKILLS = [
+  'Rust',
+  'React',
+  'TypeScript',
+  'Python',
+  'Soroban',
+  'Stellar',
+  'Node.js',
+  'AWS',
+  'ML',
+  'Docker',
+  'Kubernetes',
+  'PostgreSQL',
+  'TensorFlow',
+  'Data Science',
+  'DevOps',
+  'WebAssembly',
+];
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(null);
+const ITEMS_PER_PAGE = 12;
 
-  const handleSearch = (query: string) => {
-    updateFilter('searchQuery', query);
+export default function MentorSearch() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'rating' | 'price' | 'timezone'>('rating');
+  const [timezoneFilter, setTimezoneFilter] = useState<TimezoneProximityFilter>({
+    selectedRegions: [],
+    similarToMine: false,
+    availableNow: false,
+  });
+  const [showMapView, setShowMapView] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
+
+  const fetchMentors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: MentorSearchParams = {
+        q: query || undefined,
+        skills: filters.skills.length > 0 ? filters.skills.join(',') : undefined,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : undefined,
+        maxPrice: filters.maxPrice < 500 ? filters.maxPrice : undefined,
+        minRating: filters.minRating > 0 ? filters.minRating : undefined,
+        page,
+        limit: ITEMS_PER_PAGE,
+      };
+
+      const result = await searchMentors(params);
+      setMentors(result.mentors);
+      setTotal(result.total);
+    } catch (error) {
+      console.error('Failed to fetch mentors:', error);
+      setMentors([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [query, filters, page]);
+
+  useEffect(() => {
+    fetchMentors();
+  }, [fetchMentors]);
+
+  useEffect(() => {
+    // Update URL params when filters change
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (filters.skills.length > 0) params.set('skills', filters.skills.join(','));
+    if (filters.minPrice > 0) params.set('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice < 500) params.set('maxPrice', filters.maxPrice.toString());
+    if (filters.minRating > 0) params.set('minRating', filters.minRating.toString());
+    if (filters.availableOnly) params.set('available', 'true');
+    if (page > 1) params.set('page', page.toString());
+    setSearchParams(params, { replace: true });
+  }, [query, filters, page, setSearchParams]);
+
+  const handleSearch = (value: string) => {
+    setQuery(value);
+    setPage(1);
   };
 
-  const handleViewProfile = (mentor: MentorProfile) => {
-    addRecentlyViewed(mentor.id);
-    // In a real app, this would navigate to the mentor's profile page
-    alert(`Viewing profile of ${mentor.name}`);
+  const handleFiltersChange = (newFilters: MentorFilters) => {
+    setFilters(newFilters);
+    setPage(1);
   };
 
-  const suggestions = getSuggestions(searchQuery);
-  const recommendations = getRecommendations();
-  const recentlyViewed = getRecentlyViewedMentors();
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-gray-900 mb-2">
-          Find Your Perfect <span className="text-stellar">Mentor</span>
-        </h1>
-        <p className="text-gray-500 font-medium">
-          Discover expert mentors ready to help you grow your skills.
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-8">
-        <MentorSearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onSearch={handleSearch}
-          suggestions={suggestions}
-          placeholder="Search by name, skill (e.g., Stellar, React), or expertise..."
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar - Filters */}
-        <div className="lg:col-span-1">
-          <MentorFilterPanel
-            filters={{
-              skills: filters.skills,
-              minPrice: filters.minPrice,
-              maxPrice: filters.maxPrice,
-              minRating: filters.minRating,
-              availabilityDays: filters.availabilityDays,
-              languages: filters.languages,
-            }}
-            onFilterChange={updateFilter}
-            onClearFilters={clearFilters}
-          />
+      <div className="bg-white border-b border-gray-200 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find a Mentor</h1>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by name or skill..."
+                value={query}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Main Content - Results */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Sort & View Options */}
-          <SearchSortOptions
-            sortBy={filters.sortBy}
-            onSortChange={(sort) => updateFilter('sortBy', sort)}
-            resultsCount={totalResults}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
+      {/* Sidebar + Results Layout */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            <TimeZoneFilter
+              onFilterChange={setTimezoneFilter}
+              userTimezone={timezoneService.getUserTimezone()}
+            />
+          </div>
 
-          {/* Mentor Grid/List */}
-          <MentorGrid
-            mentors={mentors}
-            savedMentors={new Set(mentors.filter((mentor) => isSaved(mentor.id)).map((mentor) => mentor.id))}
-            onSaveToggle={toggleSaveMentor}
-            onViewProfile={handleViewProfile}
-            onBookSession={isOnline ? setSelectedMentor : undefined}
-            viewMode={viewMode}
-          />
-
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Previous
-              </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {/* Main Results Area */}
+          <div className="lg:col-span-3">
+            {/* Controls */}
+            <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 border border-gray-200">
+              <p className="text-sm text-gray-500">
+                {showSkeleton ? 'Searching for mentors...' : `${filtered.length} mentor${filtered.length !== 1 ? 's' : ''} found`}
+              </p>
+              <div className="flex items-center gap-4">
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as 'rating' | 'price' | 'timezone')}
+                  title="Sort mentors by"
+                  aria-label="Sort mentors by"
+                  className="text-sm px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                >
+                  <option value="rating">Sort by: Rating</option>
+                  <option value="price">Sort by: Price (Low to High)</option>
+                  <option value="timezone">Sort by: Closest Timezone</option>
+                </select>
                 <button
-                  key={page}
-                  onClick={() => goToPage(page)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                    currentPage === page
-                      ? 'bg-stellar text-white shadow-lg shadow-stellar/20'
-                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
+                  onClick={() => setShowMapView(!showMapView)}
+                  className={`px-4 py-2 rounded text-sm font-medium transition ${
+                    showMapView
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  {page}
+                  {showMapView ? 'List View' : 'Map View'}
                 </button>
-              ))}
-
-              <button
-                onClick={nextPage}
-                disabled={!hasMore}
-                className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Next
-              </button>
+              </div>
             </div>
-          )}
+
+            {/* Map View or List View */}
+            {showMapView ? (
+              <MentorMapView
+                mentors={filtered}
+                onMentorSelect={setBookingMentor}
+              />
+            ) : (
+              <>
+                {showSkeleton ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} variant="mentor" />)}
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <p className="text-5xl mb-4">🔍</p>
+                    <p className="text-lg font-medium">No mentors found</p>
+                    <p className="text-sm mt-1">Try adjusting your filters</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {filtered.map(m => (
+                      <MentorCard
+                        key={m.id}
+                        mentor={m}
+                        isAvailableNow={availabilityMap[m.id]}
+                        onBook={setBookingMentor}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Recently Viewed Section */}
-      {recentlyViewed.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recently Viewed Mentors</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recentlyViewed.map((mentor) => (
-              <div
-                key={mentor.id}
-                onClick={() => handleViewProfile(mentor)}
-                className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-lg hover:border-stellar/20 transition-all cursor-pointer flex items-center gap-4"
-              >
-                {mentor.avatar ? (
-                  <img
-                    src={mentor.avatar}
-                    alt={mentor.name}
-                    className="w-16 h-16 rounded-xl object-cover border-2 border-white"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-linear-to-br from-stellar to-blue-600 flex items-center justify-center text-white font-bold text-xl">
-                    {mentor.name[0]}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 truncate">{mentor.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{mentor.title}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-yellow-400 text-xs">★</span>
-                    <span className="text-xs font-bold text-gray-900">{mentor.rating}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {bookingMentor && (
+        <BookingModal
+          isOpen={!!bookingMentor}
+          onClose={() => setBookingMentor(null)}
+          mentor={bookingMentor as any}
+        />
       )}
-
-      {/* Personalized Recommendations */}
-      {recommendations.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommended For You</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendations.map((mentor) => (
-              <MentorCard
-                key={mentor.id}
-                mentor={mentor}
-                isSaved={isSaved(mentor.id)}
-                onSave={toggleSaveMentor}
-                onViewProfile={handleViewProfile}
-                onBookSession={isOnline ? setSelectedMentor : undefined}
-                viewMode="grid"
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <BookingModal
-        isOpen={selectedMentor !== null}
-        mentor={selectedMentor}
-        onClose={() => setSelectedMentor(null)}
-      />
     </div>
   );
-};
-
-export default MentorSearch;
+}

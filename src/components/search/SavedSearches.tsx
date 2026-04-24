@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bookmark, Trash2, ArrowRight, Save } from 'lucide-react';
-import type { SearchOptions } from '../../services/search.service';
+import { SearchOptions } from '../../services/search.service';
 
 interface SavedSearchesProps {
   savedSearches: { id: string, name: string, options: SearchOptions }[];

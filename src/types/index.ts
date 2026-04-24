@@ -1,444 +1,143 @@
-export interface Review {
-  id: string;
-  mentorId: string;
-  reviewerId: string;
-  reviewerName: string;
-  rating: number;
-  comment: string;
-  date: string;
-  helpfulCount: number;
-  isVerified: boolean;
-  mentorResponse?: {
-    text: string;
-    date: string;
-  };
-  isFlagged?: boolean;
-}
+import type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate } from './goals.types.js';
+import type { PaymentStatus } from './payment.types';
 
-export interface RatingDistribution {
-  star: number;
-  count: number;
-}
+export type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate };
+export * from './payment.types';
 
-export interface RatingStats {
-  average: number;
-  totalReviews: number;
-  distribution: RatingDistribution[];
-  trends: {
-    labels: string[];
-    values: number[];
-  };
-}
+// Global shared types
 
-export type OnboardingStepId =
-  | "profile"
-  | "wallet"
-  | "availability"
-  | "pricing"
-  | "tutorial"
-  | "complete";
-
-export type LearnerStepId =
-  | "goals"
-  | "assessment"
-  | "matching"
-  | "wallet"
-  | "tutorial"
-  | "complete";
-
-export interface LearnerGoal {
-  id: string;
-  label: string;
-  icon: string;
-}
-
-export interface SkillLevel {
-  topic: string;
-  level: "beginner" | "intermediate" | "advanced";
-}
-
-export interface MentorMatch {
-  id: string;
-  name: string;
-  specialization: string;
-  rating: number;
-  hourlyRate: number;
-  matchScore: number;
-  avatar: string;
-}
-
-export interface LearnerOnboardingState {
-  currentStep: LearnerStepId;
-  completedSteps: LearnerStepId[];
-  isDismissed: boolean;
-  isCelebrated: boolean;
-  data: {
-    goals?: string[];
-    skills?: SkillLevel[];
-    selectedMentor?: string;
-    wallet?: { address: string; connected: boolean };
-  };
-}
-
-// ── Wallet ────────────────────────────────────────────────────────────────────
-
-export type AssetCode = "XLM" | "USDC" | "yXLM";
-
-export interface WalletAsset {
-  code: AssetCode;
-  balance: number;
-  usdValue: number;
-}
-
-export type TxType = "earning" | "payout" | "fee" | "refund";
-export type TxStatus = "completed" | "pending" | "failed";
-
-export interface Transaction {
-  id: string;
-  type: TxType;
-  status: TxStatus;
-  amount: number;
-  asset: AssetCode;
-  usdAmount: number;
-  description: string;
-  sessionId?: string;
-  date: string;
-  fee?: number;
-}
-
-export interface PayoutRequest {
-  id: string;
-  amount: number;
-  asset: AssetCode;
-  status: "pending" | "processing" | "completed" | "failed";
-  requestedAt: string;
-  completedAt?: string;
-  txHash?: string;
-}
-
-export interface EarningsBySession {
-  sessionId: string;
-  studentName: string;
-  topic: string;
-  date: string;
-  duration: number; // minutes
-  grossAmount: number;
-  platformFee: number;
-  netAmount: number;
-  asset: AssetCode;
-}
-
-export interface WalletState {
-  address: string;
-  assets: WalletAsset[];
-  pendingEarnings: number;
-  availableEarnings: number;
-  totalEarned: number;
-  transactions: Transaction[];
-  payoutHistory: PayoutRequest[];
-  sessionEarnings: EarningsBySession[];
-  forecastNextMonth: number;
-  platformFeeRate: number; // e.g. 0.05 = 5%
-}
-
-export interface OnboardingState {
-  currentStep: OnboardingStepId;
-  completedSteps: OnboardingStepId[];
-  isDismissed: boolean;
-  isCelebrated: boolean;
-  data: {
-    profile?: {
-      bio: string;
-      specialization: string;
-    };
-    wallet?: {
-      address: string;
-      connected: boolean;
-    };
-    availability?: {
-      timezone: string;
-      slots: string[];
-    };
-    pricing?: {
-      hourlyRate: number;
-      currency: string;
-    };
-  };
-}
-
-// ── Learning Goals ────────────────────────────────────────────────────────────
-
-export type GoalStatus = 'active' | 'completed' | 'paused' | 'overdue';
-export type GoalCategory = 'technical' | 'career' | 'project' | 'certification' | 'soft-skills';
-
-export interface Milestone {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: string;
-  completedAt?: string;
-}
-
-export interface Goal {
-  id: string;
-  title: string;
-  description: string;
-  category: GoalCategory;
-  status: GoalStatus;
-  // SMART fields
-  specific: string;
-  measurable: string;
-  achievable: string;
-  relevant: string;
-  timeBound: string;
-  // Progress
-  milestones: Milestone[];
-  deadline: string;
-  createdAt: string;
-  updatedAt: string;
-  sharedWithMentor: boolean;
-  reminderEnabled: boolean;
-  badge?: string;
-  notes?: string;
-}
-
-export interface GoalTemplate {
-  id: string;
-  title: string;
-  description: string;
-  category: GoalCategory;
-  icon: string;
-  specific: string;
-  measurable: string;
-  achievable: string;
-  relevant: string;
-  milestones: Omit<Milestone, 'id' | 'completed' | 'completedAt'>[];
-}
-
-export interface GoalStats {
-  total: number;
-  completed: number;
-  active: number;
-  overdue: number;
-  completionRate: number;
-}
-
-
-export type SessionStatus =
-  | "pending"
-  | "confirmed"
-  | "cancelled"
-  | "completed"
-  | "rescheduled";
-
-export interface Session {
-  id: string;
-  learnerId: string;
-  learnerName: string;
-  topic: string;
-  startTime: string;
-  duration: number; // in minutes
-  status: SessionStatus;
-  price: number;
-  currency: string;
-  meetingLink?: string;
-}
-
-export interface EarningsData {
-  totalEarned: number;
-  pendingPayout: number;
-  history: {
-    date: string;
-    amount: number;
-  }[];
-}
-
-export interface Activity {
-  id: string;
-  type: "booking" | "payment" | "review" | "system";
-  title: string;
-  description: string;
-  timestamp: string;
-  link?: string;
-}
-
-export interface MentorDashboardData {
-  upcomingSessions: Session[];
-  earnings: EarningsData;
-  performance: {
-    averageRating: number;
-    completionRate: number;
-    totalSessions: number;
-  };
-  recentReviews: Review[];
-  activities: Activity[];
-  profileCompletion: number;
-  pendingMessagesCount: number;
-}
-
-export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
-
-export interface PaymentTransaction {
-  id: string;
-  type: "session" | "subscription" | "refund";
-  mentorId: string;
-  mentorName: string;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  date: string; // ISO date string
-  stellarTxHash: string;
-  description: string;
-  sessionId?: string;
-  sessionTopic?: string;
-}
-
-export interface PaymentAnalytics {
-  totalSpent: number;
-  totalCompleted: number;
-  totalPending: number;
-  totalRefunded: number;
-  totalFailed: number;
-  transactionCount: number;
-}
-
-export type ReminderType = "email" | "sms" | "in-app" | "prep" | "calendar";
-export type ReminderStatus = "pending" | "sent" | "snoozed" | "cancelled";
-
-export interface ReminderSettings {
-  emailEnabled: boolean;
-  smsEnabled: boolean;
-  inAppEnabled: boolean;
-  customTimes: number[]; // minutes before session (e.g., 60, 1440)
-  sessionPrepReminders: boolean;
-  calendarSyncReminders: boolean;
-  mentorSpecificPreferences: Record<string, Partial<ReminderSettings>>;
-}
-
-export interface Reminder {
-  id: string;
-  sessionId: string;
-  type: ReminderType;
-  scheduledTime: string; // ISO date string
-  status: ReminderStatus;
-  snoozeCount: number;
-  lastSnoozedAt?: string;
-  message: string;
-}
-
-export interface ReminderHistoryItem extends Reminder {
-  sentAt: string;
-}
-
-// Mentor Search & Discovery Types
-export interface MentorProfile {
-  id: string;
-  name: string;
-  title: string;
-  bio: string;
-  avatar?: string;
-  hourlyRate: number;
-  currency: string;
-  rating: number;
-  reviewCount: number;
-  totalSessions: number;
-  completionRate: number;
-  skills: string[];
-  expertise: string[];
-  languages: string[];
-  availability: {
-    days: string[]; // e.g., ['Monday', 'Wednesday', 'Friday']
-    timeSlots: string[]; // e.g., ['9:00-12:00', '14:00-17:00']
-    timezone: string;
-  };
-  experienceYears: number;
-  certifications?: string[];
-  isAvailable: boolean;
-  responseTime?: string; // e.g., 'Within 2 hours'
-  joinedDate: string;
-}
-
-export interface SearchFilters {
-  searchQuery: string;
-  skills: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  availabilityDays: string[];
-  languages: string[];
-  sortBy: "rating" | "price_low" | "price_high" | "experience" | "sessions";
-}
-
-export interface SearchResult {
-  mentors: MentorProfile[];
-  totalResults: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
-}
-
-export interface RecentlyViewedMentor {
-  mentorId: string;
-  viewedAt: string;
-  mentor: MentorProfile;
-}
-
+export type Priority = 'high' | 'medium' | 'low';
 export type UserRole = 'mentor' | 'learner' | 'admin';
+export type SessionStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
+export type AssetType = 'XLM' | 'USDC' | 'PYUSD';
 
 export interface User {
   id: string;
-  name: string;
   email: string;
+  name: string;
   role: UserRole;
-  avatar?: string;
+  avatarUrl?: string;
+  stellarPublicKey?: string;
+  createdAt: string;
+  /** Whether the user has MFA (TOTP) enabled */
+  mfaEnabled?: boolean;
+  firstName?: string;
+  lastName?: string;
   bio?: string;
+  timezone?: string;
 }
 
 export interface AuthState {
   user: User | null;
-  isAuthenticated: boolean;
+  loading: boolean;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  error?: string | null;
 }
 
-// Session History Types
-export type {
-  SessionHistoryItem,
-  LearningAnalytics,
-  SkillProgress,
-  MentorInteraction,
-  SessionFrequencyData,
-  LearningVelocityData,
-  SpendingAnalytics,
-  BookingSessionType,
-  AvailabilitySlot,
-  BookingDraft,
-  BookingPricingBreakdown,
-  CalendarInvite,
-  LearnerCalendarEvent,
-  BookingConfirmationDetails,
-  RecommendedMentor,
-  LearningPathRecommendation,
-  LearningPathStep,
-  RecommendationReason,
-  SuccessStory,
-  SkillRoadmapItem,
-  RecommendedTopic,
-  AgendaTemplateOption,
-  PrepChecklistItem,
-  UploadedResource,
-  MentorResearchProfile,
-  SessionPrepState,
-  ProgressGoal,
-  SkillProgressTrendPoint,
-  AchievementBadge,
-  LearningProgressData,
-  NoteTemplate,
-  NoteAttachment,
-  NoteVersion,
-  BookmarkedResource,
-  LearnerNote,
-  FeedbackCategoryRatings,
-  SessionFeedbackEntry
-} from "./session.types";
+export interface Mentor extends User {
+  bio: string;
+  skills: string[];
+  hourlyRate: number;
+  currency: AssetType;
+  rating: number;
+  reviewCount: number;
+  sessionCount: number;
+  isVerified: boolean;
+  timezone: string;
+  languages: string[];
+}
 
-export * from "./pricing.types";
+export interface Learner extends User {
+  learningGoals: string[];
+  skillLevel: 'beginner' | 'intermediate' | 'advanced';
+  interests: string[];
+}
+
+export interface Session {
+  id: string;
+  mentorId: string;
+  learnerId: string;
+  mentor?: Mentor;
+  learner?: Learner;
+  scheduledAt: string;
+  startTime?: string; // alias for scheduledAt if used
+  duration: number; // minutes
+  status: SessionStatus;
+  price: number;
+  asset: AssetType;
+  currency?: AssetType; // alias for asset
+  topic?: string;
+  learnerName?: string;
+  notes?: string;
+  meetingUrl?: string;
+}
+
+export interface Payment {
+  id: string;
+  sessionId: string;
+  amount: number;
+  asset: AssetType;
+  status: PaymentStatus;
+  stellarTxHash?: string;
+  escrowId?: string;
+  createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  sessionId: string;
+  mentorId: string;
+  learnerId: string;
+  reviewerId?: string;
+  rating: number;
+  comment: string;
+  helpfulCount?: number;
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'session' | 'payment' | 'review' | 'system';
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Hooks generic types
+export interface SessionHistoryItem { id: string; [key: string]: any; }
+export interface AchievementBadge { id: string; title: string; description: string; icon: string; unlocked: boolean; unlockedAt?: string; }
+export interface LearningProgressData {
+  sessionsCompleted: number;
+  timeInvestedHours: number;
+  learningStreakDays: number;
+  goalCompletionRate: number;
+  peerComparison: number;
+  milestoneCelebration: string;
+  skillProgression: { label: string; [key: string]: string | number }[];
+  goals: { id: string; title: string; completedSteps: number; totalSteps: number; dueInWeeks: number }[];
+  achievements: AchievementBadge[];
+}
+export interface LearningPathRecommendation { id: string; title: string; description: string; skills: string[]; estimatedHours: number; }
+export interface RecommendedMentor { id: string; name: string; avatarUrl?: string; matchScore: number; topSkills: string[]; hourlyRate: number; }
+export interface Reminder { id: string; type: string; title: string; message: string; scheduledFor: string; isRead: boolean; }
+export interface ReminderSettings { emailEnabled: boolean; pushEnabled: boolean; customTimes: number[]; }
+export interface ReminderHistoryItem { id: string; reminderId: string; sentAt: string; status: 'sent' | 'failed'; }
+export type ReminderType = 'session' | 'goal' | 'system';
+export interface AvailabilitySlot { id: string; startTime: string; endTime: string; isBooked: boolean; }
+export interface TimeSlot { startTime: string; endTime: string; }
+export interface MentorMatch { mentor: Mentor; score: number; reasons: string[]; }
+export interface BookingPayload { mentorId: string; startTime: string; duration: number; topic: string; notes?: string; }
+export interface CancelPayload { sessionId: string; reason: string; }
+export interface ReschedulePayload { sessionId: string; newStartTime: string; reason: string; }
+export interface GoalsListResponse { data: Goal[]; total: number; }
+export interface AssetCode {}
+export interface SkillLevel {}
+export interface AgendaTemplateOption { id: string; title: string; items: string[]; }
+export interface MentorResearchProfile { linkedinUrl?: string; githubUrl?: string; pastSessionsCount: number; commonTopics: string[]; }
+export interface PrepChecklistItem { id: string; text: string; isCompleted: boolean; }
+export interface SessionPrepState { session: Session; checklist: PrepChecklistItem[]; resources: UploadedResource[]; }
+export interface UploadedResource { id: string; name: string; url: string; size: number; }
+export interface RatingStats { average: number; count: number; breakdown: Record<number, number>; }
