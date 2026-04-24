@@ -1,5 +1,6 @@
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
+import Tooltip from '../ui/Tooltip';
 import type { BookingRecord } from '../../hooks/useBookingHistory';
 import type { SessionStatus } from '../../types';
 
@@ -21,13 +22,14 @@ interface Props {
   booking: BookingRecord;
   inDisputeWindow: boolean;
   onLeaveReview: (id: string) => void;
-  onOpenDispute: (id: string) => void;
+  onOpenDispute: (id: string, transactionId?: string | null) => void;
   onViewReceipt: (id: string) => void;
 }
 
 export default function SessionHistoryCard({ booking, inDisputeWindow, onLeaveReview, onOpenDispute, onViewReceipt }: Props) {
   const badge = STATUS_BADGE[booking.status];
   const isPast = booking.status === 'completed' || booking.status === 'cancelled';
+  const canOpenDispute = Boolean(booking.transaction_id);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
@@ -87,10 +89,30 @@ export default function SessionHistoryCard({ booking, inDisputeWindow, onLeaveRe
                 </Button>
               )}
               {booking.status === 'completed' && inDisputeWindow && (
-                <Button size="sm" variant="outline" onClick={() => onOpenDispute(booking.id)}
-                  className="text-red-600 border-red-200 hover:bg-red-50">
-                  🚩 Open Dispute
-                </Button>
+                canOpenDispute ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onOpenDispute(booking.id, booking.transaction_id ?? null)}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    🚩 Open Dispute
+                  </Button>
+                ) : (
+                  <Tooltip content="A dispute can only be opened after payment is confirmed" position="top">
+                    <span className="inline-flex">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onOpenDispute(booking.id, booking.transaction_id ?? null)}
+                        disabled
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        🚩 Open Dispute
+                      </Button>
+                    </span>
+                  </Tooltip>
+                )
               )}
               {booking.receiptUrl && (
                 <Button size="sm" variant="ghost" onClick={() => onViewReceipt(booking.id)}>
