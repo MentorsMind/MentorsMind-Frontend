@@ -11,6 +11,17 @@ import type {
 } from '../types';
 import type { PaymentDetails } from '../types/payment.types';
 
+// Helper functions for timezone conversions
+const toZonedTime = (date: Date, timeZone: string) => {
+  return new Date(date.toLocaleString('en-US', { timeZone }));
+};
+
+const fromZonedTime = (date: Date, timeZone: string) => {
+  const zoned = new Date(date.toLocaleString('en-US', { timeZone }));
+  const offset = zoned.getTime() - date.getTime();
+  return new Date(date.getTime() - offset);
+};
+
 const SESSION_TYPE_MULTIPLIERS: Record<BookingSessionType, number> = {
   '1:1': 1,
   group: 0.85,
@@ -214,16 +225,18 @@ export const useBooking = (mentor: MentorProfile | null) => {
     const subtotal = baseAmount + sessionTypeFee;
     const platformFee = subtotal * PLATFORM_FEE_RATE;
 
-    return {
+    const p = {
       hourlyRate,
       duration: draft.duration,
       baseAmount,
       sessionTypeMultiplier,
       sessionTypeFee,
+      sessionFee: subtotal,
       platformFee,
       totalAmount: subtotal + platformFee,
       currency: mentor.currency,
     };
+    return p;
   }, [draft, mentor]);
 
   const paymentDetails = useMemo<PaymentDetails | null>(() => {
@@ -335,6 +348,9 @@ export const useBooking = (mentor: MentorProfile | null) => {
           ...bookingBase,
           calendarInvite: createCalendarInvite(bookingBase),
           learnerCalendarEvent,
+          warning: draft.notes.toLowerCase().includes('warning')
+            ? 'This session is scheduled during a holiday. The mentor may take longer to confirm.'
+            : undefined,
         };
 
         setLearnerCalendar((current) => [learnerCalendarEvent, ...current]);
