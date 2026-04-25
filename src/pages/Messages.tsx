@@ -16,11 +16,14 @@ const Messages: React.FC = () => {
     searchQuery,
     searchResults,
     isLoading: messagesLoading,
+    isLoadingMore,
+    hasMore,
     selectConversation,
     sendMessage,
     searchMessages,
     clearSearch,
     createConversation,
+    loadMoreMessages,
   } = useMessages();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -156,6 +159,9 @@ const Messages: React.FC = () => {
                       messages={displayMessages}
                       currentUserId="learner1"
                       searchQuery={searchQuery}
+                      isLoadingMore={isLoadingMore}
+                      hasMore={hasMore}
+                      onLoadMore={loadMoreMessages}
                     />
                   </div>
 

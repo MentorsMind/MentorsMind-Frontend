@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Message, Conversation } from '../services/messaging.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -182,6 +182,7 @@ export const useMessages = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [isLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Typing indicators: set of conversation IDs where the other user is typing
@@ -201,8 +202,9 @@ export const useMessages = () => {
     [conversations, activeConversationId]
   );
 
+  // Messages from API are newest-first (DESC); reverse for oldest-first display
   const activeMessages = useMemo(
-    () => (activeConversationId ? messages[activeConversationId] ?? [] : []),
+    () => (activeConversationId ? [...(messages[activeConversationId] ?? [])].reverse() : []),
     [messages, activeConversationId]
   );
 
@@ -297,35 +299,52 @@ export const useMessages = () => {
   }, []);
 
   // ── Cursor-based pagination ───────────────────────────────────────────────
+  // nextCursors tracks the cursor (message UUID) for the next older-messages fetch per conv.
+  // null means no more pages; undefined means not yet fetched.
+  const [nextCursors, setNextCursors] = useState<Record<string, string | null>>({});
 
   const loadMoreMessages = useCallback(async () => {
     if (!activeConversationId || isLoadingMore || !hasMore[activeConversationId]) return;
 
     setIsLoadingMore(true);
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 600));
+    try {
+      // Build query params — use nextCursor (camelCase) as the cursor param
+      const cursor = nextCursors[activeConversationId];
+      const params = new URLSearchParams({ limit: '10' });
+      if (cursor) params.set('nextCursor', cursor);
 
-    const pool = OLDER_MESSAGES_POOL[activeConversationId] ?? [];
-    const loaded = cursors[activeConversationId] ?? 0;
-    const PAGE = 10;
-    const slice = pool.slice(loaded, loaded + PAGE);
+      // In this demo we use the local pool; in production this would be:
+      // const res = await apiClient.get(`/conversations/${activeConversationId}/messages?${params}`);
+      // const { messages: older, nextCursor } = res.data.data;
+      await new Promise((r) => setTimeout(r, 600));
 
-    if (slice.length > 0) {
-      setMessages((prev) => ({
-        ...prev,
-        [activeConversationId]: [...slice, ...(prev[activeConversationId] ?? [])],
-      }));
+      const pool = OLDER_MESSAGES_POOL[activeConversationId] ?? [];
+      const loaded = cursors[activeConversationId] ?? 0;
+      const PAGE = 10;
+      const slice = pool.slice(loaded, loaded + PAGE);
       const newLoaded = loaded + slice.length;
-      setCursors((prev) => ({ ...prev, [activeConversationId]: newLoaded }));
-      if (newLoaded >= pool.length) {
-        setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
-      }
-    } else {
-      setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
-    }
+      // Simulate nextCursor: null when exhausted
+      const nextCursor = newLoaded < pool.length ? pool[newLoaded]?.id ?? null : null;
 
-    setIsLoadingMore(false);
-  }, [activeConversationId, isLoadingMore, hasMore, cursors]);
+      if (slice.length > 0) {
+        // Prepend older messages — MessageThread saves/restores scrollHeight
+        setMessages((prev) => ({
+          ...prev,
+          [activeConversationId]: [...slice, ...(prev[activeConversationId] ?? [])],
+        }));
+        setCursors((prev) => ({ ...prev, [activeConversationId]: newLoaded }));
+        setNextCursors((prev) => ({ ...prev, [activeConversationId]: nextCursor }));
+        if (nextCursor === null) {
+          setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
+        }
+      } else {
+        setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
+        setNextCursors((prev) => ({ ...prev, [activeConversationId]: null }));
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeConversationId, isLoadingMore, hasMore, cursors, nextCursors]);
 
   // ── Optimistic send ───────────────────────────────────────────────────────
 
@@ -360,7 +379,7 @@ export const useMessages = () => {
       // Optimistic update
       setMessages((current) => ({
         ...current,
-        [activeConversationId]: [...(current[activeConversationId] || []), newMessage],
+        [activeConversationId]: [...(current[activeConversationId] || []), optimisticMsg],
       }));
       setConversations((prev) =>
         prev.map((c) =>
