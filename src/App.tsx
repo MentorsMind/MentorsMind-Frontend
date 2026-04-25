@@ -31,6 +31,8 @@ const AdminSessions = lazy(() => import('./components/admin/AdminSessions'));
 const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
 const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
 const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
+const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
+
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -168,6 +170,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminLogs />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/email-preview/:template"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <EmailTemplatePreview />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>
