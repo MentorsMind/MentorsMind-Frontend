@@ -18,7 +18,7 @@ interface AuthContextType {
   mfaPending: MFAPendingState | null;
   login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
   completeMFAChallenge: (totp: string) => Promise<void>;
-  register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'mentee') => Promise<void>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: () => Promise<void>;
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(user);
   };
 
-  const register = async (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => {
+  const register = async (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'mentee') => {
     setError(null);
     try {
       const { user, token, refreshToken } = await authService.register(firstName, lastName, email, password, role);

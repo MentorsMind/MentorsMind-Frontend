@@ -46,7 +46,7 @@ export async function register(
   lastName: string,
   email: string,
   password: string,
-  role: 'mentor' | 'learner'
+  role: 'mentor' | 'mentee'
 ): Promise<AuthResponse> {
   const { data } = await api.post('/auth/register', { firstName, lastName, email, password, role });
   return data.data;
