@@ -1,4 +1,6 @@
 export const apiConfig = {
+  baseURL: "/api",
+  wsURL: `${window.location.protocol.replace('http', 'ws')}//${window.location.host}/api/ws`,
   url: {
     auth: {
       login: "auth/login",
@@ -15,6 +17,7 @@ export const apiConfig = {
     mentors: "/mentors",
     payments: "/payments",
     conversations: "/conversations",
+    presence: "/presence",
     goals: "/goals",
     account: {
       profile: "users/me",
