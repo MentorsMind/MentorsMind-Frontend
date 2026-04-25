@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Fingerprint, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePasskey } from '../../hooks/usePasskey';
-import { TOKEN_KEY, REFRESH_TOKEN } from '../../config/app.config';
+import { tokenStorage } from '../../utils/token.storage.utils';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
@@ -57,8 +57,7 @@ export default function LoginForm({ onSuccess, onForgotPassword, onRegister }: L
     if (result) {
       // Persist session the same way the password login does via AuthContext
       localStorage.setItem('mm_user', JSON.stringify(result.user));
-      localStorage.setItem(TOKEN_KEY, result.token);
-      localStorage.setItem(REFRESH_TOKEN, result.refreshToken);
+      tokenStorage.setTokens(result.token, result.refreshToken);
       // Force a full reload so AuthContext picks up the new session
       window.location.replace('/learner/dashboard');
     }

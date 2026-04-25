@@ -5,33 +5,117 @@
 import api from './api.client';
 import type {
   MentorVerificationData,
+  VerificationDocument,
+  PresignedUrlRequest,
+  PresignedUrlResponse,
+  VerificationSubmitPayload,
+  VerificationSubmitResponse,
   DocumentUploadRequest,
   DocumentUploadResponse,
-  VerificationDocument,
 } from '../types/verification.types';
 import { DOCUMENT_TYPES } from '../types/verification.types';
 
 // Re-export for convenience
 export { DOCUMENT_TYPES };
 
+// ---------------------------------------------------------------------------
+// Presigned URL Flow (new)
+// ---------------------------------------------------------------------------
+
 /**
- * Get verification status for a mentor
+ * Get a presigned URL for direct upload to S3/GCS
+ */
+export async function getPresignedUrl(
+  request: PresignedUrlRequest,
+): Promise<PresignedUrlResponse> {
+  const { data } = await api.get('/uploads/presigned-url', {
+    params: request,
+  });
+  return data.data;
+}
+
+/**
+ * Upload file directly to S3/GCS using presigned URL.
+ * Uses XMLHttpRequest for reliable upload progress tracking.
+ */
+export function uploadToPresignedUrl(
+  file: File,
+  presignedUrl: string,
+  onProgress?: (percentage: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open('PUT', presignedUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percentage = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentage);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Upload failed due to network error'));
+    xhr.onabort = () => reject(new Error('Upload was cancelled'));
+
+    xhr.send(file);
+  });
+}
+
+/**
+ * Submit verification using URLs (not file blobs)
+ */
+export async function submitVerification(
+  payload: VerificationSubmitPayload,
+): Promise<VerificationSubmitResponse> {
+  const { data } = await api.post('/mentors/verification/submit', payload);
+  return data.data;
+}
+
+/**
+ * Get full verification status for the authenticated mentor
+ * (includes sensitive fields: rejection_reason, additional_info_request, reviewed_by)
+ */
+export async function getMyVerificationStatus(): Promise<MentorVerificationData> {
+  const { data } = await api.get('/mentors/me/verification-status');
+  return data.data;
+}
+
+// ---------------------------------------------------------------------------
+// Public / Legacy Endpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Get verification status for a mentor (public endpoint — strips sensitive fields)
  */
 export async function getMentorVerificationStatus(
-  mentorId: string
+  mentorId: string,
 ): Promise<MentorVerificationData> {
   const { data } = await api.get(`/mentors/${mentorId}/verification-status`);
   return data.data;
 }
 
+// ---------------------------------------------------------------------------
+// Legacy direct upload (deprecated, kept for backward compatibility)
+// ---------------------------------------------------------------------------
+
 /**
- * Upload a verification document
+ * Upload a verification document directly via multipart form-data
  * Supports both file uploads and URL submissions (for LinkedIn)
  */
 export async function uploadVerificationDocument(
   mentorId: string,
   request: DocumentUploadRequest,
-  onUploadProgress?: (progressEvent: ProgressEvent) => void
+  onUploadProgress?: (progressEvent: ProgressEvent) => void,
 ): Promise<DocumentUploadResponse> {
   const formData = new FormData();
 
@@ -53,19 +137,19 @@ export async function uploadVerificationDocument(
         'Content-Type': 'multipart/form-data',
       },
       onUploadProgress,
-    }
+    },
   );
 
   return data.data;
 }
 
 /**
- * Resubmit a rejected document
+ * Resubmit a rejected document (legacy)
  */
 export async function resubmitDocument(
   mentorId: string,
   request: DocumentUploadRequest,
-  onUploadProgress?: (progressEvent: ProgressEvent) => void
+  onUploadProgress?: (progressEvent: ProgressEvent) => void,
 ): Promise<DocumentUploadResponse> {
   return uploadVerificationDocument(mentorId, request, onUploadProgress);
 }
@@ -75,7 +159,7 @@ export async function resubmitDocument(
  */
 export async function getVerificationDocument(
   mentorId: string,
-  documentId: string
+  documentId: string,
 ): Promise<VerificationDocument> {
   const { data } = await api.get(`/mentors/${mentorId}/verification/${documentId}`);
   return data.data;
@@ -86,11 +170,11 @@ export async function getVerificationDocument(
  */
 export async function downloadVerificationDocument(
   mentorId: string,
-  documentId: string
+  documentId: string,
 ): Promise<Blob> {
   const response = await api.get(
     `/mentors/${mentorId}/verification/${documentId}/download`,
-    { responseType: 'blob' }
+    { responseType: 'blob' },
   );
   return response.data;
 }
@@ -100,10 +184,14 @@ export async function downloadVerificationDocument(
  */
 export async function withdrawDocument(
   mentorId: string,
-  documentId: string
+  documentId: string,
 ): Promise<void> {
   await api.delete(`/mentors/${mentorId}/verification/${documentId}`);
 }
+
+// ---------------------------------------------------------------------------
+// Validation Helpers
+// ---------------------------------------------------------------------------
 
 /**
  * Validate file before upload
@@ -111,7 +199,7 @@ export async function withdrawDocument(
 export function validateFile(
   file: File,
   acceptedFormats: string[],
-  maxSize: number
+  maxSize: number,
 ): { valid: boolean; error?: string } {
   // Check file size
   if (maxSize > 0 && file.size > maxSize) {
