@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useMobile } from '../hooks/useMobile';
 import { useNavLayout } from '../hooks/useNavLayout';
@@ -94,6 +95,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           />
         )}
         {showDeniedTooltip && <DeniedTooltip onDismiss={dismissDeniedTooltip} />}
+
+        {/* Account deletion pending amber banner */}
+        {(user as { deletion_scheduled_for?: string } | null)?.deletion_scheduled_for && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-900 text-sm">
+            <span>
+              ⚠️ Your account is scheduled for deletion on{' '}
+              <strong>
+                {new Date((user as { deletion_scheduled_for: string }).deletion_scheduled_for).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </strong>.
+            </span>
+            <Link
+              to="/account-scheduled-for-deletion"
+              className="font-semibold underline hover:text-amber-700 whitespace-nowrap"
+            >
+              Cancel
+            </Link>
+          </div>
+        )}
 
         {/* Main content — overscroll-behavior: contain prevents pull-to-refresh bleed;
             -webkit-overflow-scrolling: touch enables momentum scrolling on iOS (Req 8.6).
