@@ -12,10 +12,13 @@ interface NotificationsContextValue {
   unreadCount: number
   toasts: NotificationPayload[]
   preferences: Preferences
+  loading: boolean
+  hasMore: boolean
   markRead: (id: string) => void
   dismiss: (id: string) => void
   snooze: (id: string, minutes?: number) => void
   clearAll: () => void
+  loadMore: () => void
 }
 
 const defaultPrefs: Preferences = { sounds: true, toasts: true, push: false }
@@ -25,6 +28,9 @@ const NotificationsContext = createContext<NotificationsContextValue | undefined
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<NotificationPayload[]>([])
   const [toasts, setToasts] = useState<NotificationPayload[]>([])
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const [preferences, setPreferences] = useState<Preferences>(() => {
     try {
       const raw = localStorage.getItem('mm:notification:prefs')
@@ -40,8 +46,25 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem('mm:notification:prefs', JSON.stringify(preferences))
   }, [preferences])
 
+  const fetchPage = useCallback(async (pageNum: number) => {
+    setLoading(true)
+    try {
+      const result = await notificationService.fetchAll(pageNum)
+      if (pageNum === 1) {
+        setNotifications(result.data)
+      } else {
+        setNotifications((prev) => [...prev, ...result.data])
+      }
+      setHasMore(result.data.length > 0 && notifications.length + result.data.length < result.meta.total)
+    } catch (e) {
+      setHasMore(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [notifications.length])
+
   useEffect(() => {
-    notificationService.fetchAll().then((list) => setNotifications(list || []))
+    void fetchPage(1)
     const unsub = notificationService.subscribe((n) => {
       setNotifications((s) => [n, ...s])
       if (preferences.toasts) setToasts((s) => [n, ...s].slice(0, 5))
@@ -56,6 +79,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => unsub()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1
+      setPage(nextPage)
+      void fetchPage(nextPage)
+    }
+  }, [fetchPage, hasMore, loading, page])
 
   const markRead = async (id: string) => {
     setNotifications((s) => s.map((x) => (x.id === id ? { ...x, read: true } : x)))
@@ -79,7 +110,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <NotificationsContext.Provider
-      value={{ notifications, unreadCount, toasts, preferences, markRead, dismiss, snooze, clearAll }}>
+      value={{ notifications, unreadCount, toasts, preferences, loading, hasMore, markRead, dismiss, snooze, clearAll, loadMore }}>
       {children}
     </NotificationsContext.Provider>
   )

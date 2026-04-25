@@ -25,6 +25,14 @@ const Settings = lazy(() => import('./pages/Settings'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
 const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const AdminUsers = lazy(() => import('./components/admin/AdminUsers'));
+const AdminTransactions = lazy(() => import('./components/admin/AdminTransactions'));
+const AdminSessions = lazy(() => import('./components/admin/AdminSessions'));
+const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
+const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
+const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
+const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
+
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -83,8 +91,8 @@ function AppRoutes() {
                 />
 
             {/* Admin routes */}
-            <Route 
-              path="/admin/analytics" 
+            <Route
+              path="/admin/analytics"
               element={
                 <ProtectedRoute>
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
@@ -93,7 +101,91 @@ function AppRoutes() {
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminUsers />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/transactions"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminTransactions />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sessions"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminSessions />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminPayments />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disputes"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminDisputes />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/logs"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminLogs />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/email-preview/:template"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <EmailTemplatePreview />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
             />
 
             {/* Settings Redirect */}

@@ -29,6 +29,8 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   /** Refresh the access token using refresh token */
   refreshToken: () => Promise<string | null>;
+  /** Patch the stored user object locally (e.g. after avatar upload) */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -196,6 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const ws = new WebSocketService(config);
     setWebSocket(ws);
     ws.connect(token).catch(console.error);
+  const updateUser = (patch: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      localStorage.setItem('mm_user', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -213,7 +222,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearError,
       verifyEmail,
       resendVerification,
+      clearError, 
       refreshUser,
+      updateUser,
       refreshToken
     }}>
       {children}
