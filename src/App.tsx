@@ -31,6 +31,8 @@ const AdminSessions = lazy(() => import('./components/admin/AdminSessions'));
 const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
 const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
 const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
+const AdminSystemHealth = lazy(() => import('./components/admin/AdminSystemHealth'));
+const AccountScheduledForDeletion = lazy(() => import('./pages/AccountScheduledForDeletion'));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -59,6 +61,8 @@ function AppRoutes() {
             <Route path="/auth/callback" element={<OAuthCallback />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
+            {/* Account deletion grace period page */}
+            <Route path="/account-scheduled-for-deletion" element={<AccountScheduledForDeletion />} />
 
             {/* Mentor routes */}
             <Route path="/mentor" element={<ProtectedRoute><DashboardLayout><Navigate to="/mentor/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
@@ -168,6 +172,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminLogs />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/system-health"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminSystemHealth />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>
