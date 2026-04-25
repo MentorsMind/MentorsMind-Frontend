@@ -184,7 +184,7 @@ export default function SessionHistory() {
             />
           ))}
 
-          {hasMore && (
+          {hasMore && tab !== 'upcoming' && (
             <div className="flex justify-center pt-4">
               <Button variant="outline" onClick={loadMore}>Load more sessions</Button>
             </div>

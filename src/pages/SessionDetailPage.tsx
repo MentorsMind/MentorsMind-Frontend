@@ -147,6 +147,23 @@ export default function SessionDetailPage() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Poll every 30 seconds if session is confirmed but meeting URL is missing
+    let pollInterval: number | undefined;
+
+    if (session?.status === 'confirmed' && !session.meetingUrl) {
+      pollInterval = window.setInterval(() => {
+        void loadSession();
+      }, 30000);
+    }
+
+    return () => {
+      if (pollInterval) {
+        window.clearInterval(pollInterval);
+      }
+    };
+  }, [loadSession, session?.status, session?.meetingUrl]);
+
   const actionState = useMemo(
     () => (session ? getSessionActionState(session, now) : null),
     [now, session],
@@ -302,11 +319,13 @@ export default function SessionDetailPage() {
           </button>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={statusVariant[session.status] ?? 'default'}>
-              {session.status}
+              {session.status === 'pending' ? 'Awaiting confirmation' : session.status}
             </Badge>
-            <Badge variant={paymentVariant[session.paymentStatus] ?? 'default'}>
-              Payment: {session.paymentStatus}
-            </Badge>
+            {session.paymentStatus && (
+              <Badge variant={paymentVariant[session.paymentStatus] ?? 'default'}>
+                Payment: {session.paymentStatus}
+              </Badge>
+            )}
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-gray-950">
             {session.topic}
@@ -321,9 +340,16 @@ export default function SessionDetailPage() {
             <Clock className="h-4 w-4 text-indigo-600" />
             {actionState?.countdownLabel}
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Join opens 10 minutes before the scheduled start.
-          </p>
+          {actionState?.isJoinWindowOpen && (
+            <p className="mt-2 text-xs text-gray-500">
+              Join window is open until the scheduled end.
+            </p>
+          )}
+          {actionState?.isBeforeJoinWindow && actionState.isConfirmed && (
+            <p className="mt-2 text-xs text-gray-500">
+              Join opens 10 minutes before the scheduled start.
+            </p>
+          )}
         </div>
       </div>
 
@@ -404,13 +430,51 @@ export default function SessionDetailPage() {
             </div>
           </div>
 
-          {actionState?.shouldShowRegenerate ? (
-            <Alert type="warning" title="Meeting link needs attention">
-              {actionState.isMeetingLinkMissing
-                ? 'No meeting URL is available for this booking yet.'
-                : 'The existing meeting URL has expired.'}
+          {actionState?.isCancelled ? (
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+              <div className="flex items-center gap-2 font-bold">
+                <XCircle className="h-4 w-4" />
+                Session Cancelled
+              </div>
+              <p className="mt-1">
+                This meeting has been cancelled and the link is no longer available.
+              </p>
+            </div>
+          ) : actionState?.isCompleted ? (
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-800">
+              <div className="flex items-center gap-2 font-bold">
+                <CheckCircle2 className="h-4 w-4" />
+                Session Completed
+              </div>
+              <p className="mt-1">
+                This meeting has ended.
+              </p>
+            </div>
+          ) : actionState?.isPending ? (
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+              <div className="flex items-center gap-2 font-bold">
+                <Clock className="h-4 w-4" />
+                Awaiting Confirmation
+              </div>
+              <p className="mt-1">
+                The meeting link will be generated once the mentor confirms.
+              </p>
+            </div>
+          ) : actionState?.isConfirmed && actionState.isMeetingLinkMissing ? (
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
+              <div className="flex items-center gap-2 font-bold">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Meeting link pending
+              </div>
+              <p className="mt-1">
+                We're generating your meeting link. This usually takes a few seconds.
+              </p>
+            </div>
+          ) : actionState?.isMeetingLinkExpired ? (
+            <Alert type="warning" title="Meeting link expired">
+              The existing meeting URL has expired. Please regenerate it.
             </Alert>
-          ) : (
+          ) : session.meetingUrl ? (
             <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-green-800">
               <div className="flex items-center gap-2 font-bold">
                 <CheckCircle2 className="h-4 w-4" />
@@ -419,7 +483,20 @@ export default function SessionDetailPage() {
               <p className="mt-1 break-all text-green-700">
                 {session.meetingUrl}
               </p>
+              {session.meetingExpiresAt && (
+                <p className="mt-2 text-xs font-medium text-green-600/80">
+                  Meeting room expires at{' '}
+                  {new Date(session.meetingExpiresAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              )}
             </div>
+          ) : (
+             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-500 italic">
+               No meeting link available.
+             </div>
           )}
 
           <div className="space-y-3">
