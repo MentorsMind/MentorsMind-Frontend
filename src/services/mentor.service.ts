@@ -93,3 +93,29 @@ export async function getMentorAvailability(id: string): Promise<AvailabilitySlo
   const { data } = await api.get(`/mentors/${id}/availability`);
   return data.data;
 }
+
+export interface PricingResponse {
+  hourlyRate: number;
+}
+
+export async function updatePricing(id: string, hourlyRate: number): Promise<PricingResponse> {
+  const { data } = await api.put(`/mentors/${id}/pricing`, { hourlyRate });
+  return data.data;
+}
+
+export interface AvailabilitySchedule {
+  [day: string]: string[];
+}
+
+export interface AvailabilityResponse {
+  availability_schedule: AvailabilitySchedule;
+  is_available: boolean;
+}
+
+export async function updateAvailability(
+  id: string,
+  payload: { availability_schedule: AvailabilitySchedule; is_available: boolean },
+): Promise<AvailabilityResponse> {
+  const { data } = await api.post(`/mentors/${id}/availability`, payload);
+  return data.data;
+}
