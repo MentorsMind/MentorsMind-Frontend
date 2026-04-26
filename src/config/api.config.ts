@@ -9,6 +9,9 @@ export const apiConfig = {
       me: "/users/me",
       byId: "/users",
     },
+    admin: {
+      users: "/admin/users",
+    },
     sessions: "/sessions",
     mentors: "/mentors",
     payments: "/payments",

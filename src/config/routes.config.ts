@@ -7,6 +7,7 @@ export const ROUTES = {
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
   PROFILE: '/profile',
+  ADMIN_USERS: '/admin/users',
   SETTINGS: '/settings',
   LOGIN: '/login',
   SIGNUP: '/signup',
@@ -27,6 +28,7 @@ export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },
   { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
+  { path: ROUTES.ADMIN_USERS, label: 'Admin Users', protected: true, roles: ['admin'], icon: 'User' },
 ];
 
 export const USER_NAVIGATION: RouteConfig[] = [
