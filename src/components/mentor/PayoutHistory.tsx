@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PayoutRequest, Transaction } from '../../types';
-import type { TxFilter } from '../../hooks/useMentorWallet';
+import type { TxFilter, TxOrder } from '../../hooks/useMentorWallet';
 
 const TX_TYPE_LABELS: Record<string, string> = {
   earning: 'Earning',
@@ -34,10 +34,33 @@ interface PayoutHistoryProps {
   transactions: Transaction[];
   payoutHistory: PayoutRequest[];
   filter: TxFilter;
+  order: TxOrder;
+  transactionsHasMore: boolean;
+  transactionsLoading: boolean;
+  payoutHasMore: boolean;
+  payoutLoading: boolean;
+  showNoMoreTransactions: boolean;
   onFilterChange: (f: TxFilter) => void;
+  onOrderChange: (order: TxOrder) => void;
+  onLoadMoreTransactions: () => void;
+  onLoadMorePayouts: () => void;
 }
 
-const PayoutHistory: React.FC<PayoutHistoryProps> = ({ transactions, payoutHistory, filter, onFilterChange }) => {
+const PayoutHistory: React.FC<PayoutHistoryProps> = ({
+  transactions,
+  payoutHistory,
+  filter,
+  order,
+  transactionsHasMore,
+  transactionsLoading,
+  payoutHasMore,
+  payoutLoading,
+  showNoMoreTransactions,
+  onFilterChange,
+  onOrderChange,
+  onLoadMoreTransactions,
+  onLoadMorePayouts,
+}) => {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-5">
@@ -58,6 +81,25 @@ const PayoutHistory: React.FC<PayoutHistoryProps> = ({ transactions, payoutHisto
             {f.label}
           </button>
         ))}
+      </div>
+
+      <div className="flex gap-1.5 mb-5">
+        <button
+          onClick={() => onOrderChange('desc')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            order === 'desc' ? 'bg-stellar text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          }`}
+        >
+          Newest First
+        </button>
+        <button
+          onClick={() => onOrderChange('asc')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            order === 'asc' ? 'bg-stellar text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          }`}
+        >
+          Oldest First
+        </button>
       </div>
 
       {/* Transaction list */}
@@ -85,6 +127,20 @@ const PayoutHistory: React.FC<PayoutHistoryProps> = ({ transactions, payoutHisto
         )}
       </div>
 
+      {transactionsHasMore && (
+        <button
+          onClick={onLoadMoreTransactions}
+          disabled={transactionsLoading}
+          className="w-full mb-6 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {transactionsLoading ? 'Loading...' : 'Load more transactions'}
+        </button>
+      )}
+
+      {showNoMoreTransactions && (
+        <p className="text-center text-xs text-gray-400 mb-6">No more transactions</p>
+      )}
+
       {/* Payout history */}
       <div>
         <h4 className="text-sm font-semibold text-gray-700 mb-3">Payout History</h4>
@@ -106,6 +162,16 @@ const PayoutHistory: React.FC<PayoutHistoryProps> = ({ transactions, payoutHisto
             </div>
           ))}
         </div>
+
+        {payoutHasMore && (
+          <button
+            onClick={onLoadMorePayouts}
+            disabled={payoutLoading}
+            className="w-full mt-4 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {payoutLoading ? 'Loading...' : 'Load more payouts'}
+          </button>
+        )}
       </div>
     </div>
   );

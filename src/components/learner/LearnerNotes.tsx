@@ -11,13 +11,17 @@ const LearnerNotes: React.FC = () => {
     selectedNote,
     resources,
     searchQuery,
+    isSaving,
     setSearchQuery,
     setSelectedNoteId,
     updateSelectedNote,
     applyTemplate,
     toggleShareWithMentor,
+    shareNoteWithLearner,
     setReminder,
     addAttachments,
+    addResourceLink,
+    removeResourceLink,
     addResourceBookmark,
     exportSelectedNote,
   } = useNotes();
@@ -57,11 +61,15 @@ const LearnerNotes: React.FC = () => {
         <NoteEditor
           note={selectedNote}
           templates={templates}
+          isSaving={isSaving}
           onApplyTemplate={applyTemplate}
           onChange={updateSelectedNote}
           onToggleShare={toggleShareWithMentor}
+          onShareWithLearner={shareNoteWithLearner}
           onSetReminder={setReminder}
           onAddAttachments={addAttachments}
+          onAddResourceLink={addResourceLink}
+          onRemoveResourceLink={removeResourceLink}
           onExport={exportSelectedNote}
         />
       </div>

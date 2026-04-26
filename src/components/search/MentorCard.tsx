@@ -33,6 +33,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
           e.stopPropagation();
           onSave(mentor.id);
         }}
+        aria-label={isSaved ? 'Unsave' : 'Save'}
         className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
           isSaved 
             ? 'bg-stellar text-white' 
@@ -92,7 +93,7 @@ const MentorCard: React.FC<MentorCardProps> = ({
               key={index}
               className="px-2.5 py-1 bg-gray-50 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-100"
             >
-              {skill}
+              {skill.toUpperCase()}
             </span>
           ))}
           {mentor.skills.length > (isGridView ? 4 : 6) && (

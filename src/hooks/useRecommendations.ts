@@ -163,6 +163,8 @@ const INITIAL_PATHS: LearningPathRecommendation[] = [
 export const useRecommendations = () => {
   const [mentors, setMentors] = useState(INITIAL_MENTORS);
   const [paths, setPaths] = useState(INITIAL_PATHS);
+  const [dismissedMentors, setDismissedMentors] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleMentorBookmark = useCallback((mentorId: string) => {
     setMentors((current) =>
@@ -178,11 +180,28 @@ export const useRecommendations = () => {
     );
   }, []);
 
+  const dismissMentor = useCallback((mentorId: string) => {
+    setDismissedMentors((current) => new Set([...current, mentorId]));
+  }, []);
+
+  const refreshRecommendations = useCallback(() => {
+    setIsLoading(true);
+    // Simulate API call to refresh recommendations
+    setTimeout(() => {
+      setDismissedMentors(new Set());
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
   const togglePathBookmark = useCallback((pathId: string) => {
     setPaths((current) =>
       current.map((path) => (path.id === pathId ? { ...path, bookmarked: !path.bookmarked } : path))
     );
   }, []);
+
+  const activeMentors = useMemo(() => {
+    return mentors.filter((mentor) => !dismissedMentors.has(mentor.id));
+  }, [mentors, dismissedMentors]);
 
   const estimatedTimeToGoal = useMemo(() => {
     return paths.reduce((shortest, path) => Math.min(shortest, path.estimatedWeeks), Number.POSITIVE_INFINITY);
@@ -193,12 +212,15 @@ export const useRecommendations = () => {
   }, [paths]);
 
   return {
-    mentors,
+    mentors: activeMentors,
     paths,
     bookmarkedPaths,
     estimatedTimeToGoal,
+    isLoading,
     toggleMentorBookmark,
     setMentorFeedback,
+    dismissMentor,
+    refreshRecommendations,
     togglePathBookmark,
   };
 };

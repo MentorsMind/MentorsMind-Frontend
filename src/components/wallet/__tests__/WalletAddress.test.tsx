@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WalletAddress } from '../WalletAddress';
 
@@ -59,24 +59,23 @@ describe('WalletAddress', () => {
 
   it('shows "Copied!" message temporarily after copying', async () => {
     vi.useFakeTimers();
-    render(<WalletAddress publicKey={mockPublicKey} />);
-    
-    const copyButton = screen.getByText('Copy').closest('button')!;
-    fireEvent.click(copyButton);
-    
-    await waitFor(() => {
+    try {
+      render(<WalletAddress publicKey={mockPublicKey} />);
+      
+      const copyButton = screen.getByText('Copy').closest('button')!;
+      fireEvent.click(copyButton);
+      
       expect(screen.getByText('Copied!')).toBeInTheDocument();
-    });
-    
-    // Fast-forward time
-    vi.advanceTimersByTime(2000);
-    
-    await waitFor(() => {
+      
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      
       expect(screen.queryByText('Copied!')).not.toBeInTheDocument();
       expect(screen.getByText('Copy')).toBeInTheDocument();
-    });
-    
-    vi.useRealTimers();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('downloads QR code when download button is clicked', () => {
@@ -108,12 +107,10 @@ describe('WalletAddress', () => {
     
     const shareButton = screen.getByText('Share').closest('button')!;
     fireEvent.click(shareButton);
-    
-    await waitFor(() => {
-      expect(navigator.share).toHaveBeenCalledWith({
-        title: 'My Stellar Wallet Address',
-        text: `Send Stellar assets to: ${mockPublicKey}`
-      });
+
+    expect(navigator.share).toHaveBeenCalledWith({
+      title: 'My Stellar Wallet Address',
+      text: `Send Stellar assets to: ${mockPublicKey}`
     });
   });
 

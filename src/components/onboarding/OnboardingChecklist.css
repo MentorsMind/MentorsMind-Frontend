@@ -1,0 +1,127 @@
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* OnboardingChecklist animations */
+.onboarding-checklist-animate {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.onboarding-item-complete {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Progress bar animations */
+.onboarding-progress-bar-animate {
+  animation: shimmer 2s infinite;
+  background-size: 1000px 100%;
+}
+
+/* Celebration animation */
+.onboarding-celebration-confetti {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Pulse effect for loading states */
+.onboarding-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Smooth transitions for disabled states */
+.onboarding-item-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Hover effects */
+.onboarding-item-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.onboarding-item-hover:hover {
+  transform: translateX(2px);
+}
+
+/* Focus states for accessibility */
+.onboarding-item-focus:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .onboarding-checklist-animate {
+    animation: slideInUp 0.3s ease-out;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-checklist-animate,
+  .onboarding-item-complete,
+  .onboarding-progress-bar-animate,
+  .onboarding-celebration-confetti,
+  .onboarding-pulse,
+  .onboarding-item-hover,
+  .onboarding-item-hover:hover {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
