@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useMentorProfile } from '../hooks/useMentorProfile';
 import { useAvailability } from '../hooks/useAvailability';
 import { ProfileForm } from '../components/mentor/ProfileForm';
@@ -19,6 +19,7 @@ export const MentorProfileSetup = () => {
   const {
     profile,
     loading: profileLoading,
+    isDirty,
     updateProfile,
     saveProfile,
     addPortfolioItem,
@@ -36,6 +37,26 @@ export const MentorProfileSetup = () => {
     copyFromPreviousWeek,
     saveAvailability,
   } = useAvailability();
+
+  const confirmNavigationIfDirty = useCallback(() => {
+    if (!isDirty) {
+      return true;
+    }
+    return window.confirm('You have unsaved changes. Are you sure you want to leave this page?');
+  }, [isDirty]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const handleSave = async () => {
     if (currentStep === 'profile') {
@@ -85,7 +106,12 @@ export const MentorProfileSetup = () => {
             {steps.map((step, index) => (
               <React.Fragment key={step.id}>
                 <button
-                  onClick={() => setCurrentStep(step.id as any)}
+                  onClick={() => {
+                    if (!confirmNavigationIfDirty()) {
+                      return;
+                    }
+                    setCurrentStep(step.id as any);
+                  }}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
                     currentStep === step.id
                       ? 'bg-blue-600 text-white'
@@ -123,6 +149,11 @@ export const MentorProfileSetup = () => {
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Profile Information</h2>
+                {isDirty && (
+                  <span className="text-sm font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-md">
+                    Unsaved changes
+                  </span>
+                )}
                 <button
                   onClick={() => setShowPreview(true)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
@@ -175,7 +206,12 @@ export const MentorProfileSetup = () => {
 
           <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
             <button
-              onClick={() => setCurrentStep(currentStep === 'profile' ? 'profile' : 'profile')}
+              onClick={() => {
+                if (!confirmNavigationIfDirty()) {
+                  return;
+                }
+                setCurrentStep(currentStep === 'profile' ? 'profile' : 'profile');
+              }}
               disabled={currentStep === 'profile'}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >

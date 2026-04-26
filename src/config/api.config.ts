@@ -5,6 +5,10 @@ export const apiConfig = {
       signup: "auth/signup",
       me: "auth/me",
     },
+    users: {
+      me: "/users/me",
+      byId: "/users",
+    },
     sessions: "/sessions",
     mentors: "/mentors",
     payments: "/payments",
