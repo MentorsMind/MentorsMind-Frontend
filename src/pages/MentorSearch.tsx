@@ -13,13 +13,13 @@ export default function MentorSearch() {
   const {
     mentors,
     loading,
+    loadingMore,
+    hasMore,
     filters,
     updateFilter,
     clearFilters,
-    currentPage,
-    totalPages,
+    loadMore,
     countLabel,
-    goToPage,
   } = useMentorSearch();
 
   const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
@@ -107,35 +107,15 @@ export default function MentorSearch() {
                   ))}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-8">
+                {/* Load More — cursor-based pagination (GET /mentors) */}
+                {hasMore && (
+                  <div className="flex justify-center mt-8">
                     <button
-                      disabled={currentPage === 1}
-                      onClick={() => goToPage(currentPage - 1)}
-                      className="px-3 py-1 rounded border disabled:opacity-40"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="px-6 py-2 rounded border bg-white hover:bg-gray-50 disabled:opacity-40"
                     >
-                      Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => goToPage(p)}
-                        className={`px-3 py-1 rounded border ${
-                          p === currentPage
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                    <button
-                      disabled={currentPage === totalPages}
-                      onClick={() => goToPage(currentPage + 1)}
-                      className="px-3 py-1 rounded border disabled:opacity-40"
-                    >
-                      Next
+                      {loadingMore ? "Loading…" : "Load more"}
                     </button>
                   </div>
                 )}
