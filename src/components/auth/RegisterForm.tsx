@@ -14,7 +14,7 @@ interface RegisterFormProps {
 export default function RegisterForm({ onSuccess, onLogin }: RegisterFormProps) {
   const { register, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'mentee' as 'mentor' | 'mentee' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,7 @@ export default function RegisterForm({ onSuccess, onLogin }: RegisterFormProps) 
       if (onSuccess) {
         onSuccess();
       } else {
-        navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
+        navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/mentee/onboarding');
       }
     } catch {
       // Error is already set in context, just handle navigation
@@ -66,11 +66,11 @@ export default function RegisterForm({ onSuccess, onLogin }: RegisterFormProps) 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-text">I want to</label>
             <div className="grid grid-cols-2 gap-3">
-              {(['learner', 'mentor'] as const).map(r => (
+              {(['mentee', 'mentor'] as const).map(r => (
                 <label key={r} className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors
                   ${form.role === r ? 'border-primary bg-accent text-accent-foreground' : 'border-border hover:border-border/80'}`}>
                   <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} className="sr-only" />
-                  <span>{r === 'learner' ? '🎓 Learn' : '👨‍🏫 Mentor'}</span>
+                  <span>{r === 'mentee' ? '🎓 Learn' : '👨‍🏫 Mentor'}</span>
                 </label>
               ))}
             </div>

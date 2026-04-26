@@ -29,7 +29,7 @@ const mockDevice = {
 };
 
 const mockAuthResult = {
-  user: { id: 'u1', email: 'test@example.com', name: 'Test User', role: 'learner' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  user: { id: 'u1', email: 'test@example.com', name: 'Test User', role: 'mentee' as const, createdAt: '2024-01-01T00:00:00.000Z' },
   token: 'access-token',
   refreshToken: 'refresh-token',
 };
