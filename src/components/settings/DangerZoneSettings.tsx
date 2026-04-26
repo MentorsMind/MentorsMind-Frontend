@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import FocusTrap from '../a11y/FocusTrap';
 import AccountService from '../../services/account.service';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,19 +12,26 @@ const DangerZoneSettings: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const accountService = new AccountService();
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleDelete = async () => {
+    if (deleteConfirm !== 'DELETE') return;
     setIsDeleting(true);
     try {
-      await accountService.deleteAccount();
-      toast.success('Account deleted successfully');
+      const result = await accountService.requestDeletion();
+      // Tokens are revoked server-side — log out immediately
+      await logout();
       setShowDeleteModal(false);
-      logout();
+      // Redirect to the scheduled-for-deletion page with the date
+      navigate('/account-scheduled-for-deletion', {
+        state: { deletion_scheduled_for: result.deletion_scheduled_for },
+        replace: true,
+      });
     } catch (err) {
-      toast.error('Failed to delete account');
+      toast.error('Failed to schedule account deletion');
       console.error(err);
       setIsDeleting(false);
     }
@@ -39,7 +47,7 @@ const DangerZoneSettings: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-red-900 mb-1">Delete Account</h3>
             <p className="text-sm text-red-700/80 mb-4 max-w-xl">
-              Permanently delete your account and all associated data. This action is irreversible. All your sessions, goals, and history will be permanently erased.
+              Schedule your account for permanent deletion. You will have 30 days to cancel before all data is erased.
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
@@ -61,11 +69,11 @@ const DangerZoneSettings: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Delete Account?</h3>
               </div>
-              
+
               <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                This action <strong className="text-gray-900">cannot be undone</strong>. This will permanently delete your account, settings, and all your history.
+                Your account will be <strong className="text-gray-900">permanently deleted in 30 days</strong>. You will be logged out immediately. You can cancel the deletion by logging back in during the grace period.
               </p>
-              
+
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   To verify, type <span className="font-mono text-red-600 select-all">DELETE</span> below:
@@ -80,9 +88,9 @@ const DangerZoneSettings: React.FC = () => {
                   autoComplete="off"
                 />
               </div>
-              
+
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); }}
                   disabled={isDeleting}
                   className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -95,7 +103,7 @@ const DangerZoneSettings: React.FC = () => {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shadow-red-600/20"
                 >
                   {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                  {isDeleting ? 'Scheduling...' : 'Delete Account'}
                 </button>
               </div>
             </div>
