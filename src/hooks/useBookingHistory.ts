@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { Session, SessionStatus } from '../types';
-import { getBookingTransactionId } from '../services/dispute.service';
+import api from '../services/api';
+import { getBookingTransactionId, listDisputes } from '../services/dispute.service';
 
 // ─── Extended booking type ────────────────────────────────────────────────────
 
@@ -15,6 +16,7 @@ export interface BookingRecord extends Session {
   endedAt?: string;
   receiptUrl?: string;
   transaction_id?: string | null;
+  dispute_id?: string | null;
 }
 
 export type TabKey = 'upcoming' | 'past';
@@ -108,6 +110,7 @@ export function useBookingHistory() {
   const [page, setPage] = useState(1);
   const [isLoading] = useState(false);
   const [transactionIdsByBooking, setTransactionIdsByBooking] = useState<Record<string, string | null>>({});
+  const [disputeIdsByBooking, setDisputeIdsByBooking] = useState<Record<string, string | null>>({});
 
   const updateFilter = useCallback(<K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) => {
     setFilters((f) => ({ ...f, [key]: value }));
@@ -148,8 +151,12 @@ export function useBookingHistory() {
         transactionIdsByBooking[booking.id] !== undefined
           ? transactionIdsByBooking[booking.id]
           : (booking.transaction_id ?? null),
+      dispute_id:
+        disputeIdsByBooking[booking.id] !== undefined
+          ? disputeIdsByBooking[booking.id]
+          : (booking.dispute_id ?? null),
     })),
-    [paginated, transactionIdsByBooking],
+    [paginated, transactionIdsByBooking, disputeIdsByBooking],
   );
   const hasMore = paginated.length < filtered.length;
 
@@ -169,7 +176,7 @@ export function useBookingHistory() {
         (booking) =>
           booking.status === 'completed' &&
           booking.transaction_id === undefined &&
-          transactionIdsByBooking[booking.id] === undefined,
+          transactionIdsByBooking[booking.id] === undefined
       );
 
       if (completedWithoutHydratedTx.length === 0) {
@@ -184,7 +191,7 @@ export function useBookingHistory() {
           } catch {
             return [booking.id, null] as const;
           }
-        }),
+        })
       );
 
       if (!mounted || updates.length === 0) {
@@ -200,12 +207,41 @@ export function useBookingHistory() {
       });
     };
 
+    const hydrateDisputesPerPage = async () => {
+      const visibleBookings = paginated.filter(
+        (b) => b.status === 'completed' && disputeIdsByBooking[b.id] === undefined
+      );
+      if (visibleBookings.length === 0) return;
+
+      const updates = await Promise.all(
+        visibleBookings.map(async (b) => {
+          try {
+            const { data } = await api.get(`/disputes?booking_id=${b.id}`);
+            const disputes = (data?.data ?? data) as any[];
+            return [b.id, disputes[0]?.id ?? null] as const;
+          } catch {
+            return [b.id, null] as const;
+          }
+        })
+      );
+
+      if (!mounted) return;
+      setDisputeIdsByBooking((prev) => {
+        const next = { ...prev };
+        updates.forEach(([id, dId]) => {
+          next[id] = dId;
+        });
+        return next;
+      });
+    };
+
     void hydrateTransactionIds();
+    void hydrateDisputesPerPage();
 
     return () => {
       mounted = false;
     };
-  }, [bookingsWithTransactions, transactionIdsByBooking]);
+  }, [bookingsWithTransactions, transactionIdsByBooking, disputeIdsByBooking, paginated]);
 
   return {
     tab, switchTab,

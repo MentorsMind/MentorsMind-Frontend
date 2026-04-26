@@ -24,6 +24,7 @@ const LearningGoals = lazy(() => import('./pages/LearningGoals'));
 const Settings = lazy(() => import('./pages/Settings'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
+const DisputeDetailPage = lazy(() => import('./pages/DisputeDetailPage'));
 const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
 const AdminUsers = lazy(() => import('./components/admin/AdminUsers'));
 const AdminTransactions = lazy(() => import('./components/admin/AdminTransactions'));
@@ -70,6 +71,7 @@ function AppRoutes() {
             <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/disputes/:id" element={<ProtectedRoute><DashboardLayout><DisputeDetailPage /></DashboardLayout></ProtectedRoute>} />
 
             {/* Learner routes */}
             <Route path="/learner" element={<ProtectedRoute><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
