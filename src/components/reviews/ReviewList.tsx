@@ -5,7 +5,8 @@ import StarRating from './StarRating';
 interface ReviewListProps {
   reviews: Review[];
   stats: RatingStats;
-  onVoteHelpful: (id: string) => void;
+  onVoteHelpful: (id: string) => Promise<void> | void;
+  alreadyVotedReviewIds?: Set<string>;
   onFilterChange: (rating: number | null) => void;
   currentFilter: number | null;
   onAddResponse: (id: string, text: string) => void;
@@ -18,6 +19,7 @@ const ReviewList: React.FC<ReviewListProps> = ({
   reviews,
   stats,
   onVoteHelpful,
+  alreadyVotedReviewIds,
   onFilterChange,
   currentFilter,
   onAddResponse,
@@ -116,12 +118,13 @@ const ReviewList: React.FC<ReviewListProps> = ({
               <div className="flex items-center gap-6">
                 <button
                   onClick={() => onVoteHelpful(review.id)}
-                  className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-stellar transition-colors group"
+                  disabled={alreadyVotedReviewIds?.has(review.id)}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-stellar transition-colors group disabled:cursor-not-allowed disabled:text-amber-600"
                 >
                   <svg className="w-4 h-4 group-active:scale-125 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.708c.95 0 1.708.758 1.708 1.708 0 .428-.158.834-.442 1.15l-3.267 3.5c-.284.316-.69.475-1.117.475H9.708C8.758 18.833 8 18.075 8 17.125V10c0-.427.158-.833.442-1.15L12 5l1 1v4zM4 11h3v8H4z" />
                   </svg>
-                  Helpful ({review.helpfulCount})
+                  {alreadyVotedReviewIds?.has(review.id) ? 'Already voted' : `Helpful (${review.helpfulCount})`}
                 </button>
 
                 <button

@@ -1,12 +1,15 @@
 export interface Review {
   id: string;
   mentorId: string;
+  bookingId?: string;
   reviewerId: string;
   reviewerName: string;
   rating: number;
   comment: string;
   date: string;
+  created_at?: string;
   helpfulCount: number;
+  helpful_count?: number;
   isVerified: boolean;
   mentorResponse?: {
     text: string;

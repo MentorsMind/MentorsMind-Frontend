@@ -128,6 +128,8 @@ function AnalyticsDashboard() {
 function App() {
   const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'reviews' | 'analytics' | 'profile'>('onboarding');
   const [showForm, setShowForm] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState('booking-m1-001');
+  const [reviewMode, setReviewMode] = useState<'create' | 'edit'>('create');
   const [a11yOpen, setA11yOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const { dashboard, budgetStatus } = usePerformance();
@@ -135,15 +137,29 @@ function App() {
   const {
     reviews,
     stats,
-    addReview,
     voteHelpful,
     addMentorResponse,
+    loadReviewForBooking,
+    getReviewForBooking,
+    canEditReview,
+    submitReview,
+    isSubmittingReview,
+    reviewError,
+    alreadyVotedReviewIds,
     filterRating,
     setFilterRating,
     currentPage,
     totalPages,
     paginate,
   } = useReviews('m1');
+  const selectedBookingReview = getReviewForBooking(selectedBookingId);
+  const selectedBookingCanEdit = canEditReview(selectedBookingReview);
+
+  useEffect(() => {
+    if (view === 'reviews') {
+      void loadReviewForBooking(selectedBookingId);
+    }
+  }, [loadReviewForBooking, selectedBookingId, view]);
 
   const handleViewChange = (next: AppView, label: string) => {
     setView(next);
@@ -310,25 +326,83 @@ function App() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => {
+                  setShowForm(!showForm);
+                  setReviewMode(selectedBookingReview ? 'edit' : 'create');
+                }}
                 aria-expanded={showForm}
                 aria-controls="review-form"
                 className="rounded-xl bg-stellar px-6 py-2.5 font-bold text-white shadow-lg shadow-stellar/20 transition-all hover:bg-stellar-dark"
               >
-                {showForm ? 'Cancel Review' : 'Write a Review'}
+                {showForm ? 'Cancel Review' : selectedBookingReview ? 'Manage Review' : 'Write a Review'}
               </button>
             </div>
 
             {showForm && (
               <div id="review-form">
-                <ReviewForm
-                  onSubmit={(data) => {
-                    addReview({ ...data, reviewerId: `user-${Date.now()}` });
-                    setShowForm(false);
-                    setAnnouncement('Your review has been submitted.');
-                  }}
-                  onCancel={() => setShowForm(false)}
-                />
+                <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+                  <label htmlFor="booking-selector" className="mb-2 block text-sm font-semibold text-gray-700">
+                    Select completed booking
+                  </label>
+                  <select
+                    id="booking-selector"
+                    value={selectedBookingId}
+                    onChange={(event) => {
+                      const nextBooking = event.target.value;
+                      setSelectedBookingId(nextBooking);
+                      void loadReviewForBooking(nextBooking);
+                      setReviewMode(getReviewForBooking(nextBooking) ? 'edit' : 'create');
+                    }}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-stellar focus:outline-none"
+                  >
+                    <option value="booking-m1-001">booking-m1-001</option>
+                    <option value="booking-m1-002">booking-m1-002</option>
+                    <option value="booking-m1-003">booking-m1-003</option>
+                  </select>
+                </div>
+                {selectedBookingReview && reviewMode === 'create' && (
+                  <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm text-gray-700">A review already exists for this booking.</p>
+                    <button
+                      type="button"
+                      onClick={() => setReviewMode('edit')}
+                      disabled={!selectedBookingCanEdit}
+                      className="mt-3 rounded-lg border border-stellar px-4 py-2 text-sm font-semibold text-stellar disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-500"
+                    >
+                      {selectedBookingCanEdit ? 'Edit' : 'Edit window expired'}
+                    </button>
+                  </div>
+                )}
+                {selectedBookingReview && reviewMode === 'edit' && !selectedBookingCanEdit ? (
+                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-700">
+                    Edit window expired
+                  </div>
+                ) : (
+                  <ReviewForm
+                    bookingId={selectedBookingId}
+                    mode={selectedBookingReview ? reviewMode : 'create'}
+                    initialValues={selectedBookingReview ? { rating: selectedBookingReview.rating, comment: selectedBookingReview.comment } : undefined}
+                    isSubmitting={isSubmittingReview}
+                    error={reviewError}
+                    onSubmit={async (data) => {
+                      const result = await submitReview({
+                        bookingId: data.session_id,
+                        rating: data.rating,
+                        comment: data.comment,
+                      });
+                      if (result.ok) {
+                        setShowForm(false);
+                        setAnnouncement('Your review has been submitted.');
+                        return;
+                      }
+
+                      if (result.mode === 'edit') {
+                        setReviewMode('edit');
+                      }
+                    }}
+                    onCancel={() => setShowForm(false)}
+                  />
+                )}
               </div>
             )}
 
@@ -339,6 +413,7 @@ function App() {
                 reviews={reviews}
                 stats={stats}
                 onVoteHelpful={voteHelpful}
+                alreadyVotedReviewIds={alreadyVotedReviewIds}
                 onFilterChange={setFilterRating}
                 currentFilter={filterRating}
                 onAddResponse={addMentorResponse}
