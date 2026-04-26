@@ -6,6 +6,8 @@ import ProtectedRoute from './components/navigation/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import SkipNavigation from './components/a11y/SkipNavigation';
 import LoadingAnimation from './components/animations/LoadingAnimation';
+import OAuthCallback from './components/auth/OAuthCallback';
+import AuthErrorPage from './pages/AuthErrorPage';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -60,6 +62,7 @@ function AppRoutes() {
             <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
             {/* OAuth callback */}
             <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/auth/error" element={<AuthErrorPage />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
 

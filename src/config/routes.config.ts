@@ -17,6 +17,8 @@ export const ROUTES = {
   TERMS: '/terms',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  AUTH_CALLBACK: '/auth/callback',
+  AUTH_ERROR: '/auth/error',
   GOVERNANCE: '/governance',
   PROPOSAL_DETAIL: '/governance/proposals/:id',
   CREDIT_SCORE: '/credit-score',

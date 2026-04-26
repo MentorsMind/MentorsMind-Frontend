@@ -31,6 +31,8 @@ interface AuthContextType {
   refreshToken: () => Promise<string | null>;
   /** Patch the stored user object locally (e.g. after avatar upload) */
   updateUser: (patch: Partial<User>) => void;
+  /** Set a full session from an external source (e.g. OAuth callback) */
+  setSession: (user: User, token: string, refreshToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -199,12 +201,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWebSocket(ws);
     ws.connect(token).catch(console.error);
   const updateUser = (patch: Partial<User>) => {
-    setUser(prev => {
+    setUser((prev: User | null) => {
       if (!prev) return prev;
       const updated = { ...prev, ...patch };
       localStorage.setItem('mm_user', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const setSession = (user: User, token: string, refreshToken: string) => {
+    persistSession(user, token, refreshToken);
+    setUser(user);
+    setError(null);
+    setMfaPending(null);
   };
 
   return (
