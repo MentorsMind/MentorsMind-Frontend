@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { BookmarkedResource, LearnerNote, NoteTemplate } from '../types';
+import type { BookmarkedResource, LearnerNote, NoteTemplate, ResourceLink } from '../types';
+import api from '../services/api.client';
+import { downloadNote } from '../utils/richtext.utils';
 
 const TEMPLATES: NoteTemplate[] = [
   {
@@ -23,8 +25,12 @@ const INITIAL_NOTES: LearnerNote[] = [
     content: '## Key takeaways\n- Keep contracts small and test storage changes carefully.\n- Turn mentor feedback into concrete follow-up tickets.',
     tags: ['stellar', 'contracts'],
     sharedWithMentor: true,
+    sharedWithLearner: false,
     reminder: 'Review storage examples tomorrow morning.',
     attachments: [{ id: 'attach-1', name: 'contract-draft.md', sizeLabel: '8 KB' }],
+    resourceLinks: [
+      { id: 'rl-1', title: 'Soroban Docs', url: 'https://soroban.stellar.org' },
+    ],
     versions: [
       { id: 'version-1', savedAt: '2026-03-20T15:00:00Z', content: 'Initial session notes draft.' },
     ],
@@ -45,6 +51,7 @@ export const useNotes = () => {
   const [resources, setResources] = useState(INITIAL_RESOURCES);
   const [selectedNoteId, setSelectedNoteId] = useState(INITIAL_NOTES[0].id);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedNote = useMemo(() => {
     return notes.find((note) => note.id === selectedNoteId) ?? notes[0];
@@ -53,34 +60,50 @@ export const useNotes = () => {
   const filteredNotes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return notes;
-
-    return notes.filter((note) => {
-      return (
-        note.sessionTitle.toLowerCase().includes(query) ||
-        note.mentorName.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query) ||
-        note.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
-    });
+    return notes.filter((note) =>
+      note.sessionTitle.toLowerCase().includes(query) ||
+      note.mentorName.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query) ||
+      note.tags.some((tag) => tag.toLowerCase().includes(query))
+    );
   }, [notes, searchQuery]);
+
+  /** Persist note to backend tied to its sessionId. Falls back silently on error. */
+  const saveNoteToBackend = useCallback(async (note: LearnerNote) => {
+    setIsSaving(true);
+    try {
+      await api.put(`/sessions/${note.sessionId}/notes/${note.id}`, {
+        content: note.content,
+        sharedWithMentor: note.sharedWithMentor,
+        sharedWithLearner: note.sharedWithLearner,
+        resourceLinks: note.resourceLinks,
+        reminder: note.reminder,
+      });
+    } catch {
+      // Non-blocking — local state is source of truth during dev
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
 
   const updateSelectedNote = useCallback((content: string) => {
     setNotes((current) =>
-      current.map((note) =>
-        note.id === selectedNoteId
-          ? {
-              ...note,
-              content,
-              updatedAt: new Date().toISOString(),
-              versions: [
-                { id: `version-${Date.now()}`, savedAt: new Date().toISOString(), content: note.content },
-                ...note.versions,
-              ].slice(0, 5),
-            }
-          : note
-      )
+      current.map((note) => {
+        if (note.id !== selectedNoteId) return note;
+        const updated: LearnerNote = {
+          ...note,
+          content,
+          updatedAt: new Date().toISOString(),
+          versions: [
+            { id: `version-${Date.now()}`, savedAt: new Date().toISOString(), content: note.content },
+            ...note.versions,
+          ].slice(0, 5),
+        };
+        saveNoteToBackend(updated);
+        return updated;
+      })
     );
-  }, [selectedNoteId]);
+  }, [selectedNoteId, saveNoteToBackend]);
 
   const applyTemplate = useCallback((templateId: string) => {
     const template = templates.find((item) => item.id === templateId);
@@ -90,11 +113,26 @@ export const useNotes = () => {
 
   const toggleShareWithMentor = useCallback(() => {
     setNotes((current) =>
-      current.map((note) =>
-        note.id === selectedNoteId ? { ...note, sharedWithMentor: !note.sharedWithMentor } : note
-      )
+      current.map((note) => {
+        if (note.id !== selectedNoteId) return note;
+        const updated = { ...note, sharedWithMentor: !note.sharedWithMentor };
+        saveNoteToBackend(updated);
+        return updated;
+      })
     );
-  }, [selectedNoteId]);
+  }, [selectedNoteId, saveNoteToBackend]);
+
+  /** Mentor shares their note with the learner post-session. */
+  const shareNoteWithLearner = useCallback(() => {
+    setNotes((current) =>
+      current.map((note) => {
+        if (note.id !== selectedNoteId) return note;
+        const updated = { ...note, sharedWithLearner: !note.sharedWithLearner };
+        saveNoteToBackend(updated);
+        return updated;
+      })
+    );
+  }, [selectedNoteId, saveNoteToBackend]);
 
   const setReminder = useCallback((reminder: string) => {
     setNotes((current) =>
@@ -108,7 +146,6 @@ export const useNotes = () => {
       name: file.name,
       sizeLabel: formatSize(file.size),
     }));
-
     setNotes((current) =>
       current.map((note) =>
         note.id === selectedNoteId
@@ -117,6 +154,29 @@ export const useNotes = () => {
       )
     );
   }, [selectedNoteId]);
+
+  const addResourceLink = useCallback((title: string, url: string) => {
+    const newLink: ResourceLink = { id: `rl-${Date.now()}`, title, url };
+    setNotes((current) =>
+      current.map((note) => {
+        if (note.id !== selectedNoteId) return note;
+        const updated = { ...note, resourceLinks: [...note.resourceLinks, newLink] };
+        saveNoteToBackend(updated);
+        return updated;
+      })
+    );
+  }, [selectedNoteId, saveNoteToBackend]);
+
+  const removeResourceLink = useCallback((linkId: string) => {
+    setNotes((current) =>
+      current.map((note) => {
+        if (note.id !== selectedNoteId) return note;
+        const updated = { ...note, resourceLinks: note.resourceLinks.filter((l) => l.id !== linkId) };
+        saveNoteToBackend(updated);
+        return updated;
+      })
+    );
+  }, [selectedNoteId, saveNoteToBackend]);
 
   const addResourceBookmark = useCallback((title: string, url: string, tags: string[]) => {
     setResources((current) => [
@@ -127,16 +187,8 @@ export const useNotes = () => {
 
   const exportSelectedNote = useCallback((format: 'pdf' | 'markdown') => {
     if (!selectedNote) return;
-
-    const blob = new Blob([selectedNote.content], {
-      type: format === 'pdf' ? 'application/pdf' : 'text/markdown',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${selectedNote.sessionTitle.replace(/\s+/g, '-').toLowerCase()}.${format === 'pdf' ? 'pdf' : 'md'}`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const filename = selectedNote.sessionTitle.replace(/\s+/g, '-').toLowerCase();
+    downloadNote(selectedNote.content, filename, format);
   }, [selectedNote]);
 
   return {
@@ -146,15 +198,18 @@ export const useNotes = () => {
     selectedNote,
     resources,
     searchQuery,
+    isSaving,
     setSearchQuery,
     setSelectedNoteId,
     updateSelectedNote,
     applyTemplate,
     toggleShareWithMentor,
+    shareNoteWithLearner,
     setReminder,
     addAttachments,
+    addResourceLink,
+    removeResourceLink,
     addResourceBookmark,
     exportSelectedNote,
   };
 };
-

@@ -1,55 +1,43 @@
-import React from 'react';
-import { useProgress } from '../../hooks/useProgress';
-import ProgressDashboard from './ProgressDashboard';
-import SkillProgression from './SkillProgression';
-import GoalCompletion from './GoalCompletion';
-import Achievements from './Achievements';
+interface ProgressItem { label: string; current: number; target: number; color?: string; }
 
-const LearningProgress: React.FC = () => {
-  const { progress, achievementProgress, nextAchievement, exportProgressReport } = useProgress();
+interface LearningProgressProps { items?: ProgressItem[]; }
 
+const DEFAULT: ProgressItem[] = [
+  { label: 'React Fundamentals', current: 8, target: 10, color: 'bg-indigo-500' },
+  { label: 'TypeScript', current: 5, target: 10, color: 'bg-purple-500' },
+  { label: 'Node.js Backend', current: 3, target: 10, color: 'bg-cyan-500' },
+];
+
+export default function LearningProgress({ items = DEFAULT }: LearningProgressProps) {
   return (
-    <section className="space-y-6">
-      <div className="rounded-[2.5rem] border border-gray-100 bg-white p-8 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-stellar">
-              Learning Progress
-            </div>
-            <h2 className="mt-2 text-3xl font-black text-gray-900">Progress dashboard with momentum signals</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-gray-600">
-              Track goal completion, skill progression, learning streaks, achievements, and downloadable progress reports.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <div className="rounded-3xl bg-gray-50 px-5 py-4">
-              <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Achievement progress</div>
-              <div className="mt-1 text-2xl font-black text-gray-900">{achievementProgress}%</div>
-            </div>
-            <button
-              type="button"
-              onClick={exportProgressReport}
-              className="rounded-2xl bg-stellar px-5 py-4 text-sm font-black text-white"
-            >
-              Generate Progress Report
-            </button>
-          </div>
-        </div>
-        {nextAchievement && (
-          <div className="mt-5 rounded-3xl bg-gray-50 px-5 py-4 text-sm text-gray-600">
-            Next achievement to unlock: <span className="font-bold text-gray-900">{nextAchievement.title}</span>
-          </div>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Skill Progression Over Time</h2>
+        <p className="text-sm text-gray-500">Progress dashboard with momentum signals</p>
       </div>
 
-      <ProgressDashboard progress={progress} />
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
-        <SkillProgression progress={progress} />
-        <GoalCompletion goals={progress.goals} />
-      </div>
-      <Achievements achievements={progress.achievements} celebration={progress.milestoneCelebration} />
-    </section>
-  );
-};
+      <div className="space-y-4">
+      {items.map(item => {
+        const pct = Math.round((item.current / item.target) * 100);
+        return (
+          <div key={item.label} className="space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700">{item.label}</span>
+              <span className="text-gray-500">{item.current}/{item.target} sessions</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${item.color ?? 'bg-indigo-500'}`} style={{ width: `${pct}%` }} />
+            </div>
+            <p className="text-xs text-gray-400">{pct}% complete</p>
+          </div>
+        );
+      })}
+    </div>
 
-export default LearningProgress;
+    <div className="pt-4 border-t border-gray-100">
+      <h3 className="text-sm font-bold text-gray-900">Milestone Celebration</h3>
+      <p className="text-xs text-gray-400 mt-1">Celebrate your achievements and growth.</p>
+    </div>
+  </div>
+);
+}

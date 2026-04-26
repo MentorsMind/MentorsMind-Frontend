@@ -57,11 +57,11 @@ export const useReminders = (sessions: Session[] = []) => {
     const now = new Date();
 
     sessions.forEach(session => {
-      const sessionStart = new Date(session.startTime);
+      const sessionStart = new Date(session.startTime || session.scheduledAt || Date.now());
       
       // Only generate for upcoming sessions
       if (sessionStart > now) {
-        settings.customTimes.forEach(minutes => {
+        settings.customTimes.forEach((minutes: number) => {
           const reminderTime = new Date(sessionStart.getTime() - minutes * 60000);
           
           // Only if reminder time is in the future
@@ -76,7 +76,7 @@ export const useReminders = (sessions: Session[] = []) => {
               scheduledTime: reminderTime.toISOString(),
               status: 'pending',
               snoozeCount: 0,
-              message: `Your session on ${session.topic} starts in ${minutes >= 60 ? Math.floor(minutes/60) + ' hours' : minutes + ' minutes'}.`,
+              message: `Your session on ${session.topic || 'General Topic'} starts in ${minutes >= 60 ? Math.floor(minutes/60) + ' hours' : minutes + ' minutes'}.`,
             });
           }
         });
@@ -91,7 +91,7 @@ export const useReminders = (sessions: Session[] = []) => {
               scheduledTime: prepTime.toISOString(),
               status: 'pending',
               snoozeCount: 0,
-              message: `Time to prepare for your session: ${session.topic}!`,
+              message: `Time to prepare for your session: ${session.topic || 'General Topic'}!`,
             });
           }
         }
@@ -104,11 +104,11 @@ export const useReminders = (sessions: Session[] = []) => {
   }, [sessions, settings]);
 
   const updateSettings = useCallback((newSettings: Partial<ReminderSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings((prev: ReminderSettings) => ({ ...prev, ...newSettings }));
   }, []);
 
   const updateMentorPreference = useCallback((mentorId: string, pref: Partial<ReminderSettings>) => {
-    setSettings(prev => ({
+    setSettings((prev: ReminderSettings) => ({
       ...prev,
       mentorSpecificPreferences: {
         ...prev.mentorSpecificPreferences,

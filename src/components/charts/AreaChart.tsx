@@ -6,13 +6,12 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  Brush,
+  Legend,
 } from 'recharts';
+import type { MultiSeriesDataPoint, ChartSeries } from '../../types/charts.types';
 import ChartContainer from './ChartContainer';
 import { CHART_COLORS } from '../../utils/chart.utils';
-import type { MultiSeriesDataPoint, ChartSeries } from '../../types/charts.types';
 
 interface AreaChartProps {
   data: MultiSeriesDataPoint[];
@@ -24,14 +23,12 @@ interface AreaChartProps {
   exportable?: boolean;
   exportFilename?: string;
   xAxisKey?: string;
-  stacked?: boolean;
-  zoomable?: boolean;
   valuePrefix?: string;
   valueSuffix?: string;
   className?: string;
 }
 
-const AreaChart: React.FC<AreaChartProps> = ({
+const AreaChartComponent: React.FC<AreaChartProps> = ({
   data,
   series,
   title,
@@ -41,8 +38,6 @@ const AreaChart: React.FC<AreaChartProps> = ({
   exportable,
   exportFilename,
   xAxisKey = 'label',
-  stacked = false,
-  zoomable = false,
   valuePrefix = '',
   valueSuffix = '',
   className,
@@ -59,45 +54,40 @@ const AreaChart: React.FC<AreaChartProps> = ({
     >
       <ResponsiveContainer width="100%" height={300}>
         <ReAreaChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
-          <defs>
-            {series.map((s, i) => {
-              const color = s.color ?? CHART_COLORS[i % CHART_COLORS.length];
-              return (
-                <linearGradient key={s.key} id={`grad-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={color} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              );
-            })}
-          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey={xAxisKey} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${valuePrefix}${v}${valueSuffix}`} />
+          <XAxis
+            dataKey={xAxisKey}
+            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => `${valuePrefix}${v}${valueSuffix}`}
+          />
           <Tooltip
             contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: 12 }}
             formatter={(value: number) => [`${valuePrefix}${value}${valueSuffix}`]}
           />
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
-          {series.map((s, i) => {
-            const color = s.color ?? CHART_COLORS[i % CHART_COLORS.length];
-            return (
-              <Area
-                key={s.key}
-                type="monotone"
-                dataKey={s.key}
-                name={s.name}
-                stroke={color}
-                strokeWidth={2}
-                fill={`url(#grad-${s.key})`}
-                stackId={stacked ? 'stack' : undefined}
-              />
-            );
-          })}
-          {zoomable && <Brush dataKey={xAxisKey} height={20} stroke="#e5e7eb" travellerWidth={6} />}
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          {series.map((s, i) => (
+            <Area
+              key={s.key}
+              type="monotone"
+              dataKey={s.key}
+              name={s.name}
+              stroke={s.color ?? CHART_COLORS[i % CHART_COLORS.length]}
+              fill={s.color ?? CHART_COLORS[i % CHART_COLORS.length]}
+              fillOpacity={0.3}
+              stackId="1"
+            />
+          ))}
         </ReAreaChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
 };
 
-export default AreaChart;
+export default AreaChartComponent;

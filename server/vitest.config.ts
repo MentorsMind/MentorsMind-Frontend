@@ -18,4 +18,7 @@ export default defineConfig({
   css: {
     postcss: null,
   },
+  esbuild: {
+    tsconfig: 'tsconfig.test.json',
+  },
 });

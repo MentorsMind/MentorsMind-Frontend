@@ -208,6 +208,7 @@ const SessionDetail: React.FC<SessionDetailProps> = ({ session, isOpen, onClose 
         <RescheduleModal
           sessionId={session.id}
           currentTime={session.startTime}
+          isOpen={showReschedule}
           onClose={() => setShowReschedule(false)}
         />
       )}
