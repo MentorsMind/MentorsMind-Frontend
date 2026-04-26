@@ -1,3 +1,15 @@
+/**
+ * useMentorSearch — uses GET /mentors (cursor-based pagination).
+ *
+ * Endpoint: GET /mentors
+ * Response: { data: { data: Mentor[], next_cursor: string|null, has_more: boolean, total: number } }
+ *
+ * Pagination strategy: "Load more" — each call appends to the existing list using
+ * next_cursor. Changing any filter resets the list and fetches from the beginning.
+ *
+ * NOTE: Do NOT mix with GET /search (offset-based). That endpoint is used exclusively
+ * by SearchPage via useSearch + search.service.ts.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchMentors } from "../services/mentor.service";
@@ -10,15 +22,7 @@ export interface MentorSearchFilters {
   maxRate: string;
   isAvailable: string;
   minRating: string;
-  page: string;
 }
-
-/**
- * Filters that affect the backend `total` count accurately.
- * minRate, maxRate, isAvailable are NOT included because the backend
- * ignores them when computing total (issue #27).
- */
-const ACCURATE_COUNT_KEYS: (keyof MentorSearchFilters)[] = ["q", "skills", "minRating"];
 
 const ITEMS_PER_PAGE = 12;
 
@@ -30,7 +34,6 @@ function filtersFromParams(params: URLSearchParams): MentorSearchFilters {
     maxRate: params.get("maxRate") ?? "",
     isAvailable: params.get("isAvailable") ?? "",
     minRating: params.get("minRating") ?? "",
-    page: params.get("page") ?? "1",
   };
 }
 
@@ -42,11 +45,6 @@ function paramsFromFilters(filters: MentorSearchFilters): URLSearchParams {
   return p;
 }
 
-/** Returns true when any of the "inaccurate" filters are active */
-function hasInaccurateFilters(filters: MentorSearchFilters): boolean {
-  return !!(filters.minRate || filters.maxRate || filters.isAvailable);
-}
-
 export function useMentorSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<MentorSearchFilters>(() =>
@@ -54,12 +52,17 @@ export function useMentorSearch() {
   );
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [total, setTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Track previous filter values (excluding page) to detect filter changes
-  const prevFiltersRef = useRef<Omit<MentorSearchFilters, "page">>();
+  // Stable ref so loadMore closure always sees the latest cursor
+  const cursorRef = useRef<string | null>(null);
+  cursorRef.current = nextCursor;
 
-  const fetch = useCallback(async (f: MentorSearchFilters) => {
+  /** Fetch the first page for the given filters (resets list). */
+  const fetchFirst = useCallback(async (f: MentorSearchFilters) => {
     setLoading(true);
     try {
       const result = await searchMentors({
@@ -68,14 +71,17 @@ export function useMentorSearch() {
         minPrice: f.minRate ? Number(f.minRate) : undefined,
         maxPrice: f.maxRate ? Number(f.maxRate) : undefined,
         minRating: f.minRating ? Number(f.minRating) : undefined,
-        page: Number(f.page) || 1,
         limit: ITEMS_PER_PAGE,
       });
       setMentors(result.mentors);
       setTotal(result.total);
+      setNextCursor(result.next_cursor);
+      setHasMore(result.has_more);
     } catch {
       setMentors([]);
       setTotal(0);
+      setNextCursor(null);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -85,15 +91,39 @@ export function useMentorSearch() {
   useEffect(() => {
     const f = filtersFromParams(searchParams);
     setFilters(f);
-    fetch(f);
+    fetchFirst(f);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
 
-  /** Update a single filter key; resets page to 1 on any filter change */
+  /** Append the next page using the current cursor. */
+  const loadMore = useCallback(async () => {
+    if (!cursorRef.current) return;
+    setLoadingMore(true);
+    try {
+      const result = await searchMentors({
+        q: filters.q || undefined,
+        skills: filters.skills || undefined,
+        minPrice: filters.minRate ? Number(filters.minRate) : undefined,
+        maxPrice: filters.maxRate ? Number(filters.maxRate) : undefined,
+        minRating: filters.minRating ? Number(filters.minRating) : undefined,
+        cursor: cursorRef.current,
+        limit: ITEMS_PER_PAGE,
+      });
+      setMentors((prev) => [...prev, ...result.mentors]);
+      setNextCursor(result.next_cursor);
+      setHasMore(result.has_more);
+    } catch {
+      // keep existing list on error
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [filters]);
+
+  /** Update a single filter key; always resets to first page. */
   const updateFilter = useCallback(
     <K extends keyof MentorSearchFilters>(key: K, value: string) => {
       setFilters((prev) => {
-        const next = { ...prev, [key]: value, page: key !== "page" ? "1" : value };
+        const next = { ...prev, [key]: value };
         setSearchParams(paramsFromFilters(next), { replace: true });
         return next;
       });
@@ -101,42 +131,26 @@ export function useMentorSearch() {
     [setSearchParams]
   );
 
-  /** Clear all filters and reset page */
   const clearFilters = useCallback(() => {
     const empty: MentorSearchFilters = {
-      q: "",
-      skills: "",
-      minRate: "",
-      maxRate: "",
-      isAvailable: "",
-      minRating: "",
-      page: "1",
+      q: "", skills: "", minRate: "", maxRate: "", isAvailable: "", minRating: "",
     };
     setFilters(empty);
     setSearchParams(new URLSearchParams(), { replace: true });
   }, [setSearchParams]);
 
-  const currentPage = Number(filters.page) || 1;
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-
-  /**
-   * Whether to show "X mentors found" or "Showing results".
-   * When minRate/maxRate/isAvailable are active the backend total is inaccurate.
-   */
-  const countLabel = hasInaccurateFilters(filters)
-    ? "Showing results"
-    : `${total} mentor${total !== 1 ? "s" : ""} found`;
+  const countLabel = `${total} mentor${total !== 1 ? "s" : ""} found`;
 
   return {
     mentors,
     total,
     loading,
+    loadingMore,
+    hasMore,
     filters,
     updateFilter,
     clearFilters,
-    currentPage,
-    totalPages,
+    loadMore,
     countLabel,
-    goToPage: (page: number) => updateFilter("page", String(page)),
   };
 }

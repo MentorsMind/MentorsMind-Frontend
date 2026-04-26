@@ -29,6 +29,9 @@ import {
   normalizeSessionDetail,
   type SessionDetailViewModel,
 } from '../utils/session-detail.utils';
+import DisputeFormModal from '../components/session/DisputeFormModal';
+import { listDisputesForBooking, type DisputeRecord } from '../services/dispute.service';
+import Tooltip from '../components/ui/Tooltip';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
   pending: 'warning',
@@ -113,6 +116,9 @@ export default function SessionDetailPage() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [updatedRating, setUpdatedRating] = useState<number | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [existingDispute, setExistingDispute] = useState<DisputeRecord | null>(null);
+  const [checkingDispute, setCheckingDispute] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) {
@@ -138,9 +144,25 @@ export default function SessionDetailPage() {
     }
   }, [sessionId]);
 
+  const checkDispute = useCallback(async () => {
+    if (!sessionId) return;
+    setCheckingDispute(true);
+    try {
+      const disputes = await listDisputesForBooking(sessionId);
+      if (disputes.length > 0) {
+        setExistingDispute(disputes[0]);
+      }
+    } catch (err) {
+      console.error('Failed to check disputes', err);
+    } finally {
+      setCheckingDispute(false);
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     void loadSession();
-  }, [loadSession]);
+    void checkDispute();
+  }, [loadSession, checkDispute]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 1000);
@@ -580,6 +602,52 @@ export default function SessionDetailPage() {
             </div>
           </Card>
         )}
+
+        {(session.status === 'completed' || session.paymentStatus === 'failed') && (
+          <Card className={existingDispute ? 'border-gray-200 bg-gray-50' : 'border-red-100'}>
+            <div className="flex items-start gap-3">
+              <AlertCircle className={`mt-1 h-5 w-5 ${existingDispute ? 'text-gray-400' : 'text-red-600'}`} />
+              <div className="flex-1">
+                <h2 className="font-black text-gray-950">
+                  {existingDispute ? 'Dispute already filed' : 'File a dispute'}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {existingDispute 
+                    ? 'A dispute has already been opened for this session. You can track its progress below.'
+                    : 'If you encountered issues during this session, you can file a dispute for review by our team.'}
+                </p>
+                
+                {existingDispute ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => navigate(`/disputes/${existingDispute.id}`)}
+                  >
+                    View Dispute Status
+                  </Button>
+                ) : (
+                  <Tooltip 
+                    content={!session.transaction_id ? "A dispute can only be opened after payment is confirmed" : ""}
+                    position="top"
+                  >
+                    <div className="inline-block mt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        disabled={!session.transaction_id || checkingDispute}
+                        onClick={() => setShowDisputeModal(true)}
+                      >
+                        🚩 Open Dispute
+                      </Button>
+                    </div>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       <Modal
@@ -630,6 +698,20 @@ export default function SessionDetailPage() {
           onSubmit={submitReview}
           onDismiss={() => setShowReviewModal(false)}
           onClose={() => setShowReviewModal(false)}
+        />
+      )}
+
+      {showDisputeModal && session.transaction_id && (
+        <DisputeFormModal
+          isOpen={showDisputeModal}
+          onClose={() => setShowDisputeModal(false)}
+          bookingId={session.id}
+          transactionId={session.transaction_id}
+          onSuccess={(disputeId) => {
+            setActionMessage('Dispute filed successfully.');
+            void checkDispute();
+            navigate(`/disputes/${disputeId}`);
+          }}
         />
       )}
     </div>

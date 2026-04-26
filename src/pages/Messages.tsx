@@ -167,8 +167,8 @@ const Messages: React.FC = () => {
                     />
                   </div>
 
-                  {/* Input */}
-                  <MessageInput onSendMessage={sendMessage} />
+                  {/* Input — only shown once a conversation exists */}
+                  {activeConversationId && <MessageInput onSendMessage={sendMessage} />}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-8 text-center">
