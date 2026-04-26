@@ -2,6 +2,22 @@ import { apiConfig } from "../config/api.config";
 import type { RequestOptions } from "../types/api.types";
 import { request } from "../utils/request.utils";
 
+// ─── Typed errors ─────────────────────────────────────────────────────────────
+
+export class NoSharedBookingError extends Error {
+  constructor() {
+    super("Messaging is only available between users who share at least one booking");
+    this.name = "NoSharedBookingError";
+  }
+}
+
+export class SelfMessageError extends Error {
+  constructor() {
+    super("You cannot message yourself");
+    this.name = "SelfMessageError";
+  }
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -121,13 +137,21 @@ export default class MessagingService {
   }
 
   async createConversation(participantId: string, opts?: RequestOptions) {
-    return request<Conversation>(
-      {
-        method: "POST",
-        url: apiConfig.url.conversations,
-        data: { participantId },
-      },
-      opts,
-    );
+    try {
+      return await request<Conversation>(
+        {
+          method: "POST",
+          url: apiConfig.url.conversations,
+          data: { participantId },
+        },
+        opts,
+      );
+    } catch (err: unknown) {
+      const status = (err as { status?: number; response?: { status?: number } })?.status
+        ?? (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) throw new NoSharedBookingError();
+      if (status === 400) throw new SelfMessageError();
+      throw err;
+    }
   }
 }
