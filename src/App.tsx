@@ -6,6 +6,8 @@ import ProtectedRoute from './components/navigation/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import SkipNavigation from './components/a11y/SkipNavigation';
 import LoadingAnimation from './components/animations/LoadingAnimation';
+import OAuthCallback from './components/auth/OAuthCallback';
+import AuthErrorPage from './pages/AuthErrorPage';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -24,6 +26,7 @@ const LearningGoals = lazy(() => import('./pages/LearningGoals'));
 const Settings = lazy(() => import('./pages/Settings'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
+const DisputeDetailPage = lazy(() => import('./pages/DisputeDetailPage'));
 const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
 const AdminUsers = lazy(() => import('./components/admin/AdminUsers'));
 const AdminTransactions = lazy(() => import('./components/admin/AdminTransactions'));
@@ -31,6 +34,8 @@ const AdminSessions = lazy(() => import('./components/admin/AdminSessions'));
 const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
 const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
 const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
+const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
+
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -57,6 +62,7 @@ function AppRoutes() {
             <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
             {/* OAuth callback */}
             <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/auth/error" element={<AuthErrorPage />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
 
@@ -68,6 +74,7 @@ function AppRoutes() {
             <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/disputes/:id" element={<ProtectedRoute><DashboardLayout><DisputeDetailPage /></DashboardLayout></ProtectedRoute>} />
 
             {/* Learner routes */}
             <Route path="/learner" element={<ProtectedRoute><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
@@ -168,6 +175,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminLogs />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/email-preview/:template"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <EmailTemplatePreview />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>

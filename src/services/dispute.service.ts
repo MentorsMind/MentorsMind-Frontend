@@ -131,3 +131,41 @@ export async function uploadDisputeEvidence(params: {
   const { data } = await api.post(`/disputes/${params.disputeId}/evidence`, payload);
   return data?.data ?? data;
 }
+
+export function getDisputeStatusColor(status: string): 'warning' | 'info' | 'success' | 'default' {
+  switch (status) {
+    case 'open':
+      return 'warning';
+    case 'under_review':
+      return 'info';
+    case 'resolved':
+      return 'success';
+    case 'closed':
+      return 'default';
+    default:
+      return 'default';
+  }
+}
+
+export async function getDispute(id: string): Promise<DisputeRecord> {
+  const { data } = await api.get(`/disputes/${id}`);
+  return (data?.data ?? data) as DisputeRecord;
+}
+
+export async function listDisputesForBooking(bookingId: string): Promise<DisputeRecord[]> {
+  const { data } = await api.get(`/disputes?booking_id=${bookingId}`);
+  const payload = (data?.data ?? data) as unknown;
+
+  if (Array.isArray(payload)) {
+    return payload as DisputeRecord[];
+  }
+
+  if (payload && typeof payload === 'object') {
+    const maybeNested = (payload as Record<string, unknown>).data;
+    if (Array.isArray(maybeNested)) {
+      return maybeNested as DisputeRecord[];
+    }
+  }
+
+  return [];
+}

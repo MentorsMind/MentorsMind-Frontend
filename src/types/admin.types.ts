@@ -80,3 +80,15 @@ export interface AdminListResponse<T> {
   data: T[];
   meta: AdminListMeta;
 }
+
+export interface EmailPreviewResponse {
+  template: string;
+  subject: string;
+  html: string;
+  text: string;
+  sampleData: any;
+}
+
+export interface EmailPreviewRequest {
+  sampleData?: any;
+}

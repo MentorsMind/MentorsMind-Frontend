@@ -9,7 +9,7 @@ export type { AdminUser, AdminTransaction, AdminSession, AdminPayment, AdminDisp
 // Global shared types
 
 export type Priority = 'high' | 'medium' | 'low';
-export type UserRole = 'mentor' | 'learner' | 'admin';
+export type UserRole = 'mentor' | 'mentee' | 'admin';
 export type SessionStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 export type AssetType = 'XLM' | 'USDC' | 'PYUSD';
 

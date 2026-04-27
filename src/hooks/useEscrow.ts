@@ -15,7 +15,7 @@ import { useFreighter } from './useFreighter';
 import { STELLAR_CONFIG } from '../config/stellar.config';
 
 interface UseEscrowOptions {
-  userRole: 'learner' | 'mentor';
+  userRole: 'mentee' | 'mentor';
   userId: string;
 }
 
@@ -167,9 +167,9 @@ export const useEscrow = ({ userRole, userId }: UseEscrowOptions): UseEscrowRetu
     return new Date() >= sessionDate;
   }, [userRole, userId]);
 
-  // Check if learner can dispute escrow
+  // Check if mentee can dispute escrow
   const canDispute = useCallback((escrow: EscrowContract): boolean => {
-    if (userRole !== 'learner') return false;
+    if (userRole !== 'mentee') return false;
     if (escrow.status !== 'active') return false;
     if (escrow.learnerId && escrow.learnerId !== userId) return false;
     

@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Message, Conversation } from '../services/messaging.service';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import type { Message, Conversation, SendMessageRequest } from '../services/messaging.service';
+import MessagingService from '../services/messaging.service';
+import socketService from '../services/socket.service';
+import PresenceService from '../services/presence.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +40,7 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
     participantName: 'Diego Alvarez',
     participantAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Diego',
     participantOnline: false,
+    last_seen: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
     unreadCount: 0,
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     lastMessage: {
@@ -176,26 +180,22 @@ const OLDER_MESSAGES_POOL: Record<string, EnhancedMessage[]> = {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useMessages = () => {
-  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [messages, setMessages] = useState<Record<string, EnhancedMessage[]>>(INITIAL_MESSAGES);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Record<string, EnhancedMessage[]>>({});
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const presenceService = new PresenceService();
 
-  // Typing indicators: set of conversation IDs where the other user is typing
-  const [typingConversations, setTypingConversations] = useState<Set<string>>(new Set());
-  const typingTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Cursor pagination: track the oldest message ID (cursor) per conv
+  const [cursors, setCursors] = useState<Record<string, string | null>>({});
+  const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
 
-  // Cursor pagination: track how many older messages have been loaded per conv
-  const [cursors, setCursors] = useState<Record<string, number>>({});
-  const [hasMore, setHasMore] = useState<Record<string, boolean>>({
-    conv1: true,
-    conv2: true,
-    conv3: true,
-  });
+  const messagingService = useRef(new MessagingService());
+  const socketRef = useRef(socketService);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
@@ -209,257 +209,240 @@ export const useMessages = () => {
   );
 
   const totalUnreadCount = useMemo(
-    () => conversations.reduce((sum, c) => sum + c.unreadCount, 0),
+    () => conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
     [conversations]
   );
 
-  const isTyping = useMemo(
-    () => (activeConversationId ? typingConversations.has(activeConversationId) : false),
-    [typingConversations, activeConversationId]
-  );
+  // ── API Calls ────────────────────────────────────────────────────────────
 
-  // ── Socket-style event handlers ──────────────────────────────────────────
-
-  /** Call this when the server emits a "typing" event for a conversation */
-  const handleRemoteTyping = useCallback((conversationId: string) => {
-    setTypingConversations((prev) => new Set(prev).add(conversationId));
-
-    // Auto-clear after 3 s of no new typing events
-    if (typingTimers.current[conversationId]) {
-      clearTimeout(typingTimers.current[conversationId]);
+  const loadConversations = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await messagingService.current.getConversations();
+      setConversations(data);
+    } catch (err) {
+      setError('Failed to load conversations');
+    } finally {
+      setIsLoading(false);
     }
-    typingTimers.current[conversationId] = setTimeout(() => {
-      setTypingConversations((prev) => {
-        const next = new Set(prev);
-        next.delete(conversationId);
-        return next;
-      });
-    }, 3000);
   }, []);
 
-  /** Call this when the server emits a new incoming message */
-  const handleIncomingMessage = useCallback((message: EnhancedMessage) => {
-    setMessages((prev) => ({
-      ...prev,
-      [message.conversationId]: [...(prev[message.conversationId] ?? []), message],
-    }));
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === message.conversationId
-          ? {
-              ...c,
-              lastMessage: message,
-              updatedAt: message.timestamp,
-              unreadCount: c.id === activeConversationId ? 0 : c.unreadCount + 1,
-            }
-          : c
-      )
-    );
-    // Clear typing indicator when message arrives
-    setTypingConversations((prev) => {
-      const next = new Set(prev);
-      next.delete(message.conversationId);
-      return next;
-    });
-  }, [activeConversationId]);
-
-  /** Call this when the server confirms delivery/read status */
-  const handleStatusUpdate = useCallback(
-    (conversationId: string, messageId: string, status: MessageStatus) => {
-      setMessages((prev) => ({
-        ...prev,
-        [conversationId]: (prev[conversationId] ?? []).map((m) =>
-          m.id === messageId ? { ...m, status } : m
-        ),
-      }));
-    },
-    []
-  );
-
-  // ── Conversation selection ────────────────────────────────────────────────
-
-  const selectConversation = useCallback((conversationId: string) => {
-    setActiveConversationId(conversationId || null);
-    setSearchQuery('');
-    setSearchResults([]);
-
-    if (!conversationId) return;
-
-    setConversations((prev) =>
-      prev.map((c) => (c.id === conversationId ? { ...c, unreadCount: 0 } : c))
-    );
-    setMessages((prev) => ({
-      ...prev,
-      [conversationId]: (prev[conversationId] ?? []).map((m) => ({
-        ...m,
-        read: true,
-        status: m.senderId !== 'learner1' ? ('read' as MessageStatus) : m.status,
-      })),
-    }));
+  const loadMessages = useCallback(async (conversationId: string) => {
+    setIsLoading(true);
+    try {
+      const data = await messagingService.current.getMessages(conversationId);
+      setMessages((prev) => ({ ...prev, [conversationId]: data }));
+      
+      // Set cursor to the oldest message ID
+      if (data.length > 0) {
+        setCursors((prev) => ({ ...prev, [conversationId]: data[0].id }));
+        setHasMore((prev) => ({ ...prev, [conversationId]: data.length >= 20 }));
+      }
+    } catch (err) {
+      setError('Failed to load messages');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
-
-  // ── Cursor-based pagination ───────────────────────────────────────────────
-  // nextCursors tracks the cursor (message UUID) for the next older-messages fetch per conv.
-  // null means no more pages; undefined means not yet fetched.
-  const [nextCursors, setNextCursors] = useState<Record<string, string | null>>({});
 
   const loadMoreMessages = useCallback(async () => {
     if (!activeConversationId || isLoadingMore || !hasMore[activeConversationId]) return;
 
+    const cursor = cursors[activeConversationId];
+    if (!cursor) return;
+
     setIsLoadingMore(true);
     try {
-      // Build query params — use nextCursor (camelCase) as the cursor param
-      const cursor = nextCursors[activeConversationId];
-      const params = new URLSearchParams({ limit: '10' });
-      if (cursor) params.set('nextCursor', cursor);
+      const data = await messagingService.current.getMessages(activeConversationId, {
+        params: { before: cursor, limit: 20 },
+      });
 
-      // In this demo we use the local pool; in production this would be:
-      // const res = await apiClient.get(`/conversations/${activeConversationId}/messages?${params}`);
-      // const { messages: older, nextCursor } = res.data.data;
-      await new Promise((r) => setTimeout(r, 600));
-
-      const pool = OLDER_MESSAGES_POOL[activeConversationId] ?? [];
-      const loaded = cursors[activeConversationId] ?? 0;
-      const PAGE = 10;
-      const slice = pool.slice(loaded, loaded + PAGE);
-      const newLoaded = loaded + slice.length;
-      // Simulate nextCursor: null when exhausted
-      const nextCursor = newLoaded < pool.length ? pool[newLoaded]?.id ?? null : null;
-
-      if (slice.length > 0) {
-        // Prepend older messages — MessageThread saves/restores scrollHeight
+      if (data.length > 0) {
         setMessages((prev) => ({
           ...prev,
-          [activeConversationId]: [...slice, ...(prev[activeConversationId] ?? [])],
+          [activeConversationId]: [...data, ...(prev[activeConversationId] ?? [])],
         }));
-        setCursors((prev) => ({ ...prev, [activeConversationId]: newLoaded }));
-        setNextCursors((prev) => ({ ...prev, [activeConversationId]: nextCursor }));
-        if (nextCursor === null) {
-          setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
-        }
+        setCursors((prev) => ({ ...prev, [activeConversationId]: data[0].id }));
+        setHasMore((prev) => ({ ...prev, [activeConversationId]: data.length >= 20 }));
       } else {
         setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
         setNextCursors((prev) => ({ ...prev, [activeConversationId]: null }));
       }
+    } catch (err) {
+      console.error('Failed to load more messages:', err);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [activeConversationId, isLoadingMore, hasMore, cursors, nextCursors]);
+  }, [activeConversationId, cursors, hasMore, isLoadingMore]);
 
-  // ── Optimistic send ───────────────────────────────────────────────────────
+  // ── Socket Events ────────────────────────────────────────────────────────
 
-  const sendMessage = useCallback(
-    async (content: string, attachments?: File[]) => {
-      if (!activeConversationId || (!content.trim() && !attachments?.length)) return;
+  useEffect(() => {
+    socketRef.current.connect();
 
-      const tempId = `optimistic-${Date.now()}`;
-      const optimisticMsg: EnhancedMessage = {
-        id: tempId,
+    const handleNewMessage = (message: Message) => {
+      setMessages((prev) => {
+        const existing = prev[message.conversationId] || [];
+        if (existing.some((m) => m.id === message.id)) return prev;
+        return {
+          ...prev,
+          [message.conversationId]: [...existing, message],
+        };
+      });
+
+      setConversations((prev) => {
+        const index = prev.findIndex((c) => c.id === message.conversationId);
+        if (index === -1) {
+          // If conversation doesn't exist, we might need to fetch it
+          void loadConversations();
+          return prev;
+        }
+
+        const next = [...prev];
+        const conv = next[index];
+        next[index] = {
+          ...conv,
+          lastMessage: message,
+          updatedAt: message.timestamp,
+          unreadCount: message.conversationId === activeConversationId ? 0 : (conv.unreadCount || 0) + 1,
+        };
+        // Move to top
+        return [next[index], ...next.filter((_, i) => i !== index)];
+      });
+
+      if (message.conversationId === activeConversationId) {
+        void messagingService.current.markAsRead(message.conversationId);
+      }
+    };
+
+    const handleReadReceipt = ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
+      setMessages((prev) => {
+        const list = prev[conversationId] || [];
+        return {
+          ...prev,
+          [conversationId]: list.map((m) => (m.id === messageId ? { ...m, read: true, status: 'read' as MessageStatus } : m)),
+        };
+      });
+    };
+
+    socketRef.current.on('message:new', handleNewMessage);
+    socketRef.current.on('message:read', handleReadReceipt);
+
+    return () => {
+      socketRef.current.off('message:new', handleNewMessage);
+      socketRef.current.off('message:read', handleReadReceipt);
+    };
+  }, [activeConversationId, loadConversations]);
+
+  // ── Actions ──────────────────────────────────────────────────────────────
+
+  const selectConversation = useCallback((conversationId: string) => {
+    setActiveConversationId(conversationId || null);
+    if (conversationId) {
+      void loadMessages(conversationId);
+      void messagingService.current.markAsRead(conversationId);
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conversationId ? { ...c, unreadCount: 0 } : c))
+      );
+    }
+  }, [loadMessages]);
+
+  const sendMessage = useCallback(async (content: string, attachments?: File[]) => {
+    if (!activeConversationId || (!content.trim() && !attachments?.length)) return;
+
+    try {
+      const newMessage = await messagingService.current.sendMessage({
         conversationId: activeConversationId,
-        senderId: 'learner1',
-        senderName: 'You',
         content: content.trim(),
-        timestamp: new Date().toISOString(),
-        read: true,
-        status: 'sending',
-        optimistic: true,
-        attachments: attachments?.map((f, i) => ({
-          id: `att-${tempId}-${i}`,
-          name: f.name,
-          size: f.size,
-          type: f.type,
-          url: URL.createObjectURL(f),
-        })),
-      };
+        attachments,
+      });
 
-      // Store previous state for rollback
-      const prevMessages = { ...messages };
-      const prevConversations = [...conversations];
-
-      // Optimistic update
-      setMessages((current) => ({
-        ...current,
-        [activeConversationId]: [...(current[activeConversationId] || []), optimisticMsg],
+      setMessages((prev) => ({
+        ...prev,
+        [activeConversationId]: [...(prev[activeConversationId] ?? []), newMessage],
       }));
+
       setConversations((prev) =>
         prev.map((c) =>
           c.id === activeConversationId
-            ? { ...c, lastMessage: optimisticMsg, updatedAt: optimisticMsg.timestamp }
+            ? { ...c, lastMessage: newMessage, updatedAt: newMessage.timestamp }
             : c
         )
       );
+    } catch (err) {
+      setError('Failed to send message');
+    }
+  }, [activeConversationId]);
 
-      try {
-        // Simulate API call
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // Randomly fail 10% of the time for demonstration
-            if (Math.random() < 0.1) reject(new Error('Network error: Failed to send message'));
-            else resolve(true);
-          }, 1000);
-        });
-      } catch (err) {
-        // Rollback on failure
-        setMessages(prevMessages);
-        setConversations(prevConversations);
-        setError(err instanceof Error ? err.message : 'Failed to send message');
-        
-        // In a real app, you would use a toast notification here
-        console.error('Optimistic update failed, rolled back:', err);
-      }
-    },
-    [activeConversationId, messages, conversations]
-  );
-
-  // ── Search ────────────────────────────────────────────────────────────────
-
-  const searchMessages = useCallback(
-    (query: string) => {
-      setSearchQuery(query);
-      if (!activeConversationId || !query.trim()) {
-        setSearchResults([]);
-        return;
-      }
-      const results = (messages[activeConversationId] ?? []).filter((m) =>
-        m.content.toLowerCase().includes(query.toLowerCase())
-      );
+  const searchMessages = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    if (!activeConversationId || !query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const results = await messagingService.current.searchMessages({
+        conversationId: activeConversationId,
+        query,
+      });
       setSearchResults(results);
-    },
-    [activeConversationId, messages]
-  );
+    } catch (err) {
+      console.error('Search failed:', err);
+    }
+  }, [activeConversationId]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery('');
     setSearchResults([]);
   }, []);
 
-  // ── Create conversation ───────────────────────────────────────────────────
-
-  const createConversation = useCallback(
-    (participantId: string, participantName: string, participantAvatar?: string) => {
-      const newConv: Conversation = {
-        id: `conv-${Date.now()}`,
-        participantId,
-        participantName,
-        participantAvatar,
-        participantOnline: false,
-        unreadCount: 0,
-        updatedAt: new Date().toISOString(),
-      };
+  const createConversation = useCallback(async (participantId: string) => {
+    try {
+      const newConv = await messagingService.current.createConversation(participantId);
       setConversations((prev) => [newConv, ...prev]);
-      setMessages((prev) => ({ ...prev, [newConv.id]: [] }));
-      setHasMore((prev) => ({ ...prev, [newConv.id]: false }));
       return newConv;
-    },
-    []
-  );
+    } catch (err) {
+      setError('Failed to create conversation');
+      return null;
+    }
+  }, []);
+
+  // Fetch presence for conversation partners
+  useEffect(() => {
+    const fetchPresence = async () => {
+      const participantIds = conversations.map(c => c.participantId);
+      if (participantIds.length === 0) return;
+
+      try {
+        const presenceStatuses = await presenceService.getBatchStatus(participantIds);
+        setConversations(prev =>
+          prev.map(c => {
+            const status = presenceStatuses.find(p => p.userId === c.participantId);
+            if (status) {
+              return {
+                ...c,
+                participantOnline: status.online,
+                last_seen: status.last_seen,
+              };
+            }
+            return c;
+          })
+        );
+      } catch (error) {
+        console.error('Failed to fetch presence:', error);
+      }
+    };
+
+    fetchPresence();
+    const interval = setInterval(fetchPresence, 25000); // 25 seconds
+
+    return () => clearInterval(interval);
+  }, [conversations.map(c => c.participantId).join(',')]); // depend on participantIds
 
   // Cleanup typing timers on unmount
   useEffect(() => {
-    return () => {
-      Object.values(typingTimers.current).forEach(clearTimeout);
-    };
-  }, []);
+    void loadConversations();
+  }, [loadConversations]);
 
   return {
     conversations,
@@ -472,7 +455,6 @@ export const useMessages = () => {
     isLoading,
     isLoadingMore,
     error,
-    isTyping,
     hasMore: activeConversationId ? (hasMore[activeConversationId] ?? false) : false,
     selectConversation,
     sendMessage,
@@ -480,8 +462,5 @@ export const useMessages = () => {
     clearSearch,
     createConversation,
     loadMoreMessages,
-    handleRemoteTyping,
-    handleIncomingMessage,
-    handleStatusUpdate,
   };
 };
