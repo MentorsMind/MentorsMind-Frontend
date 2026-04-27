@@ -20,6 +20,10 @@ export const apiConfig = {
     admin: {
       users: "/admin/users",
     },
+    reviews: {
+      base: "/reviews",
+      helpful: "/reviews",
+    },
     sessions: "/sessions",
     mentors: "/mentors",
     payments: "/payments",
