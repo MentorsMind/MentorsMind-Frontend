@@ -202,8 +202,9 @@ export const useMessages = () => {
     [conversations, activeConversationId]
   );
 
+  // Messages from API are newest-first (DESC); reverse for oldest-first display
   const activeMessages = useMemo(
-    () => (activeConversationId ? messages[activeConversationId] ?? [] : []),
+    () => (activeConversationId ? [...(messages[activeConversationId] ?? [])].reverse() : []),
     [messages, activeConversationId]
   );
 
@@ -265,6 +266,7 @@ export const useMessages = () => {
         setHasMore((prev) => ({ ...prev, [activeConversationId]: data.length >= 20 }));
       } else {
         setHasMore((prev) => ({ ...prev, [activeConversationId]: false }));
+        setNextCursors((prev) => ({ ...prev, [activeConversationId]: null }));
       }
     } catch (err) {
       console.error('Failed to load more messages:', err);
