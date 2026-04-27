@@ -13,6 +13,13 @@ export const apiConfig = {
       resendVerification: "auth/resend-verification",
       refreshToken: "auth/refresh-token",
     },
+    users: {
+      me: "/users/me",
+      byId: "/users",
+    },
+    admin: {
+      users: "/admin/users",
+    },
     sessions: "/sessions",
     mentors: "/mentors",
     payments: "/payments",
