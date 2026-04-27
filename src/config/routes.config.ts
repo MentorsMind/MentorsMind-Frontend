@@ -9,6 +9,7 @@ export const ROUTES = {
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
   PROFILE: '/profile',
+  ADMIN_USERS: '/admin/users',
   SETTINGS: '/settings',
   MENTOR_ANALYTICS: '/mentor/analytics',
   LEARNER_ANALYTICS: '/learner/analytics',
