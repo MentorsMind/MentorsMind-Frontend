@@ -65,6 +65,8 @@ function AppRoutes() {
             <Route path="/auth/error" element={<AuthErrorPage />} />
             {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
             <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
+            {/* Account deletion grace period page */}
+            <Route path="/account-scheduled-for-deletion" element={<AccountScheduledForDeletion />} />
 
             {/* Mentor routes */}
             <Route path="/mentor" element={<ProtectedRoute><DashboardLayout><Navigate to="/mentor/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
