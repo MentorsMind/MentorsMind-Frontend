@@ -1,21 +1,14 @@
 import api from './api';
-import { apiConfig } from "../config/api.config";
 import type { RequestOptions } from "../types/api.types";
 import type { Session } from '../types';
-import type { BookingSessionType } from "../types/session.types";
 import { request } from "../utils/request.utils";
 
 export interface CreateBookingPayload {
   mentorId: string;
-  sessionType: BookingSessionType;
-  duration: number;
-  notes: string;
-  slotStart: string;
-  slotEnd: string;
-  timezone: string;
-  totalAmount: number;
-  currency: string;
-  paymentTransactionHash?: string;
+  scheduledAt: string; // ISO 8601 string in UTC
+  durationMinutes: number; // 15, 30, 45, 60, 90, 120
+  topic: string;
+  notes?: string;
 }
 
 export interface CreateBookingResponse {
@@ -24,12 +17,20 @@ export interface CreateBookingResponse {
 }
 
 export default class BookingService {
-  async create(payload: CreateBookingPayload, opts?: RequestOptions) {
+  async create(payload: CreateBookingPayload, opts?: RequestOptions & { idempotencyKey?: string }) {
+    const headers: Record<string, string> = {};
+    
+    // Add Idempotency-Key header if provided
+    if (opts?.idempotencyKey) {
+      headers['Idempotency-Key'] = opts.idempotencyKey;
+    }
+
     return request<CreateBookingResponse>(
       {
         method: "POST",
-        url: `${apiConfig.url.sessions}/bookings`,
+        url: "/bookings", // Use direct bookings endpoint as per issue description
         data: payload,
+        headers,
       },
       opts,
     );
