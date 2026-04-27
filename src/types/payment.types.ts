@@ -65,7 +65,7 @@ export interface EscrowDispute {
   id: string;
   reason: string;
   description: string;
-  filedBy: 'learner' | 'mentor';
+  filedBy: 'mentee' | 'mentor';
   filedAt: string;
   status: 'pending' | 'resolved' | 'rejected';
   resolution?: {
@@ -107,7 +107,7 @@ export interface EscrowDisputeRequest {
   sessionId: string;
   reason: string;
   description: string;
-  filedBy: 'learner';
+  filedBy: 'mentee';
   filedAt: string;
 }
 

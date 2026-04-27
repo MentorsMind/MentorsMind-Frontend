@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMessages } from '../hooks/useMessages';
+import { useAuth } from '../hooks/useAuth';
 import ConversationList from '../components/messaging/ConversationList';
 import MessageThread from '../components/messaging/MessageThread';
 import MessageInput from '../components/messaging/MessageInput';
@@ -8,6 +9,7 @@ import { SkeletonCard } from '../components/animations/SkeletonLoader';
 import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
 const Messages: React.FC = () => {
+  const { user } = useAuth();
   const {
     conversations,
     activeConversation,
@@ -17,11 +19,14 @@ const Messages: React.FC = () => {
     searchQuery,
     searchResults,
     isLoading: messagesLoading,
+    isLoadingMore,
+    hasMore,
     selectConversation,
     sendMessage,
     searchMessages,
     clearSearch,
-    markConversationRead,
+    createConversation,
+    loadMoreMessages,
   } = useMessages();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +38,7 @@ const Messages: React.FC = () => {
 
   const showSkeleton = useMinimumLoading(isLoading || messagesLoading, 300);
 
-  const displayMessages = searchResults.length > 0 ? searchResults : activeMessages;
+  const displayMessages = searchQuery.trim() && searchResults.length > 0 ? searchResults : activeMessages;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -143,13 +148,16 @@ const Messages: React.FC = () => {
                   <div className="flex-1 overflow-y-auto">
                     <MessageThread
                       messages={displayMessages}
-                      currentUserId="learner1"
+                      currentUserId={user?.id || ''}
                       searchQuery={searchQuery}
+                      isLoadingMore={isLoadingMore}
+                      hasMore={hasMore}
+                      onLoadMore={loadMoreMessages}
                     />
                   </div>
 
-                  {/* Input */}
-                  <MessageInput onSendMessage={sendMessage} />
+                  {/* Input — only shown once a conversation exists */}
+                  {activeConversationId && <MessageInput onSendMessage={sendMessage} />}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-8 text-center">

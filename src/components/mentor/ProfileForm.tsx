@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MentorProfile, SocialLinks } from '../../hooks/useMentorProfile';
 import { SkillTagSelector } from './SkillTagSelector';
 import { PhotoUpload } from './PhotoUpload';
@@ -17,9 +17,20 @@ export const ProfileForm = ({
   onAddPortfolio,
   onRemovePortfolio,
 }: ProfileFormProps) => {
+  const [showSensitiveFields, setShowSensitiveFields] = useState(false);
+
   const updateSocialLinks = (platform: keyof SocialLinks, value: string) => {
     onUpdate({
       socialLinks: { ...profile.socialLinks, [platform]: value },
+    });
+  };
+
+  const updateNotificationPreference = (key: string, value: boolean) => {
+    onUpdate({
+      notificationPreferences: {
+        ...profile.notificationPreferences,
+        [key]: value,
+      },
     });
   };
 
@@ -155,6 +166,92 @@ export const ProfileForm = ({
             />
           </div>
         </div>
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">Notification Preferences</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className="flex items-center space-x-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={Boolean(profile.notificationPreferences.email)}
+              onChange={(e) => updateNotificationPreference('email', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span>Email notifications</span>
+          </label>
+          <label className="flex items-center space-x-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={Boolean(profile.notificationPreferences.sms)}
+              onChange={(e) => updateNotificationPreference('sms', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span>SMS notifications</span>
+          </label>
+          <label className="flex items-center space-x-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={Boolean(profile.notificationPreferences.push)}
+              onChange={(e) => updateNotificationPreference('push', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span>Push notifications</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-900">Sensitive Information</h3>
+          <button
+            type="button"
+            onClick={() => setShowSensitiveFields((prev) => !prev)}
+            className="text-sm text-blue-600 hover:text-blue-700"
+          >
+            {showSensitiveFields ? 'Hide sensitive fields' : 'Show sensitive fields'}
+          </button>
+        </div>
+        {showSensitiveFields && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={profile.phoneNumber || ''}
+                onChange={(e) => onUpdate({ phoneNumber: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <input
+                type="date"
+                value={profile.dateOfBirth || ''}
+                onChange={(e) => onUpdate({ dateOfBirth: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Government ID Number</label>
+              <input
+                type="text"
+                value={profile.governmentIdNumber || ''}
+                onChange={(e) => onUpdate({ governmentIdNumber: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account Details</label>
+              <input
+                type="text"
+                value={profile.bankAccountDetails || ''}
+                onChange={(e) => onUpdate({ bankAccountDetails: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
