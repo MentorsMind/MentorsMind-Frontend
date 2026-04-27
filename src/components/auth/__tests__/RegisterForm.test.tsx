@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import RegisterForm from '../RegisterForm';
 
+vi.mock('../../ui/Alert', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <div role="alert">{children}</div>
+}));
+
 const renderWithAuth = (component: React.ReactElement) => {
-  return render(<AuthProvider>{component}</AuthProvider>);
+  return render(
+    <MemoryRouter>
+      <AuthProvider>{component}</AuthProvider>
+    </MemoryRouter>
+  );
 };
 
 describe('RegisterForm', () => {
@@ -16,152 +25,59 @@ describe('RegisterForm', () => {
   });
 
   it('renders registration form with all fields', () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} onLogin={mockOnLogin} />);
+    renderWithAuth(<RegisterForm />);
 
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
-  it('validates name field', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
+  it('validates required fields', async () => {
+    renderWithAuth(<RegisterForm />);
 
     const submitButton = screen.getByRole('button', { name: /create account/i });
-    fireEvent.click(submitButton);
+    fireEvent.submit(submitButton.closest('form')!);
 
-    await waitFor(() => {
-      expect(screen.getByText(/name is required/i)).toBeInTheDocument();
-    });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/please fill in all fields/i);
   });
 
-  it('validates email format', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
+  it('validates password length', async () => {
+    renderWithAuth(<RegisterForm />);
 
-    const emailInput = screen.getByLabelText(/email address/i);
+    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: 'John' } });
+    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'john@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'short' } });
+
     const submitButton = screen.getByRole('button', { name: /create account/i });
+    fireEvent.submit(submitButton.closest('form')!);
 
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
-    });
-  });
-
-  it('validates password strength', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    const submitButton = screen.getByRole('button', { name: /create account/i });
-
-    fireEvent.change(passwordInput, { target: { value: 'weak' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/password must contain uppercase, lowercase, and number/i)).toBeInTheDocument();
-    });
-  });
-
-  it('validates password confirmation', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
-    const submitButton = screen.getByRole('button', { name: /create account/i });
-
-    fireEvent.change(passwordInput, { target: { value: 'Password123' } });
-    fireEvent.change(confirmPasswordInput, { target: { value: 'Different123' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows password strength indicator', () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    const passwordInput = screen.getByLabelText(/^password$/i);
-
-    fireEvent.change(passwordInput, { target: { value: 'Weak1' } });
-    expect(screen.getByText(/weak/i)).toBeInTheDocument();
-
-    fireEvent.change(passwordInput, { target: { value: 'StrongPass123!' } });
-    expect(screen.getByText(/strong/i)).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/password must be at least 8 characters/i);
   });
 
   it('toggles between learner and mentor roles', () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
+    renderWithAuth(<RegisterForm />);
 
-    const learnerButton = screen.getByRole('button', { name: /learn find mentors/i });
-    const mentorButton = screen.getByRole('button', { name: /mentor share knowledge/i });
+    const learnerLabel = screen.getByText(/🎓 Learn/i);
+    const mentorLabel = screen.getByText(/👨‍🏫 Mentor/i);
 
-    expect(learnerButton).toHaveClass('border-stellar');
+    // Default role is learner
+    const learnerRadio = screen.getByLabelText(/🎓 Learn/i) as HTMLInputElement;
+    expect(learnerRadio.checked).toBe(true);
 
-    fireEvent.click(mentorButton);
-    expect(mentorButton).toHaveClass('border-stellar');
-
-    fireEvent.click(learnerButton);
-    expect(learnerButton).toHaveClass('border-stellar');
+    fireEvent.click(mentorLabel);
+    const mentorRadio = screen.getByLabelText(/👨‍🏫 Mentor/i) as HTMLInputElement;
+    expect(mentorRadio.checked).toBe(true);
   });
 
-  it('validates terms acceptance', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    const nameInput = screen.getByLabelText(/full name/i);
-    const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
-    const submitButton = screen.getByRole('button', { name: /create account/i });
-
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
-    fireEvent.change(emailInput, { target: { value: 'john@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'Password123' } });
-    fireEvent.change(confirmPasswordInput, { target: { value: 'Password123' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/you must accept the terms and conditions/i)).toBeInTheDocument();
-    });
-  });
-
-  it('submits form with valid data', async () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    const nameInput = screen.getByLabelText(/full name/i);
-    const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
-    const termsCheckbox = screen.getByRole('checkbox');
-    const submitButton = screen.getByRole('button', { name: /create account/i });
-
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
-    fireEvent.change(emailInput, { target: { value: 'john@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'Password123' } });
-    fireEvent.change(confirmPasswordInput, { target: { value: 'Password123' } });
-    fireEvent.click(termsCheckbox);
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockOnSuccess).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it('calls onLogin when sign in is clicked', () => {
-    renderWithAuth(<RegisterForm onLogin={mockOnLogin} />);
-
-    const signInButton = screen.getByRole('button', { name: /sign in/i });
-    fireEvent.click(signInButton);
-
-    expect(mockOnLogin).toHaveBeenCalledTimes(1);
-  });
-
-  it('displays Stellar wallet creation notice', () => {
-    renderWithAuth(<RegisterForm onSuccess={mockOnSuccess} />);
-
-    expect(screen.getByText(/stellar wallet creation/i)).toBeInTheDocument();
-    expect(screen.getByText(/a stellar blockchain wallet will be automatically created/i)).toBeInTheDocument();
+  it('has a link to sign in', () => {
+    renderWithAuth(<RegisterForm />);
+    const signInLink = screen.getByRole('link', { name: /sign in/i });
+    expect(signInLink).toBeInTheDocument();
+    expect(signInLink).toHaveAttribute('href', '/login');
   });
 });

@@ -4,7 +4,7 @@ import type { AvailabilitySlot } from '../types';
 export interface RescheduleRequest {
   id: string;
   sessionId: string;
-  requestedBy: 'mentor' | 'learner';
+  requestedBy: 'mentor' | 'mentee';
   originalTime: string;
   proposedTime: string;
   proposedSlot: AvailabilitySlot;
@@ -25,7 +25,6 @@ export interface UseRescheduleOptions {
 export const useReschedule = ({
   sessionId,
   currentTime,
-  mentorId,
   onRescheduleSubmit,
   onRescheduleResponse,
 }: UseRescheduleOptions) => {
@@ -55,9 +54,9 @@ export const useReschedule = ({
         const request: RescheduleRequest = {
           id: `reschedule-${Date.now()}`,
           sessionId,
-          requestedBy: 'learner',
+          requestedBy: 'mentee',
           originalTime: currentTime,
-          proposedTime: proposedSlot.start,
+          proposedTime: proposedSlot.startTime,
           proposedSlot,
           status: 'pending',
           createdAt: new Date().toISOString(),

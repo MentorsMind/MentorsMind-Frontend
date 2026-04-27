@@ -84,13 +84,13 @@ export function WalletQRCode({ publicKey, nickname }: WalletQRCodeProps) {
   const shortKey = `${publicKey.slice(0, 8)}…${publicKey.slice(-8)}`;
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-      <h3 className="font-bold text-gray-900 mb-1">Receive Funds</h3>
-      {nickname && <p className="text-sm text-gray-500 mb-4">{nickname}</p>}
+    <div className="bg-background rounded-3xl shadow-sm border border-border p-6">
+      <h3 className="font-bold text-text mb-1">Receive Funds</h3>
+      {nickname && <p className="text-sm text-muted-foreground mb-4">{nickname}</p>}
 
       {/* QR */}
       <div className="flex justify-center mb-5">
-        <div className="p-3 bg-white rounded-2xl border-2 border-gray-100 shadow-inner">
+        <div className="p-3 bg-background rounded-2xl border-2 border-border shadow-inner">
           <canvas
             ref={canvasRef}
             width={200}
@@ -103,11 +103,11 @@ export function WalletQRCode({ publicKey, nickname }: WalletQRCodeProps) {
 
       {/* Address display */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
           Wallet Address
         </p>
-        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
-          <p className="flex-1 font-mono text-xs text-gray-700 break-all select-all">
+        <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2.5">
+          <p className="flex-1 font-mono text-xs text-text break-all select-all">
             {publicKey}
           </p>
         </div>
@@ -135,7 +135,7 @@ export function WalletQRCode({ publicKey, nickname }: WalletQRCodeProps) {
 
         <button
           onClick={handleDownload}
-          className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-border text-text text-sm font-semibold hover:bg-surface transition-colors"
           aria-label="Download QR code as PNG"
         >
           <Download className="w-4 h-4" />
@@ -143,7 +143,7 @@ export function WalletQRCode({ publicKey, nickname }: WalletQRCodeProps) {
         </button>
       </div>
 
-      <p className="mt-4 text-center text-gray-400 text-[10px]">
+      <p className="mt-4 text-center text-muted-foreground text-[10px]">
         Only send Stellar assets to this address · {shortKey}
       </p>
     </div>

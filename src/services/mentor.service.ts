@@ -1,26 +1,35 @@
 import api from './api';
 import type { Mentor, Session, Review } from '../types';
 
+// GET /mentors — cursor-based pagination
+// Response shape: { data: { data: Mentor[], next_cursor: string | null, has_more: boolean, total: number } }
 export interface MentorSearchParams {
   q?: string;
   skills?: string;
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
-  page?: number;
+  cursor?: string;
   limit?: number;
 }
 
-export interface PaginatedMentors {
+export interface CursorPaginatedMentors {
   mentors: Mentor[];
+  next_cursor: string | null;
+  has_more: boolean;
   total: number;
-  page: number;
-  limit: number;
 }
 
-export async function searchMentors(params: MentorSearchParams = {}): Promise<PaginatedMentors> {
+export async function searchMentors(params: MentorSearchParams = {}): Promise<CursorPaginatedMentors> {
   const { data } = await api.get('/mentors', { params });
-  return data.data;
+  // Response: { data: { data: [...], next_cursor, has_more, total } }
+  const payload = data.data;
+  return {
+    mentors: payload.data,
+    next_cursor: payload.next_cursor ?? null,
+    has_more: payload.has_more ?? false,
+    total: payload.total ?? 0,
+  };
 }
 
 export async function getMentor(id: string): Promise<Mentor> {
@@ -43,24 +52,79 @@ export async function updateMentorProfile(id: string, payload: Partial<Mentor>):
   return data.data;
 }
 
-export interface AvailabilityPayload {
-  slots: import('../hooks/useAvailability').TimeSlot[];
-  timezone: string;
+export interface VerificationStatus {
+  verificationStatus: 'approved' | 'pending' | 'rejected';
 }
 
-export interface AvailabilityResponse extends AvailabilityPayload {
-  syncedCalendars?: string[];
-}
-
-export async function getAvailability(mentorId: string): Promise<AvailabilityResponse> {
-  const { data } = await api.get(`/mentors/${mentorId}/availability`);
+export async function getMentorVerificationStatus(id: string): Promise<VerificationStatus> {
+  const { data } = await api.get(`/mentors/${id}/verification-status`);
   return data.data;
 }
 
-export async function saveAvailability(mentorId: string, payload: AvailabilityPayload): Promise<void> {
-  await api.post(`/mentors/${mentorId}/availability`, payload);
+export interface PublicUserProfile {
+  id: string;
+  name: string;
+  bio: string;
+  avatarUrl?: string;
+  skills: string[];
+  languages: string[];
+  hourlyRate: number;
+  currency: string;
+  rating: number;
+  reviewCount: number;
+  sessionCount: number;
+  timezone: string;
+  joinDate: string;
 }
 
-export async function syncCalendar(mentorId: string, provider: 'google' | 'outlook'): Promise<void> {
-  await api.post(`/mentors/${mentorId}/calendar-sync`, { provider });
+export async function getPublicUserProfile(id: string): Promise<PublicUserProfile> {
+  const { data } = await api.get(`/users/${id}/public`);
+  return data.data;
+}
+
+export interface RatingSummary {
+  average: number;
+  total: number;
+  breakdown: Array<{ stars: number; count: number }>;
+}
+
+export async function getMentorRatingSummary(id: string): Promise<RatingSummary> {
+  const { data } = await api.get(`/mentors/${id}/rating-summary`);
+  return data.data;
+}
+
+export interface AvailabilitySlot {
+  date: string;
+  duration: number;
+}
+
+export async function getMentorAvailability(id: string): Promise<AvailabilitySlot[]> {
+  const { data } = await api.get(`/mentors/${id}/availability`);
+  return data.data;
+}
+
+export interface PricingResponse {
+  hourlyRate: number;
+}
+
+export async function updatePricing(id: string, hourlyRate: number): Promise<PricingResponse> {
+  const { data } = await api.put(`/mentors/${id}/pricing`, { hourlyRate });
+  return data.data;
+}
+
+export interface AvailabilitySchedule {
+  [day: string]: string[];
+}
+
+export interface AvailabilityResponse {
+  availability_schedule: AvailabilitySchedule;
+  is_available: boolean;
+}
+
+export async function updateAvailability(
+  id: string,
+  payload: { availability_schedule: AvailabilitySchedule; is_available: boolean },
+): Promise<AvailabilityResponse> {
+  const { data } = await api.post(`/mentors/${id}/availability`, payload);
+  return data.data;
 }

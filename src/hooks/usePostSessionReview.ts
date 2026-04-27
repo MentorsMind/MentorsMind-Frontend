@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { SessionHistoryItem } from '../types';
+import type { SessionHistoryItem } from '../types/session.types';
 import api from '../services/api.client';
 
 const STORAGE_KEY = 'post_session_review_state';
-const REVIEW_DELAY_MS = 60 * 60 * 1000; // 1 hour
+const REVIEW_DELAY_MS = 60 * 60 * 1000; // 1 hour after session end
 const REMIND_LATER_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface ReviewState {
-  dismissedUntil: Record<string, number>; // sessionId -> timestamp
-  submitted: string[]; // sessionId[]
+  dismissedUntil: Record<string, number>; // bookingId -> timestamp
+  submitted: string[]; // bookingId[]
 }
 
 const loadState = (): ReviewState => {
@@ -50,9 +50,12 @@ export const usePostSessionReview = (sessions: SessionHistoryItem[]) => {
     async (data: { rating: number; comment: string; skillTags: string[] }) => {
       if (!pendingSession) return;
 
-      await api.post(`/sessions/${pendingSession.id}/review`, {
+      await api.post('/reviews', {
+        bookingId: pendingSession.id,
         mentorId: pendingSession.mentorId,
-        ...data,
+        rating: data.rating,
+        comment: data.comment,
+        skillTags: data.skillTags,
       });
 
       const state = loadState();

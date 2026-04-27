@@ -1,5 +1,6 @@
 import React from 'react'
 import useNotifications from '../hooks/useNotifications'
+import EmptyState from '../components/ui/EmptyState'
 
 const groupByDate = (items: any[]) => {
   const map: Record<string, any[]> = {}
@@ -18,7 +19,9 @@ const NotificationHistory: React.FC = () => {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Notification History</h2>
-      {Object.keys(grouped).length === 0 && <div className="text-gray-500">No historical notifications</div>}
+      {Object.keys(grouped).length === 0 && (
+        <EmptyState title="You're all caught up" description="No notifications to show right now." />
+      )}
       {Object.entries(grouped).map(([date, items]) => (
         <div key={date} className="mb-6">
           <div className="text-sm text-gray-500 mb-2">{date}</div>

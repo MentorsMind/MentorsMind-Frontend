@@ -9,6 +9,7 @@ export const ROUTES = {
   PAYMENTS: '/payments',
   ONBOARDING: '/onboarding',
   PROFILE: '/profile',
+  ADMIN_USERS: '/admin/users',
   SETTINGS: '/settings',
   MENTOR_ANALYTICS: '/mentor/analytics',
   LEARNER_ANALYTICS: '/learner/analytics',
@@ -17,29 +18,32 @@ export const ROUTES = {
   TERMS: '/terms',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  AUTH_CALLBACK: '/auth/callback',
+  AUTH_ERROR: '/auth/error',
   GOVERNANCE: '/governance',
   PROPOSAL_DETAIL: '/governance/proposals/:id',
   CREDIT_SCORE: '/credit-score',
+  GOALS: '/learner/goals',
 } as const;
 
 export interface RouteConfig {
   path: string;
   label: string;
   protected?: boolean;
-  roles?: ('mentor' | 'learner' | 'admin')[];
+  roles?: ('mentor' | 'mentee' | 'admin')[];
   icon?: string;
 }
 
 export const MAIN_NAVIGATION: RouteConfig[] = [
   { path: ROUTES.DASHBOARD, label: 'Dashboard', protected: true, icon: 'LayoutDashboard' },
-  { path: ROUTES.MENTOR_ANALYTICS, label: 'Analytics', protected: true, roles: ['mentor'], icon: 'BarChart3' },
-  { path: ROUTES.LEARNER_ANALYTICS, label: 'Learning Analytics', protected: true, roles: ['learner'], icon: 'LineChart' },
+  { path: ROUTES.GOALS, label: 'Learning Goals', protected: true, roles: ['mentee'], icon: 'Target' },
+  { path: ROUTES.LEARNER_ANALYTICS, label: 'Learning Analytics', protected: true, roles: ['mentee'], icon: 'LineChart' },
   { path: ROUTES.MENTORS, label: 'Explore Mentors', protected: true, icon: 'Search' },
   { path: '/mentor/sessions', label: 'My Sessions', protected: true, roles: ['mentor'], icon: 'Calendar' },
-  { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['learner'], icon: 'Calendar' },
-  { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['learner'] },
+  { path: ROUTES.SESSIONS, label: 'Book Session', protected: true, roles: ['mentee'], icon: 'Calendar' },
+  { path: ROUTES.HISTORY, label: 'Learning History', protected: true, icon: 'History', roles: ['mentee'] },
   { path: ROUTES.PAYMENTS, label: 'Payments', protected: true, icon: 'CreditCard' },
-  { path: ROUTES.CREDIT_SCORE, label: 'Credit Score', protected: true, roles: ['learner'], icon: 'CreditCard' },
+  { path: ROUTES.CREDIT_SCORE, label: 'Credit Score', protected: true, roles: ['mentee'], icon: 'CreditCard' },
   { path: ROUTES.PLATFORM_STATS, label: 'Platform Stats', protected: false, icon: 'Globe' },
   { path: ROUTES.GOVERNANCE, label: 'Governance', protected: true, icon: 'Shield' },
 ];

@@ -1,5 +1,36 @@
 import React from 'react';
 
+interface EmptyStateProps {
+  illustration?: React.ReactNode;
+  title: string;
+  description?: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+}
+
+export default function EmptyState({ illustration, title, description, ctaLabel, onCta }: EmptyStateProps) {
+  return (
+    <div className="text-center py-16 text-gray-500">
+      <div className="mx-auto w-40 h-40 flex items-center justify-center mb-6">
+        {illustration ?? <div className="text-6xl">✨</div>}
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      {description && <p className="text-sm text-gray-500 mb-4">{description}</p>}
+      {ctaLabel && onCta && (
+        <div>
+          <button
+            onClick={onCta}
+            className="px-5 py-2.5 bg-stellar text-white rounded-2xl font-semibold hover:bg-stellar-dark transition-colors"
+          >
+            {ctaLabel}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+import React from 'react';
+
 export interface EmptyStateProps {
   icon: React.ReactNode;
   title: string;

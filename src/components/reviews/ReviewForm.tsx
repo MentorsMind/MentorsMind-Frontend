@@ -1,18 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import StarRating from './StarRating';
 
 interface ReviewFormProps {
-  onSubmit: (review: { rating: number; comment: string; reviewerName: string; isVerified: boolean }) => void;
+  bookingId: string;
+  mode?: 'create' | 'edit';
+  initialValues?: { rating: number; comment: string };
+  isSubmitting?: boolean;
+  submitLabel?: string;
+  onSubmit: (review: { session_id: string; rating: number; comment: string; reviewerName: string; isVerified: boolean }) => Promise<void> | void;
   onCancel?: () => void;
+  error?: string | null;
 }
 
-const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit, onCancel }) => {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
+const ReviewForm: React.FC<ReviewFormProps> = ({
+  bookingId,
+  mode = 'create',
+  initialValues,
+  isSubmitting = false,
+  submitLabel,
+  onSubmit,
+  onCancel,
+  error,
+}) => {
+  const [rating, setRating] = useState(initialValues?.rating ?? 0);
+  const [comment, setComment] = useState(initialValues?.comment ?? '');
   const [name, setName] = useState('');
   const [errors, setErrors] = useState<{ rating?: string; comment?: string }>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setRating(initialValues?.rating ?? 0);
+    setComment(initialValues?.comment ?? '');
+  }, [initialValues?.comment, initialValues?.rating]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
     if (rating === 0) next.rating = 'Please select a rating.';
@@ -22,18 +42,29 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit, onCancel }) => {
       return;
     }
     setErrors({});
-    onSubmit({ rating, comment, reviewerName: name || 'Anonymous', isVerified: true });
+    await onSubmit({
+      session_id: bookingId,
+      rating,
+      comment,
+      reviewerName: name || 'Anonymous',
+      isVerified: true,
+    });
     
     // Reset form
-    setRating(0);
-    setComment('');
-    setName('');
-    setErrors({});
+    if (mode === 'create') {
+      setRating(0);
+      setComment('');
+      setName('');
+      setErrors({});
+    }
   };
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">Write a Review</h3>
+      <h3 className="text-xl font-bold text-gray-900 mb-4">{mode === 'edit' ? 'Edit Your Review' : 'Write a Review'}</h3>
+      <p className="mb-4 text-xs font-medium text-gray-500">
+        Booking ID: <span className="font-mono text-gray-700">{bookingId}</span>
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate aria-label="Write a review form">
 
         {/* Star rating */}
@@ -96,12 +127,19 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit, onCancel }) => {
           )}
         </div>
 
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
+            disabled={isSubmitting}
             className="px-6 py-2 bg-stellar text-white font-semibold rounded-lg hover:bg-stellar-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stellar focus-visible:ring-offset-2"
           >
-            Post Review
+            {submitLabel ?? (mode === 'edit' ? 'Save Changes' : 'Post Review')}
           </button>
           {onCancel && (
             <button

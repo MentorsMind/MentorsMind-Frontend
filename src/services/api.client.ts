@@ -1,14 +1,9 @@
 import type { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { initTokenRefresh } from "../utils/request.refresh.util";
-
-let accessToken: string;
-let refreshToken: string;
-
-const setTokens = (access: string, refresh: string) => {
-  accessToken = access;
-  refreshToken = refresh;
-};
+import { tokenStorage } from "../utils/token.storage.utils";
+import { parseApiError } from "../utils/parse.api.error";
 
 // Use to wait few seconds before retry
 const getBackOffDelay = (retry: number) => {
@@ -80,28 +75,26 @@ if (typeof window !== "undefined") {
 }
 
 api.interceptors.request.use((config) => {
-  if (accessToken && config.headers) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+  const at = tokenStorage.getAccessToken();
+  if (at && config.headers) {
+    config.headers.Authorization = `Bearer ${at}`;
   }
 
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     if (config.method !== "get") {
-      requestQueue.push({
-        config,
-        resolve: (val: any) => val,
-        reject: (err: any) => err,
+      return new Promise((resolve, reject) => {
+        requestQueue.push({ config, resolve, reject });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("api-network-error", {
+              detail: {
+                message:
+                  "You are offline. Your changes will be saved and synced once you reconnect.",
+              },
+            }),
+          );
+        }
       });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("api-network-error", {
-            detail: {
-              message:
-                "You are offline. Your changes will be saved and synced once you reconnect.",
-            },
-          }),
-        );
-      }
-      return Promise.reject(new Error("OFFLINE"));
     }
   }
   startSlowTimer();
@@ -153,28 +146,20 @@ api.interceptors.response.use(
       error.response.status >= 500 &&
       originalReq._retry < MAX_RETRIES
     ) {
-      originalReq._retry++;
-
-      // void immediate retry
+      // Increment before sleep so backoff uses correct retry count
       await sleep(getBackOffDelay(originalReq._retry));
+      originalReq._retry++;
 
       return api(originalReq);
     }
 
-    // Refresh token
-    if (error.response?.status === 401 && refreshToken) {
-      try {
-        const res = await axios.post("/auth/refresh", { refreshToken });
-        setTokens(res.data.accessToken, res.data.refreshToken);
+    // NOTE: Token refresh is handled by initTokenRefresh to avoid
+    // multiple competing refresh attempts. Do not perform refresh here.
 
-        if (originalReq.headers) {
-          originalReq.headers.Authorization = `Bearer ${res.data.accessToken}`;
-        }
-
-        return api(originalReq);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
-      }
+    // Show a unified error toast for all non-401 errors (401 is handled by
+    // initTokenRefresh which shows "Session expired" only on refresh failure).
+    if (error.response?.status !== 401) {
+      toast.error(parseApiError(error));
     }
 
     return Promise.reject(error);

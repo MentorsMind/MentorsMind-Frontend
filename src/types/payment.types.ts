@@ -16,21 +16,36 @@ export interface PaymentBreakdown {
   assetCode: StellarAssetCode;
 }
 
-export type PaymentStep = 'connect' | 'method' | 'review' | 'processing' | 'success' | 'error';
+export interface PaymentQuote {
+  quoteId: string;
+  receiveAmount: number;
+  expiresAt: string; // ISO timestamp
+  maxSlippagePct: number;
+}
+
+export type PaymentStep = 'method' | 'review' | 'processing' | 'success' | 'error';
 
 export interface PaymentState {
   step: PaymentStep;
   selectedAsset: StellarAssetCode;
+  isSubmitting: boolean;
   transactionHash?: string;
   error?: string;
+  idempotencyKey?: string;
+  quote?: PaymentQuote;
+  quoteSecondsLeft?: number;
+  quoteRefreshing?: boolean;
+  rateUpdated?: boolean;
+  previousReceiveAmount?: number;
 }
 
 export interface PaymentDetails {
   mentorId: string;
   mentorName: string;
-  sessionId: string;
+  sessionId?: string;
   sessionTopic: string;
   amount: number; // Base amount in USD or equivalent
+  escrowContractId?: string; // Per-session escrow contract address; falls back to STELLAR_CONFIG.contractId
 }
 
 // ── Escrow Types ─────────────────────────────────────────────────────────────
@@ -50,7 +65,7 @@ export interface EscrowDispute {
   id: string;
   reason: string;
   description: string;
-  filedBy: 'learner' | 'mentor';
+  filedBy: 'mentee' | 'mentor';
   filedAt: string;
   status: 'pending' | 'resolved' | 'rejected';
   resolution?: {
@@ -92,6 +107,80 @@ export interface EscrowDisputeRequest {
   sessionId: string;
   reason: string;
   description: string;
-  filedBy: 'learner';
+  filedBy: 'mentee';
   filedAt: string;
+}
+
+// ── Payment History & Transaction Types ──────────────────────────────────────
+
+export type PaymentType = 'deposit' | 'payment' | 'refund' | 'session' | 'subscription' | 'fee';
+export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded' | 'processing';
+
+export interface PaymentTransaction {
+  id: string;
+  type: PaymentType;
+  mentorId: string;
+  mentorName: string;
+  amount: number;
+  currency: StellarAssetCode;
+  status: PaymentStatus;
+  date: string;
+  stellarTxHash: string;
+  description: string;
+  sessionId: string;
+  sessionTopic: string;
+  transactionType?: PaymentType;
+  memo?: string;
+  // Fee breakdown
+  grossAmount?: number;
+  platformFee?: number;
+  networkFee?: number;
+  netAmount?: number;
+  // Refund tracking
+  isRefund?: boolean;
+  originalPaymentId?: string;
+  refundReason?: string;
+  // Failed transaction info
+  failureReason?: string;
+  failedAt?: string;
+  // Ledger info
+  ledgerSequence?: number;
+  timestamp?: string;
+}
+
+export interface PaymentAnalytics {
+  totalSpent: number;
+  totalCompleted: number;
+  totalPending: number;
+  totalRefunded: number;
+  totalFailed: number;
+  transactionCount: number;
+}
+
+export interface PaymentHistoryResponse {
+  data: PaymentTransaction[];
+  pagination: {
+    cursor?: string;
+    hasMore: boolean;
+    count: number;
+  };
+}
+
+export interface PaymentDetailResponse {
+  data: PaymentTransaction & {
+    fullBreakdown: {
+      baseAmount: number;
+      platformFeePercentage: number;
+      platformFeeAmount: number;
+      networkFeeAmount: number;
+      totalDeductions: number;
+      netAmount: number;
+    };
+    stellarDetails: {
+      transactionHash: string;
+      ledgerSequence: number;
+      timestamp: string;
+      horizonUrl: string;
+    };
+  };
 }

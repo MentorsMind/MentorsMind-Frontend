@@ -1,10 +1,11 @@
 import React from "react";
-import { Calendar, Globe, Award, X } from "lucide-react";
+import { Calendar, Globe, Award, X, Clock, Zap } from "lucide-react";
 import {
   TIMEZONES,
   AVAILABLE_LANGUAGES,
   AVAILABLE_SKILLS,
 } from "../../utils/search.utils";
+import { getAllRegions } from "../../utils/timezone.utils";
 
 export type AvailabilityFilter = "all" | "today" | "this_week";
 
@@ -18,6 +19,9 @@ interface MentorFilterPanelProps {
     availabilityDays: string[];
     languages: string[];
     timezone?: string;
+    timezoneRegions: string[];
+    similarToMine: boolean;
+    availableNow: boolean;
     verifiedOnly: boolean;
   };
   onFilterChange: (key: string, value: unknown) => void;
@@ -50,7 +54,20 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
     filters.availabilityDays.length > 0 ||
     filters.languages.length > 0 ||
     filters.timezone !== undefined ||
+    filters.timezoneRegions.length > 0 ||
+    filters.similarToMine ||
+    filters.availableNow ||
     filters.verifiedOnly;
+
+  const timezoneRegions = getAllRegions();
+
+  const toggleTimezoneRegion = (region: string) => {
+    const current = filters.timezoneRegions;
+    const updated = current.includes(region)
+      ? current.filter((r: string) => r !== region)
+      : [...current, region];
+    onFilterChange("timezoneRegions", updated);
+  };
 
   const toggleSkill = (skill: string) => {
     const current = filters.skills;
@@ -269,6 +286,62 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Globe className="w-4 h-4" /> Timezone
           </label>
+
+          {/* Quick filters */}
+          <div className="flex flex-col gap-2 mb-3">
+            <button
+              onClick={() => onFilterChange("similarToMine", !filters.similarToMine)}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-left transition-all ${
+                filters.similarToMine
+                  ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-100"
+              }`}
+            >
+              <Clock className="w-4 h-4 flex-shrink-0" />
+              <span>Similar to mine (±3h)</span>
+              {filters.similarToMine && (
+                <svg className="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => onFilterChange("availableNow", !filters.availableNow)}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-left transition-all ${
+                filters.availableNow
+                  ? "bg-green-500 text-white shadow-md shadow-green-500/20"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-100"
+              }`}
+            >
+              <Zap className="w-4 h-4 flex-shrink-0" />
+              <span>Available now</span>
+              {filters.availableNow && (
+                <svg className="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* IANA Region filter */}
+          <p className="text-xs font-semibold text-gray-500 mb-2">Filter by region</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {timezoneRegions.map((region) => (
+              <button
+                key={region}
+                onClick={() => toggleTimezoneRegion(region)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  filters.timezoneRegions.includes(region)
+                    ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-100"
+                }`}
+              >
+                {region}
+              </button>
+            ))}
+          </div>
+
+          {/* Specific timezone dropdown */}
           <select
             value={filters.timezone || ""}
             onChange={(e) =>
@@ -276,7 +349,7 @@ const MentorFilterPanel: React.FC<MentorFilterPanelProps> = ({
             }
             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium outline-none focus:border-stellar focus:ring-2 focus:ring-stellar/10 transition-all cursor-pointer"
           >
-            <option value="">Any timezone</option>
+            <option value="">Any specific timezone</option>
             {TIMEZONES.map((tz) => (
               <option key={tz.value} value={tz.value}>
                 {tz.label}
