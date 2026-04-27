@@ -100,8 +100,10 @@ export default function GoalCard({ goal, onEdit, onRefresh }: GoalCardProps) {
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    setProgressValue(val);
+    let val = parseInt(e.target.value, 10);
+    if (isNaN(val)) val = 0;
+    const clamped = Math.max(0, Math.min(100, val));
+    setProgressValue(clamped);
   };
 
   const handleProgressCommit = async () => {

@@ -1,9 +1,36 @@
 import api from './api.client';
 
+/**
+ * Raw balance from the API — uses assetType for native XLM, assetCode for tokens
+ */
+export interface RawWalletBalance {
+  /** "native" for XLM, undefined for tokens */
+  assetType?: 'native';
+  /** e.g. "USDC", "PYUSD" — present only for non-native assets */
+  assetCode?: string;
+  balance: string;
+  assetIssuer?: string;
+}
+
+/**
+ * Normalised balance used by UI components — always has assetCode
+ */
 export interface WalletBalance {
-  assetCode: 'XLM' | 'USDC' | 'PYUSD';
+  assetCode: string;
   balance: string;
   usdValue: number;
+  assetIssuer?: string;
+  isNative: boolean;
+}
+
+/**
+ * Response from GET /wallet_balances — two distinct shapes depending on account state
+ */
+export interface WalletBalanceResponse {
+  balances: RawWalletBalance[];
+  accountExists: boolean;
+  message?: string;
+  lastUpdated?: string; // ISO 8601
 }
 
 export interface WalletActivationResponse {
@@ -31,9 +58,27 @@ export interface FeeEstimate {
 }
 
 /**
- * Get wallet balances for all supported assets
+ * Normalise a raw balance from the API into a UI-friendly shape.
+ * - assetType === "native"  → assetCode = "XLM", isNative = true
+ * - assetCode present       → assetCode as-is, isNative = false
  */
-export async function getWalletBalances(): Promise<WalletBalance[]> {
+export function normaliseBalance(raw: RawWalletBalance): WalletBalance {
+  const isNative = raw.assetType === 'native';
+  const assetCode = isNative ? 'XLM' : (raw.assetCode ?? 'UNKNOWN');
+  return {
+    assetCode,
+    balance: raw.balance,
+    usdValue: 0, // populated separately by price feed
+    assetIssuer: raw.assetIssuer,
+    isNative,
+  };
+}
+
+/**
+ * Get wallet balances for all supported assets.
+ * Returns the raw API response so callers can check accountExists before rendering.
+ */
+export async function getWalletBalances(): Promise<WalletBalanceResponse> {
   const { data } = await api.get('/wallet_balances');
   return data.data;
 }
@@ -55,14 +100,19 @@ export async function activateWallet(): Promise<WalletActivationResponse> {
 }
 
 /**
- * Get transaction history with pagination
+ * Get transaction history with pagination.
+ * NOTE: uses pagination.cursor and pagination.hasMore — different from
+ * bookings/payments which use next_cursor / has_more.
  */
 export async function getTransactionHistory(
   cursor?: string,
   limit: number = 20
 ): Promise<{
   transactions: WalletTransaction[];
-  nextCursor?: string;
+  pagination: {
+    cursor: string | null;
+    hasMore: boolean;
+  };
 }> {
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
@@ -95,3 +145,4 @@ export function getStellarExplorerUrl(txHash: string, network: 'testnet' | 'main
       : 'https://stellar.expert/explorer/testnet';
   return `${baseUrl}/tx/${txHash}`;
 }
+

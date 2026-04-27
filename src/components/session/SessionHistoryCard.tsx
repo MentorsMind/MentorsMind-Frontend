@@ -1,6 +1,7 @@
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import Tooltip from '../ui/Tooltip';
+import { useNavigate } from 'react-router-dom';
 import type { BookingRecord } from '../../hooks/useBookingHistory';
 import type { SessionStatus } from '../../types';
 
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function SessionHistoryCard({ booking, inDisputeWindow, onLeaveReview, onOpenDispute, onViewReceipt }: Props) {
+  const navigate = useNavigate();
   const badge = STATUS_BADGE[booking.status];
   const isPast = booking.status === 'completed' || booking.status === 'cancelled';
   const canOpenDispute = Boolean(booking.transaction_id);
@@ -89,7 +91,20 @@ export default function SessionHistoryCard({ booking, inDisputeWindow, onLeaveRe
                 </Button>
               )}
               {booking.status === 'completed' && inDisputeWindow && (
-                canOpenDispute ? (
+                booking.dispute_id ? (
+                  <Tooltip content="A dispute has already been filed for this session" position="top">
+                    <span className="inline-flex">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/disputes/${booking.dispute_id}`)}
+                        className="text-gray-400 border-gray-200"
+                      >
+                        🚩 Dispute Filed
+                      </Button>
+                    </span>
+                  </Tooltip>
+                ) : canOpenDispute ? (
                   <Button
                     size="sm"
                     variant="outline"

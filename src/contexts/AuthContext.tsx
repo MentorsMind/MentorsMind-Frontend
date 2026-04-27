@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
 import * as authService from '../services/auth.service';
 import { TOKEN_KEY, REFRESH_TOKEN } from '../config/app.config';
+import { WebSocketService, WebSocketConfig } from '../services/websocket.service';
+import { apiConfig } from '../config/api.config';
 import { tokenStorage } from '../utils/token.storage.utils';
 
 export interface MFAPendingState {
@@ -18,15 +20,19 @@ interface AuthContextType {
   mfaPending: MFAPendingState | null;
   login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
   completeMFAChallenge: (totp: string) => Promise<void>;
-  register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'mentee') => Promise<void>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   clearError: () => void;
   /** Refresh the stored user object (e.g. after enabling/disabling MFA) */
   refreshUser: () => Promise<void>;
+  /** Refresh the access token using refresh token */
+  refreshToken: () => Promise<string | null>;
   /** Patch the stored user object locally (e.g. after avatar upload) */
   updateUser: (patch: Partial<User>) => void;
+  /** Set a full session from an external source (e.g. OAuth callback) */
+  setSession: (user: User, token: string, refreshToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mfaPending, setMfaPending] = useState<MFAPendingState | null>(null);
+  const [webSocket, setWebSocket] = useState<WebSocketService | null>(null);
 
   useEffect(() => {
     // Restore session from storage, then verify with backend.
@@ -88,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user, token, refreshToken } = result as authService.MFALoginResponse;
       persistSession(user, token, refreshToken);
       setUser(user);
+      initializeWebSocket(token);
       return { mfaRequired: false };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
@@ -102,14 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMfaPending(null);
     persistSession(user, token, refreshToken);
     setUser(user);
+    initializeWebSocket(token);
   };
 
-  const register = async (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'learner') => {
+  const register = async (firstName: string, lastName: string, email: string, password: string, role: 'mentor' | 'mentee') => {
     setError(null);
     try {
       const { user, token, refreshToken } = await authService.register(firstName, lastName, email, password, role);
       persistSession(user, token, refreshToken);
       setUser(user);
+      initializeWebSocket(token);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
       setError(errorMessage);
@@ -118,6 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (webSocket) {
+      webSocket.disconnect();
+      setWebSocket(null);
+    }
     await authService.logout();
     clearSession();
     setMfaPending(null);
@@ -157,8 +171,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mm_user', JSON.stringify(freshUser));
   };
 
+  const refreshToken = async (): Promise<string | null> => {
+    const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN);
+    if (!refreshTokenValue) return null;
+
+    try {
+      const { token, refreshToken: newRefreshToken } = await authService.refreshToken(refreshTokenValue);
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(REFRESH_TOKEN, newRefreshToken);
+      return token;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      // If refresh fails, logout
+      clearSession();
+      setUser(null);
+      return null;
+    }
+  };
+
+  const initializeWebSocket = (token: string) => {
+    if (webSocket) {
+      webSocket.disconnect();
+    }
+    const config: WebSocketConfig = {
+      url: apiConfig.wsURL,
+      onTokenRefresh: refreshToken,
+    };
+    const ws = new WebSocketService(config);
+    setWebSocket(ws);
+    ws.connect(token).catch(console.error);
   const updateUser = (patch: Partial<User>) => {
-    setUser(prev => {
+    setUser((prev: User | null) => {
       if (!prev) return prev;
       const updated = { ...prev, ...patch };
       localStorage.setItem('mm_user', JSON.stringify(updated));
@@ -166,23 +209,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const setSession = (user: User, token: string, refreshToken: string) => {
+    persistSession(user, token, refreshToken);
+    setUser(user);
+    setError(null);
+    setMfaPending(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
+    <AuthContext.Provider value={{
+      user,
+      loading,
       isAuthenticated: !!user,
       isLoading: loading,
-      error, 
-      mfaPending, 
-      login, 
-      completeMFAChallenge, 
-      register, 
-      logout, 
+      error,
+      mfaPending,
+      login,
+      completeMFAChallenge,
+      register,
+      logout,
+      clearError,
       verifyEmail,
       resendVerification,
       clearError, 
       refreshUser,
       updateUser,
+      refreshToken
     }}>
       {children}
     </AuthContext.Provider>
