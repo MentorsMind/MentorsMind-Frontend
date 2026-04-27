@@ -19,3 +19,11 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
   // @ts-expect-error test environment polyfill
   global.ResizeObserver = ResizeObserverMock;
 }
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});

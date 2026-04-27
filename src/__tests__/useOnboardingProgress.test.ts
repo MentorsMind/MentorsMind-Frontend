@@ -54,7 +54,7 @@ describe('useOnboardingProgress Hook', () => {
 
       const { result: learnerResult } = renderHook(() =>
         useOnboardingProgress({
-          role: 'learner',
+          role: 'mentee',
           userCreatedAt: new Date().toISOString(),
         })
       );
@@ -298,7 +298,7 @@ describe('useOnboardingProgress Hook', () => {
     it('should auto-detect learner completion based on user data', () => {
       const { result } = renderHook(() =>
         useOnboardingProgress({
-          role: 'learner',
+          role: 'mentee',
           userCreatedAt: new Date().toISOString(),
         })
       );

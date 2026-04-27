@@ -16,7 +16,14 @@ export interface PaymentBreakdown {
   assetCode: StellarAssetCode;
 }
 
-export type PaymentStep = 'connect' | 'method' | 'review' | 'processing' | 'success' | 'error';
+export interface PaymentQuote {
+  quoteId: string;
+  receiveAmount: number;
+  expiresAt: string; // ISO timestamp
+  maxSlippagePct: number;
+}
+
+export type PaymentStep = 'method' | 'review' | 'processing' | 'success' | 'error';
 
 export interface PaymentState {
   step: PaymentStep;
@@ -24,6 +31,12 @@ export interface PaymentState {
   isSubmitting: boolean;
   transactionHash?: string;
   error?: string;
+  idempotencyKey?: string;
+  quote?: PaymentQuote;
+  quoteSecondsLeft?: number;
+  quoteRefreshing?: boolean;
+  rateUpdated?: boolean;
+  previousReceiveAmount?: number;
 }
 
 export interface PaymentDetails {
@@ -32,6 +45,7 @@ export interface PaymentDetails {
   sessionId?: string;
   sessionTopic: string;
   amount: number; // Base amount in USD or equivalent
+  escrowContractId?: string; // Per-session escrow contract address; falls back to STELLAR_CONFIG.contractId
 }
 
 // ── Escrow Types ─────────────────────────────────────────────────────────────
@@ -51,7 +65,7 @@ export interface EscrowDispute {
   id: string;
   reason: string;
   description: string;
-  filedBy: 'learner' | 'mentor';
+  filedBy: 'mentee' | 'mentor';
   filedAt: string;
   status: 'pending' | 'resolved' | 'rejected';
   resolution?: {
@@ -93,7 +107,7 @@ export interface EscrowDisputeRequest {
   sessionId: string;
   reason: string;
   description: string;
-  filedBy: 'learner';
+  filedBy: 'mentee';
   filedAt: string;
 }
 

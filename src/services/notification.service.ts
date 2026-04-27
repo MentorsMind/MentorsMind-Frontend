@@ -14,13 +14,19 @@ export interface NotificationPayload {
 const API_BASE = '/api/notifications'
 
 export const notificationService = {
-  async fetchAll(): Promise<NotificationPayload[]> {
+  async fetchAll(page = 1, limit = 20): Promise<{ data: NotificationPayload[]; meta: { total: number; page: number; limit: number } }> {
     try {
-      const res = await fetch(API_BASE)
-      if (!res.ok) return []
-      return (await res.json()) as NotificationPayload[]
+      const res = await fetch(`${API_BASE}?page=${page}&limit=${limit}`)
+      if (!res.ok) return { data: [], meta: { total: 0, page, limit } }
+      const body = await res.json()
+      // Backend returns { data: [...], meta: { ... } }
+      if (body && typeof body === 'object' && 'data' in body) {
+        return body
+      }
+      // Fallback for old/direct array response
+      return { data: Array.isArray(body) ? body : [], meta: { total: Array.isArray(body) ? body.length : 0, page, limit } }
     } catch (e) {
-      return []
+      return { data: [], meta: { total: 0, page, limit } }
     }
   },
   async markRead(id: string) {

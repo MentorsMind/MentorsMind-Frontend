@@ -38,6 +38,10 @@ export interface SessionActionState {
   shouldShowReviewPrompt: boolean;
   canCancel: boolean;
   countdownLabel: string;
+  isPending: boolean;
+  isConfirmed: boolean;
+  isCancelled: boolean;
+  isCompleted: boolean;
 }
 
 type RawRecord = Record<string, unknown>;
@@ -217,17 +221,36 @@ export const getSessionActionState = (
     ? new Date(session.meetingExpiresAt).getTime()
     : Number.POSITIVE_INFINITY;
 
+  const isPending = session.status === 'pending';
+  const isConfirmed = session.status === 'confirmed';
+  const isCancelled = session.status === 'cancelled';
+  const isCompleted = session.status === 'completed';
+
   const isBeforeJoinWindow = nowTime < startTime - JOIN_LEAD_TIME_MS;
   const isPastSessionEnd = nowTime > endTime;
-  const isJoinWindowOpen = !isBeforeJoinWindow && !isPastSessionEnd;
+  const isJoinWindowOpen = isConfirmed && !isBeforeJoinWindow && !isPastSessionEnd;
   const isMeetingLinkMissing = !session.meetingUrl;
   const isMeetingLinkExpired = Number.isFinite(meetingExpiresTime)
     ? nowTime >= meetingExpiresTime
     : false;
   const canCancel =
     session.canCancel ??
-    (!['cancelled', 'completed'].includes(session.status) &&
-      nowTime < startTime - DEFAULT_CANCEL_CUTOFF_MS);
+    (isPending && nowTime < startTime - DEFAULT_CANCEL_CUTOFF_MS);
+
+  let countdownLabel = '';
+  if (isCancelled) {
+    countdownLabel = 'Session cancelled';
+  } else if (isCompleted) {
+    countdownLabel = 'Session completed';
+  } else if (isPastSessionEnd) {
+    countdownLabel = 'Session has ended';
+  } else if (isBeforeJoinWindow) {
+    countdownLabel = `Starts in ${formatDuration(startTime - nowTime)}`;
+  } else if (isConfirmed) {
+    countdownLabel = 'Join window is open';
+  } else {
+    countdownLabel = 'Awaiting confirmation';
+  }
 
   return {
     isJoinWindowOpen,
@@ -235,13 +258,13 @@ export const getSessionActionState = (
     isPastSessionEnd,
     isMeetingLinkMissing,
     isMeetingLinkExpired,
-    shouldShowRegenerate: isMeetingLinkMissing || isMeetingLinkExpired,
-    shouldShowReviewPrompt: isPastSessionEnd && !session.hasReview,
+    shouldShowRegenerate: isConfirmed && (isMeetingLinkMissing || isMeetingLinkExpired),
+    shouldShowReviewPrompt: isCompleted && !session.hasReview,
     canCancel,
-    countdownLabel: isPastSessionEnd
-      ? 'Session has ended'
-      : isBeforeJoinWindow
-        ? `Starts in ${formatDuration(startTime - nowTime)}`
-        : 'Join window is open',
+    countdownLabel,
+    isPending,
+    isConfirmed,
+    isCancelled,
+    isCompleted,
   };
 };
