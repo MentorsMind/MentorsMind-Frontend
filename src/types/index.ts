@@ -88,7 +88,7 @@ export interface Payment {
 
 export interface Review {
   id: string;
-  sessionId: string;
+  bookingId: string;
   mentorId: string;
   learnerId: string;
   reviewerId?: string;
@@ -96,6 +96,15 @@ export interface Review {
   comment: string;
   helpfulCount?: number;
   createdAt: string;
+  isFlagged?: boolean;
+  mentorResponse?: { text: string; date: string };
+}
+
+export interface RatingStats {
+  average: number;
+  totalReviews: number;
+  distribution: { star: number; count: number }[];
+  trends: { labels: string[]; values: number[] };
 }
 
 export interface Notification {

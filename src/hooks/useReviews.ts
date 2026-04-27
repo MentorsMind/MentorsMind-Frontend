@@ -1,7 +1,7 @@
 import type { AxiosError } from 'axios';
 import { useState, useMemo, useCallback } from 'react';
 import type { Review, RatingStats } from '../types';
-import ReviewService, { type ReviewApiRecord } from '../services/review.service';
+import api from '../services/api.client';
 
 export interface ExtendedReview extends Review {
   reviewerName?: string;
@@ -31,8 +31,8 @@ const generateMockReviews = (): ExtendedReview[] => [
     isVerified: true,
     mentorResponse: {
       text: 'Thanks Alex! It was great working on those concepts with you.',
-      date: '2025-10-16'
-    }
+      date: '2025-10-16',
+    },
   },
   {
     id: '2',
@@ -47,7 +47,7 @@ const generateMockReviews = (): ExtendedReview[] => [
     date: '2025-11-02',
     helpfulCount: 5,
     isVerified: true,
-    isFlagged: false
+    isFlagged: false,
   },
   {
     id: '3',
@@ -62,7 +62,7 @@ const generateMockReviews = (): ExtendedReview[] => [
     date: '2025-11-20',
     helpfulCount: 2,
     isVerified: false,
-  }
+  },
 ];
 
 export const useReviews = (mentorId: string) => {
@@ -190,7 +190,7 @@ export const useReviews = (mentorId: string) => {
   const filteredReviews = useMemo(() => {
     let result = reviews;
     if (filterRating !== null) {
-      result = result.filter(r => Math.floor(r.rating) === filterRating);
+      result = result.filter((r) => Math.floor(r.rating) === filterRating);
     }
     return result;
   }, [reviews, filterRating]);
@@ -198,20 +198,18 @@ export const useReviews = (mentorId: string) => {
   const stats: RatingStats = useMemo(() => {
     const total = reviews.length;
     const avg = total > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / total : 0;
-    
-    const distribution = [1, 2, 3, 4, 5].map(star => ({
+    const distribution = [1, 2, 3, 4, 5].map((star) => ({
       star,
-      count: reviews.filter(r => Math.floor(r.rating) === star).length
+      count: reviews.filter((r) => Math.floor(r.rating) === star).length,
     }));
-
     return {
       average: avg,
       totalReviews: total,
       distribution,
       trends: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        values: [4.2, 4.5, 4.3, 4.8, 4.6, 4.7]
-      }
+        values: [4.2, 4.5, 4.3, 4.8, 4.6, 4.7],
+      },
     };
   }, [reviews]);
 
@@ -220,7 +218,6 @@ export const useReviews = (mentorId: string) => {
     const review: ExtendedReview = {
       ...reviewData,
       mentorId,
-      reviewerId: reviewData.reviewerId || 'anon-' + Math.random().toString(36).substr(2, 5),
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
@@ -253,13 +250,16 @@ export const useReviews = (mentorId: string) => {
     ));
   };
 
+  const voteHelpful = markHelpful; // alias for backward compat
+
   const addMentorResponse = (reviewId: string, text: string) => {
-    setReviews(prev => prev.map(r => 
-      r.id === reviewId ? { 
-        ...r, 
-        mentorResponse: { text, date: new Date().toISOString().split('T')[0] } 
-      } : r
-    ));
+    setReviews((prev) =>
+      prev.map((r) =>
+        r.id === reviewId
+          ? { ...r, mentorResponse: { text, date: new Date().toISOString().split('T')[0] } }
+          : r,
+      ),
+    );
   };
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
@@ -276,13 +276,18 @@ export const useReviews = (mentorId: string) => {
   }, [isWithinEditWindow]);
 
   return {
-    reviews: filteredReviews.slice((currentPage - 1) * REVIEWS_PER_PAGE, currentPage * REVIEWS_PER_PAGE),
+    reviews: filteredReviews.slice(
+      (currentPage - 1) * REVIEWS_PER_PAGE,
+      currentPage * REVIEWS_PER_PAGE,
+    ),
     allReviews: reviews,
     stats,
     filterRating,
     setFilterRating,
     addReview,
     voteHelpful,
+    markHelpful,
+    editReview,
     addMentorResponse,
     loadReviewForBooking,
     getReviewForBooking,
@@ -294,6 +299,6 @@ export const useReviews = (mentorId: string) => {
     alreadyVotedReviewIds,
     currentPage,
     paginate,
-    totalPages: Math.ceil(filteredReviews.length / REVIEWS_PER_PAGE)
+    totalPages: Math.ceil(filteredReviews.length / REVIEWS_PER_PAGE),
   };
 };

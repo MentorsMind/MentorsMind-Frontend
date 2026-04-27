@@ -161,7 +161,6 @@ export default function MentorPublicProfile() {
         text: `Check out ${mentor.name}'s mentor profile with ${mentor.rating.toFixed(1)} star rating.`,
         url: profileUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Profile shared.' : 'Profile link copied to clipboard.');
     } catch {
       setShareStatus('Unable to share profile right now.');
@@ -176,20 +175,16 @@ export default function MentorPublicProfile() {
         text: `Join my MentorMinds session: ${sessionInviteUrl}`,
         url: sessionInviteUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Session invite shared.' : 'Session invite copied to clipboard.');
     } catch {
       setShareStatus('Unable to share session invite right now.');
     }
   };
 
-  const {
-    endorsements,
-    pendingSkill,
-    requestEndorsement,
-    cancelRequest,
-    toggleEndorsement,
-  } = useEndorsements(true);
+  const { endorsements, pendingSkill, requestEndorsement, cancelRequest, toggleEndorsement } =
+    useEndorsements(true);
+
+  const { allReviews, markHelpful, editReview } = useReviews(mentorId);
 
   const handleBookSession = () => {
     const availabilityElement = document.getElementById('availability');
@@ -273,7 +268,12 @@ export default function MentorPublicProfile() {
 
       <PublicAvailability availability={availability} />
 
-      <ReviewsList />
+      <ReviewsList
+        reviews={allReviews}
+        currentUserId={CURRENT_USER_ID}
+        onVoteHelpful={markHelpful}
+        onEdit={editReview}
+      />
 
       {/* Skills */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
