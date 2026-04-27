@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMessages } from '../hooks/useMessages';
+import { useAuth } from '../hooks/useAuth';
 import ConversationList from '../components/messaging/ConversationList';
 import MessageThread from '../components/messaging/MessageThread';
 import MessageInput from '../components/messaging/MessageInput';
+import UserAvatar from '../components/ui/UserAvatar';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
 const Messages: React.FC = () => {
+  const { user } = useAuth();
   const {
     conversations,
     activeConversation,
@@ -13,15 +18,27 @@ const Messages: React.FC = () => {
     totalUnreadCount,
     searchQuery,
     searchResults,
+    isLoading: messagesLoading,
+    isLoadingMore,
+    hasMore,
     selectConversation,
     sendMessage,
     searchMessages,
     clearSearch,
+    createConversation,
+    loadMoreMessages,
   } = useMessages();
 
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const displayMessages = searchResults.length > 0 ? searchResults : activeMessages;
+  const showSkeleton = useMinimumLoading(isLoading || messagesLoading, 300);
+
+  const displayMessages = searchQuery.trim() && searchResults.length > 0 ? searchResults : activeMessages;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,11 +56,23 @@ const Messages: React.FC = () => {
           <div className="grid md:grid-cols-[380px_1fr] h-[calc(100vh-220px)]">
             {/* Conversation List */}
             <div className={`border-r border-gray-100 ${activeConversationId ? 'hidden md:block' : 'block'}`}>
-              <ConversationList
-                conversations={conversations}
-                activeConversationId={activeConversationId}
-                onSelectConversation={selectConversation}
-              />
+              {showSkeleton ? (
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="h-6 w-24 bg-gray-100 rounded animate-pulse mb-2" />
+                    <div className="h-4 w-32 bg-gray-50 rounded animate-pulse" />
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} variant="message" />)}
+                  </div>
+                </div>
+              ) : (
+                <ConversationList
+                  conversations={conversations}
+                  activeConversationId={activeConversationId}
+                  onSelectConversation={selectConversation}
+                />
+              )}
             </div>
 
             {/* Message Thread */}
@@ -63,29 +92,17 @@ const Messages: React.FC = () => {
                     </button>
 
                     <div className="relative">
-                      {activeConversation.participantAvatar ? (
-                        <img
-                          src={activeConversation.participantAvatar}
-                          alt={activeConversation.participantName}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-stellar flex items-center justify-center text-white font-bold">
-                          {activeConversation.participantName[0]}
-                        </div>
-                      )}
-                      {activeConversation.participantOnline && (
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-                      )}
+                      <UserAvatar
+                        avatarUrl={activeConversation.other_user_avatar}
+                        name={activeConversation.other_user_name}
+                        size="sm"
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <h2 className="text-sm font-bold text-gray-900 truncate">
-                        {activeConversation.participantName}
+                        {activeConversation.other_user_name}
                       </h2>
-                      <p className="text-xs text-gray-500">
-                        {activeConversation.participantOnline ? 'Online' : 'Offline'}
-                      </p>
                     </div>
 
                     {/* Search */}
@@ -131,13 +148,16 @@ const Messages: React.FC = () => {
                   <div className="flex-1 overflow-y-auto">
                     <MessageThread
                       messages={displayMessages}
-                      currentUserId="learner1"
+                      currentUserId={user?.id || ''}
                       searchQuery={searchQuery}
+                      isLoadingMore={isLoadingMore}
+                      hasMore={hasMore}
+                      onLoadMore={loadMoreMessages}
                     />
                   </div>
 
-                  {/* Input */}
-                  <MessageInput onSendMessage={sendMessage} />
+                  {/* Input — only shown once a conversation exists */}
+                  {activeConversationId && <MessageInput onSendMessage={sendMessage} />}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-8 text-center">

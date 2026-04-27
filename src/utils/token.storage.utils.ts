@@ -1,21 +1,22 @@
-import { REFRESH_TOKEN, TOKEN_KEY } from "../config/app.config";
+let _accessToken: string | null = null;
+let _refreshToken: string | null = null;
 
 export const tokenStorage = {
   setTokens(accessToken: string, refreshToken: string) {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN, refreshToken);
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
   },
   getAccessToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return _accessToken;
   },
   getRefreshToken() {
-    return localStorage.getItem(REFRESH_TOKEN);
+    return _refreshToken;
   },
   hasTokens() {
-    return !!this.getAccessToken() && !!this.getRefreshToken();
+    return !!_accessToken && !!_refreshToken;
   },
-  cleaTokens() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN);
+  clearTokens() {
+    _accessToken = null;
+    _refreshToken = null;
   },
 };

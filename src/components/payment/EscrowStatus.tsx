@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import type { EscrowContract, EscrowStatus } from '../../types/payment.types';
 
+const disputeStatusLabelMap: Record<string, string> = {
+  open: 'Under Review',
+  under_review: 'Escalated',
+  resolved: 'Resolved',
+};
+
+const getDisputeStatusLabel = (status: string): string => {
+  return disputeStatusLabelMap[status] ?? status;
+};
+
 interface EscrowStatusProps {
   escrow: EscrowContract;
   userRole: 'learner' | 'mentor';
@@ -177,7 +187,7 @@ const EscrowStatus: React.FC<EscrowStatusProps> = ({
                 Dispute Details
               </p>
               <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${escrow.dispute.status === 'resolved' ? 'bg-gray-200 text-gray-600' : 'bg-red-200 text-red-700'}`}>
-                {escrow.dispute.status === 'resolved' ? 'Resolved' : 'Pending'}
+                {getDisputeStatusLabel(escrow.dispute.status)}
               </span>
             </div>
             <p className="text-sm font-medium text-gray-700 capitalize">

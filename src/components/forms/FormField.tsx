@@ -12,13 +12,13 @@ export default function FormField({ label, error, hint, required, children }: Fo
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}{required && <span className="text-red-500 ml-1">*</span>}
+        <label className="block text-sm font-medium text-text">
+          {label}{required && <span className="text-destructive ml-1">*</span>}
         </label>
       )}
       {children}
-      {hint && !error && <p className="text-xs text-gray-500">{hint}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

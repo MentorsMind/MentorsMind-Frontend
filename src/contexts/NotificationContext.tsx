@@ -229,20 +229,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const processWebSocketMessage = useCallback((message: WebSocketMessage) => {
     let notification: Omit<Notification, 'id' | 'timestamp' | 'read'>;
 
-    switch (message.type) {
-      case 'session_booking':
+    switch (message.event) {
+      case 'session:updated':
         notification = {
-          type: 'session_booking',
-          title: 'New Session Booking',
-          message: `You have a new session booking: ${message.payload.sessionTitle || 'Session scheduled'}`,
-          priority: 'high',
+          type: 'session_booking', // keep as is or update to session_updated
+          title: 'Session Updated',
+          message: `Session "${message.payload.sessionTitle || 'Untitled session'}" has been updated`,
+          priority: 'medium',
           actionUrl: `/sessions/${message.payload.sessionId}`,
           actionLabel: 'View Session',
           metadata: message.payload,
         };
         break;
 
-      case 'payment_confirmed':
+      case 'payment:confirmed':
         notification = {
           type: 'payment_confirmed',
           title: 'Payment Confirmed',
@@ -254,31 +254,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         };
         break;
 
-      case 'session_cancelled':
+      case 'notification:new':
         notification = {
-          type: 'session_cancelled',
-          title: 'Session Cancelled',
-          message: `Session "${message.payload.sessionTitle || 'Untitled session'}" has been cancelled`,
-          priority: 'high',
-          actionUrl: `/sessions/${message.payload.sessionId}`,
-          actionLabel: 'View Details',
+          type: 'system',
+          title: message.payload.title || 'New Notification',
+          message: message.payload.message || 'You have a new notification',
+          priority: message.payload.priority || 'low',
+          actionUrl: message.payload.actionUrl,
+          actionLabel: message.payload.actionLabel,
           metadata: message.payload,
         };
         break;
 
-      case 'session_rescheduled':
-        notification = {
-          type: 'session_rescheduled',
-          title: 'Session Rescheduled',
-          message: `Session "${message.payload.sessionTitle || 'Untitled session'}" has been rescheduled`,
-          priority: 'medium',
-          actionUrl: `/sessions/${message.payload.sessionId}`,
-          actionLabel: 'View Details',
-          metadata: message.payload,
-        };
-        break;
-
-      case 'message':
+      case 'message:new':
         notification = {
           type: 'message',
           title: `New message from ${message.payload.senderName || 'Someone'}`,
@@ -313,6 +301,35 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       showToast(latestNotification);
     }
   }, [state.notifications, showToast]);
+
+  useEffect(() => {
+    if (state.websocketStatus === 'connecting' || state.websocketStatus === 'disconnected') {
+      // Show reconnecting indicator
+      toast('Reconnecting...', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: { background: '#f59e0b', color: '#fff' },
+      });
+    }
+  }, [state.websocketStatus]);
+
+  useEffect(() => {
+    const handleWSMessage = (event: CustomEvent<WebSocketMessage>) => {
+      processWebSocketMessage(event.detail);
+    };
+
+    const handleWSStatus = (event: CustomEvent<string>) => {
+      setWebsocketStatus(event.detail as 'connecting' | 'connected' | 'disconnected' | 'error');
+    };
+
+    window.addEventListener('ws-message', handleWSMessage as EventListener);
+    window.addEventListener('ws-status', handleWSStatus as EventListener);
+
+    return () => {
+      window.removeEventListener('ws-message', handleWSMessage as EventListener);
+      window.removeEventListener('ws-status', handleWSStatus as EventListener);
+    };
+  }, [processWebSocketMessage, setWebsocketStatus]);
 
   const contextValue: NotificationContextType = {
     ...state,

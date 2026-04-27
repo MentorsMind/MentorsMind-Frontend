@@ -4,6 +4,7 @@ import {
   VolumeX, CalendarCheck, BadgeDollarSign, Star,
 } from 'lucide-react';
 import type { NotificationPrefs, ReminderTiming } from '../../hooks/useSettings';
+import DeviceManager from '../notifications/DeviceManager';
 
 interface NotificationSettingsProps {
   prefs: NotificationPrefs;
@@ -316,6 +317,16 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ prefs, onCh
             />
           </div>
         </div>
+      </Section>
+
+      <div className="border-t border-gray-100" />
+
+      {/* ── Push Notification Devices ── */}
+      <Section
+        title="Push Notification Devices"
+        description="Manage the devices registered to receive push notifications on your account."
+      >
+        <DeviceManager />
       </Section>
 
       <div className="border-t border-gray-100" />

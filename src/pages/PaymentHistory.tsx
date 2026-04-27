@@ -1,28 +1,144 @@
-import type { Payment } from '../types';
-import PaymentStatus from '../components/payment/PaymentStatus';
+import React, { useState, useEffect } from 'react';
+import { usePaymentHistory } from '../hooks/usePaymentHistory';
+import PaymentHistoryList from '../components/payment/PaymentHistoryList';
+import PaymentFilters from '../components/payment/PaymentFilters';
+import { TransactionDetail } from '../components/payment/TransactionDetail';
+import { SkeletonCard } from '../components/animations/SkeletonLoader';
+import { useMinimumLoading } from '../hooks/useMinimumLoading';
+import { generatePaymentReceipt } from '../utils/pdf-receipt';
+import { retryPayment } from '../services/payment.service';
+import type { PaymentTransaction } from '../types';
 
-const MOCK: Payment[] = [
-  { id: '1', sessionId: 's1', amount: 90, asset: 'USDC', status: 'completed', stellarTxHash: 'TXABC123', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-  { id: '2', sessionId: 's2', amount: 60, asset: 'XLM',  status: 'pending',   createdAt: new Date(Date.now() - 86400000).toISOString() },
-  { id: '3', sessionId: 's3', amount: 120, asset: 'USDC', status: 'refunded', createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-];
+const PaymentHistory: React.FC = () => {
+  const {
+    transactions,
+    analytics,
+    filters,
+    sortField,
+    sortDirection,
+    currentPage,
+    totalPages,
+    totalResults,
+    updateFilters,
+    toggleStatusFilter,
+    clearFilters,
+    handleSort,
+    setCurrentPage,
+  } = usePaymentHistory();
 
-export default function PaymentHistory() {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showSkeleton = useMinimumLoading(isLoading, 300);
+
+  const [selectedTransaction, setSelectedTransaction] = useState<PaymentTransaction | null>(null);
+
+  const handleTransactionClick = (transaction: PaymentTransaction) => {
+    setSelectedTransaction(transaction);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedTransaction(null);
+  };
+
+  const handleDownloadReceipt = (transactionId: string) => {
+    // In a real app, you'd fetch the full transaction details from the API
+    // For now, we'll use the transaction from the list
+    const transaction = transactions.find(tx => tx.id === transactionId);
+    if (transaction) {
+      // Mock full breakdown data - in real app this would come from API
+      const receiptData = {
+        ...transaction,
+        fullBreakdown: {
+          baseAmount: transaction.amount,
+          platformFeePercentage: 5,
+          platformFeeAmount: transaction.amount * 0.05,
+          networkFeeAmount: 0.00001,
+          totalDeductions: transaction.amount * 0.05 + 0.00001,
+          netAmount: transaction.amount - (transaction.amount * 0.05 + 0.00001),
+        },
+        stellarDetails: {
+          transactionHash: transaction.stellarTxHash,
+          ledgerSequence: Math.floor(Math.random() * 1000000),
+          timestamp: transaction.date,
+          horizonUrl: `https://horizon-testnet.stellar.org/transactions/${transaction.stellarTxHash}`,
+        },
+      };
+
+      generatePaymentReceipt(receiptData);
+    }
+  };
+
+  const handleRetryPayment = async (transactionId: string) => {
+    try {
+      await retryPayment(transactionId);
+      // In a real app, you'd refresh the data or show a success message
+      alert('Payment retry initiated successfully');
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Failed to retry payment:', error);
+      alert('Failed to retry payment. Please try again.');
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-        {MOCK.map(p => (
-          <div key={p.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm font-medium text-gray-900">{p.amount} {p.asset}</p>
-              <p className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</p>
-              {p.stellarTxHash && <p className="text-xs font-mono text-gray-400 mt-0.5">{p.stellarTxHash.slice(0, 16)}…</p>}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 mb-2">Payment History</h1>
+          <p className="text-gray-600">View and manage all your payment transactions</p>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6">
+          <PaymentFilters
+            filters={filters}
+            onUpdateFilters={updateFilters}
+            onToggleStatus={toggleStatusFilter}
+            onClearFilters={clearFilters}
+          />
+        </div>
+
+        {/* Payment History List */}
+        {showSkeleton ? (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+              <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-6" />
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} variant="history" />)}
+              </div>
             </div>
-            <PaymentStatus status={p.status} />
           </div>
-        ))}
+        ) : (
+          <PaymentHistoryList
+             transactions={transactions}
+             analytics={analytics}
+             sortField={sortField}
+             sortDirection={sortDirection}
+             currentPage={currentPage}
+             totalPages={totalPages}
+             totalResults={totalResults}
+             onSort={handleSort}
+             onPageChange={setCurrentPage}
+             onSelectTransaction={handleTransactionClick}
+            />
+        )}
+
+        {/* Transaction Detail Modal */}
+        <TransactionDetail
+          transaction={selectedTransaction}
+          onClose={handleCloseDetail}
+          onDownloadReceipt={handleDownloadReceipt}
+          onRetryPayment={handleRetryPayment}
+        />
       </div>
     </div>
   );
-}
+};
+
+export default PaymentHistory;

@@ -2,16 +2,30 @@ import { useState, useMemo } from 'react';
 import type { Review, RatingStats } from '../types';
 import api from '../services/api.client';
 
-const generateMockReviews = (): Review[] => [
+export interface ExtendedReview extends Review {
+  reviewerName?: string;
+  date: string;
+  isVerified?: boolean;
+  isFlagged?: boolean;
+  mentorResponse?: {
+    text: string;
+    date: string;
+  };
+}
+
+// Mock data generator
+const generateMockReviews = (): ExtendedReview[] => [
   {
     id: '1',
-    bookingId: 'b1',
+    sessionId: 's1',
+    learnerId: 'u1',
     mentorId: 'm1',
     reviewerId: 'u1',
     reviewerName: 'Alex Johnson',
     rating: 5,
     comment: 'Exceptional guidance on blockchain architecture. Very clear explanation of Stellar smart contracts.',
-    createdAt: '2025-10-15T10:00:00Z',
+    createdAt: '2025-10-15T00:00:00Z',
+    date: '2025-10-15',
     helpfulCount: 12,
     isVerified: true,
     mentorResponse: {
@@ -21,33 +35,37 @@ const generateMockReviews = (): Review[] => [
   },
   {
     id: '2',
-    bookingId: 'b2',
+    sessionId: 's2',
+    learnerId: 'u2',
     mentorId: 'm1',
     reviewerId: 'u2',
     reviewerName: 'Sarah Smith',
     rating: 4,
     comment: 'Solid session, helped me debug my wallet integration. A bit fast-paced but very knowledgeable.',
-    createdAt: '2025-11-02T14:00:00Z',
+    createdAt: '2025-11-02T00:00:00Z',
+    date: '2025-11-02',
     helpfulCount: 5,
     isVerified: true,
     isFlagged: false,
   },
   {
     id: '3',
-    bookingId: 'b3',
+    sessionId: 's3',
+    learnerId: 'u3',
     mentorId: 'm1',
     reviewerId: 'u3',
     reviewerName: 'John Doe',
     rating: 3,
     comment: 'Good overall but I expected more hands-on practice. The theory part was too long.',
-    createdAt: '2025-11-20T09:00:00Z',
+    createdAt: '2025-11-20T00:00:00Z',
+    date: '2025-11-20',
     helpfulCount: 2,
     isVerified: false,
   },
 ];
 
 export const useReviews = (mentorId: string) => {
-  const [reviews, setReviews] = useState<Review[]>(generateMockReviews());
+  const [reviews, setReviews] = useState<ExtendedReview[]>(generateMockReviews());
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const REVIEWS_PER_PAGE = 5;
@@ -78,48 +96,41 @@ export const useReviews = (mentorId: string) => {
     };
   }, [reviews]);
 
-  const addReview = (reviewData: Omit<Review, 'id' | 'createdAt' | 'helpfulCount' | 'mentorId'>) => {
-    const review: Review = {
+  const addReview = async (reviewData: Omit<ExtendedReview, 'id' | 'date' | 'helpfulCount' | 'mentorId' | 'createdAt'>) => {
+    const prevReviews = [...reviews];
+    const review: ExtendedReview = {
       ...reviewData,
       mentorId,
       id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
       helpfulCount: 0,
     };
-    setReviews((prev) => [review, ...prev]);
-  };
 
-  const markHelpful = async (reviewId: string) => {
     // Optimistic update
-    setReviews((prev) =>
-      prev.map((r) => (r.id === reviewId ? { ...r, helpfulCount: r.helpfulCount + 1 } : r)),
-    );
+    setReviews(prev => [review, ...prev]);
+
     try {
-      await api.post(`/reviews/${reviewId}/helpful`);
-    } catch {
-      // Rollback on failure
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, helpfulCount: r.helpfulCount - 1 } : r)),
-      );
+      // Simulate API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() < 0.1) reject(new Error('Failed to submit review'));
+          else resolve(true);
+        }, 1500);
+      });
+    } catch (err) {
+      // Rollback
+      setReviews(prevReviews);
+      console.error('Failed to submit review:', err);
+      // In a real app, show a toast error
+      alert(err instanceof Error ? err.message : 'Failed to submit review');
     }
   };
 
-  const editReview = async (reviewId: string, data: { rating: number; comment: string }) => {
-    const original = reviews.find((r) => r.id === reviewId);
-    // Optimistic update
-    setReviews((prev) =>
-      prev.map((r) => (r.id === reviewId ? { ...r, ...data } : r)),
-    );
-    try {
-      await api.put(`/reviews/${reviewId}`, data);
-    } catch {
-      // Rollback on failure
-      if (original) {
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? original : r)),
-        );
-      }
-    }
+  const voteHelpful = (reviewId: string) => {
+    setReviews(prev => prev.map(r => 
+      r.id === reviewId ? { ...r, helpfulCount: (r.helpfulCount || 0) + 1 } : r
+    ));
   };
 
   const voteHelpful = markHelpful; // alias for backward compat

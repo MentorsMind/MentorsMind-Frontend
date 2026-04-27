@@ -1,7 +1,7 @@
-import { WebSocket, CloseEvent as WSCloseEvent, MessageEvent as WSMessageEvent, ErrorEvent as WSErrorEvent } from 'ws';
+// Browser WebSocket types
 
 export interface WebSocketMessage {
-  type: 'session_booking' | 'payment_confirmed' | 'session_cancelled' | 'session_rescheduled' | 'message' | 'ping' | 'pong';
+  event: 'session:updated' | 'payment:confirmed' | 'notification:new' | 'message:new' | 'ping' | 'pong';
   payload: any;
   timestamp: string;
   id: string;
@@ -9,9 +9,9 @@ export interface WebSocketMessage {
 
 export interface WebSocketConfig {
   url: string;
-  reconnectInterval?: number;
   maxReconnectAttempts?: number;
   heartbeatInterval?: number;
+  onTokenRefresh?: () => Promise<string | null>;
 }
 
 export class WebSocketService {
@@ -34,9 +34,8 @@ export class WebSocketService {
 
   constructor(config: WebSocketConfig) {
     this.config = {
-      reconnectInterval: 3000,
-      maxReconnectAttempts: 10,
-      heartbeatInterval: 30000,
+      maxReconnectAttempts: 5, // max attempts before giving up
+      heartbeatInterval: 20000, // 20 seconds
       ...config,
     };
   }
@@ -69,14 +68,28 @@ export class WebSocketService {
           resolve();
         };
 
-        this.ws.onclose = (event: WSCloseEvent) => {
+        this.ws.onclose = async (event: WSCloseEvent) => {
           this.isConnecting = false;
           this.stopHeartbeat();
-          
+
+          if (event.code === 4001 && this.config.onTokenRefresh) {
+            // Unauthorized, refresh token and reconnect
+            try {
+              const newToken = await this.config.onTokenRefresh();
+              if (newToken) {
+                // Retry connect with new token
+                this.connect(newToken).catch(console.error);
+                return;
+              }
+            } catch (error) {
+              console.error('Failed to refresh token:', error);
+            }
+          }
+
           if (!this.isManualClose && this.reconnectAttempts < this.config.maxReconnectAttempts!) {
             this.scheduleReconnect();
           }
-          
+
           this.eventListeners.onClose?.(event);
         };
 
@@ -84,8 +97,8 @@ export class WebSocketService {
           try {
             const message: WebSocketMessage = JSON.parse(event.data.toString());
             
-            if (message.type === 'ping') {
-              this.send({ type: 'pong', payload: {} });
+            if (message.event === 'ping') {
+              this.send({ event: 'pong', payload: {} });
               return;
             }
 
@@ -125,7 +138,8 @@ export class WebSocketService {
 
   send(message: Omit<WebSocketMessage, 'timestamp' | 'id'>): void {
     const fullMessage: WebSocketMessage = {
-      ...message,
+      event: message.event,
+      payload: message.payload,
       timestamp: new Date().toISOString(),
       id: Math.random().toString(36).substr(2, 9),
     };
@@ -148,14 +162,17 @@ export class WebSocketService {
 
   private scheduleReconnect(): void {
     this.reconnectAttempts++;
-    
+
     this.eventListeners.onReconnect?.(this.reconnectAttempts);
-    
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+    const interval = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+
     this.reconnectTimeout = setTimeout(() => {
       if (!this.isManualClose) {
         this.connect().catch(console.error);
       }
-    }, this.config.reconnectInterval);
+    }, interval);
   }
 
   private startHeartbeat(): void {

@@ -16,6 +16,7 @@ interface UseWebSocketReturn {
   isConnected: boolean;
   connectionState: string;
   reconnectAttempts: number;
+  isReconnecting: boolean;
   lastMessage: WebSocketMessage | null;
   sendMessage: (message: Omit<WebSocketMessage, 'timestamp' | 'id'>) => void;
   connect: () => Promise<void>;
@@ -42,6 +43,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [queuedMessages, setQueuedMessages] = useState<WebSocketMessage[]>([]);
 
@@ -100,8 +102,12 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
       setIsConnected(true);
       setConnectionState('connected');
       setReconnectAttempts(0);
+      setIsReconnecting(false);
       onConnect?.();
       updateConnectionState();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ws-status', { detail: 'connected' }));
+      }
     };
 
     const handleClose = (event: any) => {
@@ -109,11 +115,19 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
       setConnectionState('disconnected');
       onDisconnect?.(event);
       updateConnectionState();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ws-status', { detail: 'disconnected' }));
+      }
     };
 
     const handleMessage = (message: WebSocketMessage) => {
       setLastMessage(message);
       onMessage?.(message);
+
+      // Dispatch to contexts
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ws-message', { detail: message }));
+      }
     };
 
     const handleError = (error: any) => {
@@ -122,7 +136,11 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
 
     const handleReconnect = (attempt: number) => {
       setReconnectAttempts(attempt);
+      setIsReconnecting(true);
       onReconnect?.(attempt);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ws-status', { detail: 'connecting' }));
+      }
     };
 
     socketRef.current.onOpen(handleOpen);
@@ -167,6 +185,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
     isConnected,
     connectionState,
     reconnectAttempts,
+    isReconnecting,
     lastMessage,
     sendMessage,
     connect,

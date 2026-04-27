@@ -1,33 +1,63 @@
 import { useState } from 'react';
-import Input from '../ui/Input';
-import Select from '../forms/Select';
 import Button from '../ui/Button';
-import type { AssetType } from '../../types';
+import { usePricingUpdate } from '../../hooks/queries/useMentors';
 
-const ASSETS = [
-  { value: 'XLM', label: 'XLM - Stellar Lumens' },
-  { value: 'USDC', label: 'USDC - USD Coin' },
-  { value: 'PYUSD', label: 'PYUSD - PayPal USD' },
-];
+interface PricingSettingsProps {
+  mentorId: string;
+  initialRate: number;
+  onRateChange: (rate: number) => void;
+}
 
-export default function PricingSettings() {
-  const [rate, setRate] = useState('100');
-  const [asset, setAsset] = useState<AssetType>('USDC');
-  const [saved, setSaved] = useState(false);
+export default function PricingSettings({ mentorId, initialRate, onRateChange }: PricingSettingsProps) {
+  const [input, setInput] = useState(String(initialRate));
+  const [error, setError] = useState<string | null>(null);
 
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+  const { save, saving } = usePricingUpdate(mentorId, onRateChange);
+
+  const handleSave = async () => {
+    const parsed = parseFloat(input);
+    if (!isFinite(parsed) || parsed <= 0) {
+      setError('Enter a positive number greater than 0');
+      return;
+    }
+    setError(null);
+
+    const prev = initialRate;
+    // Optimistic update
+    onRateChange(parsed);
+
+    await save(parsed, () => {
+      // Rollback
+      onRateChange(prev);
+      setInput(String(prev));
+    });
+  };
 
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-gray-900">Pricing</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="Hourly Rate" type="number" value={rate} onChange={e => setRate(e.target.value)} />
-        <Select label="Currency" options={ASSETS} value={asset} onChange={v => setAsset(v as AssetType)} />
+
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Hourly Rate (USD)</label>
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={input}
+          onChange={(e) => { setInput(e.target.value); setError(null); }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="e.g. 25.50"
+        />
+        {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
+
       <div className="bg-indigo-50 rounded-lg p-3 text-sm text-indigo-700">
-        Learners will pay <strong>{rate} {asset}</strong>/hour. Platform fee (5%) is deducted automatically.
+        Learners will pay <strong>${input || '—'}/hr</strong>. Platform fee (5%) is deducted automatically.
       </div>
-      <Button onClick={save}>{saved ? '✓ Saved' : 'Save Pricing'}</Button>
+
+      <Button onClick={handleSave} disabled={saving}>
+        {saving ? 'Saving…' : 'Save Pricing'}
+      </Button>
     </div>
   );
 }

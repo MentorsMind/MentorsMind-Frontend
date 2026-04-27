@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { WalletState, AssetCode, TxType, TxStatus } from '../types';
+import { useState, useCallback, useEffect } from 'react';
+import type { WalletState, AssetCode, TxType, TxStatus, Transaction, PayoutRequest } from '../types';
 
 const MOCK_STATE: WalletState = {
   address: 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGZWM9CQJKR3BSQNEWVZOR',
@@ -27,6 +27,7 @@ const MOCK_STATE: WalletState = {
     { id: 'p1', amount: 500, asset: 'USDC', status: 'completed', requestedAt: '2026-03-15', completedAt: '2026-03-16', txHash: 'abc123...def' },
     { id: 'p2', amount: 320, asset: 'USDC', status: 'pending', requestedAt: '2026-03-23' },
     { id: 'p3', amount: 750, asset: 'USDC', status: 'completed', requestedAt: '2026-02-28', completedAt: '2026-03-01', txHash: 'xyz789...uvw' },
+    { id: 'p4', amount: 210, asset: 'USDC', status: 'completed', requestedAt: '2026-02-20', completedAt: '2026-02-21', txHash: 'pqr456...lmn' },
   ],
   sessionEarnings: [
     { sessionId: 's1', studentName: 'Alex M.', topic: 'React Hooks Deep Dive', date: '2026-03-20', duration: 60, grossAmount: 120, platformFee: 6, netAmount: 114, asset: 'USDC' },
@@ -38,19 +39,170 @@ const MOCK_STATE: WalletState = {
 };
 
 export type TxFilter = 'all' | TxType | TxStatus;
+export type TxOrder = 'asc' | 'desc';
+
+const PAYOUT_LIMIT = 2;
+const TRANSACTION_LIMIT = 3;
+
+type PayoutRequestsResponse = {
+  payoutRequests: PayoutRequest[];
+  pagination: {
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
+};
+
+type TransactionsResponse = {
+  transactions: Transaction[];
+  pagination: {
+    cursor: string | null;
+    hasMore: boolean;
+  };
+};
+
+const byDate = (a: { date: string }, b: { date: string }, order: TxOrder) => {
+  const left = new Date(a.date).getTime();
+  const right = new Date(b.date).getTime();
+  return order === 'asc' ? left - right : right - left;
+};
+
+const getPayoutRequests = async (allPayouts: PayoutRequest[], page: number, limit: number): Promise<PayoutRequestsResponse> => {
+  const sortedPayouts = [...allPayouts].sort((a, b) => byDate(a, b, 'desc'));
+  const start = (page - 1) * limit;
+  const payoutRequests = sortedPayouts.slice(start, start + limit);
+
+  // Mirrors backend approximation; frontend must still handle empty follow-up pages.
+  const hasMore = payoutRequests.length === limit;
+
+  return {
+    payoutRequests,
+    pagination: {
+      page,
+      limit,
+      hasMore,
+    },
+  };
+};
+
+const getTransactions = async (
+  allTransactions: Transaction[],
+  cursor: string | null,
+  limit: number,
+  order: TxOrder,
+): Promise<TransactionsResponse> => {
+  const orderedTransactions = [...allTransactions].sort((a, b) => byDate(a, b, order));
+
+  let startIndex = 0;
+  if (cursor) {
+    const cursorIndex = orderedTransactions.findIndex((tx) => tx.id === cursor);
+    startIndex = cursorIndex === -1 ? orderedTransactions.length : cursorIndex + 1;
+  }
+
+  const transactions = orderedTransactions.slice(startIndex, startIndex + limit);
+  const nextCursor =
+    startIndex + limit < orderedTransactions.length && transactions.length > 0
+      ? transactions[transactions.length - 1].id
+      : null;
+
+  return {
+    transactions,
+    pagination: {
+      cursor: nextCursor,
+      hasMore: nextCursor !== null,
+    },
+  };
+};
 
 export function useMentorWallet() {
   const [wallet] = useState<WalletState>(MOCK_STATE);
   const [txFilter, setTxFilter] = useState<TxFilter>('all');
+  const [txOrder, setTxOrder] = useState<TxOrder>('desc');
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutAsset, setPayoutAsset] = useState<AssetCode>('USDC');
   const [payoutStatus, setPayoutStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [copied, setCopied] = useState(false);
 
-  const filteredTx = wallet.transactions.filter((tx: WalletState['transactions'][number]) => {
+  const [visibleTransactions, setVisibleTransactions] = useState<Transaction[]>([]);
+  const [transactionsCursor, setTransactionsCursor] = useState<string | null>(null);
+  const [transactionsHasMore, setTransactionsHasMore] = useState(false);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [showNoMoreTransactions, setShowNoMoreTransactions] = useState(false);
+
+  const [visiblePayoutRequests, setVisiblePayoutRequests] = useState<PayoutRequest[]>([]);
+  const [payoutPage, setPayoutPage] = useState(1);
+  const [payoutHasMore, setPayoutHasMore] = useState(false);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+
+  const filteredTx = visibleTransactions.filter((tx: WalletState['transactions'][number]) => {
     if (txFilter === 'all') return true;
     return tx.type === txFilter || tx.status === txFilter;
   });
+
+  const loadPayoutRequests = useCallback(async (page: number, shouldAppend: boolean) => {
+    setPayoutLoading(true);
+    try {
+      const response = await getPayoutRequests(wallet.payoutHistory, page, PAYOUT_LIMIT);
+
+      if (response.payoutRequests.length === 0) {
+        setPayoutHasMore(false);
+        return;
+      }
+
+      setVisiblePayoutRequests((prev) =>
+        shouldAppend ? [...prev, ...response.payoutRequests] : response.payoutRequests,
+      );
+      setPayoutPage(response.pagination.page);
+      setPayoutHasMore(response.pagination.hasMore);
+    } finally {
+      setPayoutLoading(false);
+    }
+  }, [wallet.payoutHistory]);
+
+  const loadTransactions = useCallback(async (cursor: string | null, shouldAppend: boolean) => {
+    setTransactionsLoading(true);
+    try {
+      const response = await getTransactions(wallet.transactions, cursor, TRANSACTION_LIMIT, txOrder);
+
+      if (response.transactions.length === 0) {
+        setTransactionsHasMore(false);
+        setTransactionsCursor(null);
+        setShowNoMoreTransactions(true);
+        return;
+      }
+
+      setVisibleTransactions((prev) =>
+        shouldAppend ? [...prev, ...response.transactions] : response.transactions,
+      );
+
+      setTransactionsCursor(response.pagination.cursor);
+      setTransactionsHasMore(response.pagination.hasMore && Boolean(response.pagination.cursor));
+      setShowNoMoreTransactions(false);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, [txOrder, wallet.transactions]);
+
+  const loadMorePayoutRequests = useCallback(async () => {
+    if (!payoutHasMore || payoutLoading) return;
+    await loadPayoutRequests(payoutPage + 1, true);
+  }, [loadPayoutRequests, payoutHasMore, payoutLoading, payoutPage]);
+
+  const loadMoreTransactions = useCallback(async () => {
+    if (!transactionsHasMore || !transactionsCursor || transactionsLoading) return;
+    await loadTransactions(transactionsCursor, true);
+  }, [loadTransactions, transactionsCursor, transactionsHasMore, transactionsLoading]);
+
+  useEffect(() => {
+    void loadPayoutRequests(1, false);
+  }, [loadPayoutRequests]);
+
+  useEffect(() => {
+    setTransactionsCursor(null);
+    setTransactionsHasMore(false);
+    setShowNoMoreTransactions(false);
+    void loadTransactions(null, false);
+  }, [loadTransactions]);
 
   const copyAddress = useCallback(() => {
     navigator.clipboard.writeText(wallet.address).then(() => {
@@ -88,7 +240,16 @@ export function useMentorWallet() {
   return {
     wallet,
     txFilter, setTxFilter,
+    txOrder, setTxOrder,
     filteredTx,
+    visiblePayoutRequests,
+    payoutHasMore,
+    payoutLoading,
+    loadMorePayoutRequests,
+    transactionsHasMore,
+    transactionsLoading,
+    loadMoreTransactions,
+    showNoMoreTransactions,
     payoutAmount, setPayoutAmount,
     payoutAsset, setPayoutAsset,
     payoutStatus,
