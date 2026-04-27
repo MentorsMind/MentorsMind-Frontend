@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import ConversationList from '../components/messaging/ConversationList';
 import MessageThread from '../components/messaging/MessageThread';
 import MessageInput from '../components/messaging/MessageInput';
+import UserAvatar from '../components/ui/UserAvatar';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
 import { useMinimumLoading } from '../hooks/useMinimumLoading';
 
@@ -91,29 +92,17 @@ const Messages: React.FC = () => {
                     </button>
 
                     <div className="relative">
-                      {activeConversation.participantAvatar ? (
-                        <img
-                          src={activeConversation.participantAvatar}
-                          alt={activeConversation.participantName}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-stellar flex items-center justify-center text-white font-bold">
-                          {activeConversation.participantName[0]}
-                        </div>
-                      )}
-                      {activeConversation.participantOnline && (
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-                      )}
+                      <UserAvatar
+                        avatarUrl={activeConversation.other_user_avatar}
+                        name={activeConversation.other_user_name}
+                        size="sm"
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <h2 className="text-sm font-bold text-gray-900 truncate">
-                        {activeConversation.participantName}
+                        {activeConversation.other_user_name}
                       </h2>
-                      <p className="text-xs text-gray-500">
-                        {activeConversation.participantOnline ? 'Online' : 'Offline'}
-                      </p>
                     </div>
 
                     {/* Search */}

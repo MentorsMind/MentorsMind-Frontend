@@ -63,7 +63,7 @@ export interface SearchMessagesRequest {
 
 export default class MessagingService {
   async getConversations(opts?: RequestOptions) {
-    return request<Conversation[]>(
+    return request<{ conversations: Conversation[] }>(
       {
         method: "GET",
         url: apiConfig.url.conversations,
@@ -118,7 +118,7 @@ export default class MessagingService {
   async markAsRead(conversationId: string, opts?: RequestOptions) {
     return request<{ success: boolean }>(
       {
-        method: "PUT",
+        method: "POST",
         url: `${apiConfig.url.conversations}/${conversationId}/read`,
       },
       opts,
