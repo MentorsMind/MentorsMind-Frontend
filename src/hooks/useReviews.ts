@@ -3,15 +3,29 @@ import { useState, useMemo, useCallback } from 'react';
 import type { Review, RatingStats } from '../types';
 import ReviewService, { type ReviewApiRecord } from '../services/review.service';
 
+export interface ExtendedReview extends Review {
+  reviewerName?: string;
+  date: string;
+  isVerified?: boolean;
+  isFlagged?: boolean;
+  mentorResponse?: {
+    text: string;
+    date: string;
+  };
+}
+
 // Mock data generator
-const generateMockReviews = (): Review[] => [
+const generateMockReviews = (): ExtendedReview[] => [
   {
     id: '1',
+    sessionId: 's1',
+    learnerId: 'u1',
     mentorId: 'm1',
     reviewerId: 'u1',
     reviewerName: 'Alex Johnson',
     rating: 5,
     comment: 'Exceptional guidance on blockchain architecture. Very clear explanation of Stellar smart contracts.',
+    createdAt: '2025-10-15T00:00:00Z',
     date: '2025-10-15',
     helpfulCount: 12,
     isVerified: true,
@@ -22,11 +36,14 @@ const generateMockReviews = (): Review[] => [
   },
   {
     id: '2',
+    sessionId: 's2',
+    learnerId: 'u2',
     mentorId: 'm1',
     reviewerId: 'u2',
     reviewerName: 'Sarah Smith',
     rating: 4,
     comment: 'Solid session, helped me debug my wallet integration. A bit fast-paced but very knowledgeable.',
+    createdAt: '2025-11-02T00:00:00Z',
     date: '2025-11-02',
     helpfulCount: 5,
     isVerified: true,
@@ -34,11 +51,14 @@ const generateMockReviews = (): Review[] => [
   },
   {
     id: '3',
+    sessionId: 's3',
+    learnerId: 'u3',
     mentorId: 'm1',
     reviewerId: 'u3',
     reviewerName: 'John Doe',
     rating: 3,
     comment: 'Good overall but I expected more hands-on practice. The theory part was too long.',
+    createdAt: '2025-11-20T00:00:00Z',
     date: '2025-11-20',
     helpfulCount: 2,
     isVerified: false,
@@ -46,8 +66,7 @@ const generateMockReviews = (): Review[] => [
 ];
 
 export const useReviews = (mentorId: string) => {
-  const reviewService = new ReviewService();
-  const [reviews, setReviews] = useState<Review[]>(generateMockReviews());
+  const [reviews, setReviews] = useState<ExtendedReview[]>(generateMockReviews());
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [alreadyVotedReviewIds, setAlreadyVotedReviewIds] = useState<Set<string>>(new Set());
@@ -196,37 +215,43 @@ export const useReviews = (mentorId: string) => {
     };
   }, [reviews]);
 
-  const addReview = (reviewData: Omit<Review, 'id' | 'date' | 'helpfulCount' | 'mentorId'>) => {
-    const review: Review = {
+  const addReview = async (reviewData: Omit<ExtendedReview, 'id' | 'date' | 'helpfulCount' | 'mentorId' | 'createdAt'>) => {
+    const prevReviews = [...reviews];
+    const review: ExtendedReview = {
       ...reviewData,
       mentorId,
       reviewerId: reviewData.reviewerId || 'anon-' + Math.random().toString(36).substr(2, 5),
       id: Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
       helpfulCount: 0,
     };
+
+    // Optimistic update
     setReviews(prev => [review, ...prev]);
+
+    try {
+      // Simulate API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() < 0.1) reject(new Error('Failed to submit review'));
+          else resolve(true);
+        }, 1500);
+      });
+    } catch (err) {
+      // Rollback
+      setReviews(prevReviews);
+      console.error('Failed to submit review:', err);
+      // In a real app, show a toast error
+      alert(err instanceof Error ? err.message : 'Failed to submit review');
+    }
   };
 
-  const voteHelpful = useCallback(async (reviewId: string) => {
-    try {
-      const response = await reviewService.voteHelpful(reviewId);
-      setReviews(prev => prev.map(r =>
-        r.id === reviewId
-          ? { ...r, helpfulCount: response.helpful_count, helpful_count: response.helpful_count }
-          : r
-      ));
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 409) {
-        setAlreadyVotedReviewIds((prev) => {
-          const next = new Set(prev);
-          next.add(reviewId);
-          return next;
-        });
-      }
-    }
-  }, [reviewService]);
+  const voteHelpful = (reviewId: string) => {
+    setReviews(prev => prev.map(r => 
+      r.id === reviewId ? { ...r, helpfulCount: (r.helpfulCount || 0) + 1 } : r
+    ));
+  };
 
   const addMentorResponse = (reviewId: string, text: string) => {
     setReviews(prev => prev.map(r => 

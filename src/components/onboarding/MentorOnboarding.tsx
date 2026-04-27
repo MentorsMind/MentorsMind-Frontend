@@ -65,13 +65,23 @@ const MentorOnboarding: React.FC = () => {
 
         <div className="lg:col-span-1">
           <OnboardingChecklist
-            completedSteps={completedSteps}
-            onStepClick={() => {
-               // Logic to jump back to wizard
-               resumeOnboarding();
-            }}
+            items={steps.map(s => ({
+              id: s,
+              label: s.charAt(0).toUpperCase() + s.slice(1),
+              description: `Complete your ${s} setup`,
+              isCompleted: completedSteps.includes(s as any),
+              icon: 'CheckCircle'
+            }))}
+            progressPercentage={progress}
+            completedCount={completedSteps.length}
+            totalCount={steps.length}
             isDismissed={isDismissed}
+            isCompleted={currentStep === 'complete'}
+            shouldDisplay={true}
+            onMarkItemComplete={() => {}}
+            onDismiss={skipToDashboard}
             onResume={resumeOnboarding}
+            role="mentor"
           />
         </div>
       </div>

@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import AuthModal from '../AuthModal';
 
 const renderWithAuth = (component: React.ReactElement) => {
-  return render(<AuthProvider>{component}</AuthProvider>);
+  return render(
+    <MemoryRouter>
+      <AuthProvider>{component}</AuthProvider>
+    </MemoryRouter>
+  );
 };
 
 describe('AuthModal', () => {
@@ -63,11 +68,9 @@ describe('AuthModal', () => {
       <AuthModal isOpen={true} onClose={mockOnClose} />
     );
 
-    const backdrop = screen.getByRole('dialog').parentElement;
-    if (backdrop) {
-      fireEvent.click(backdrop);
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-    }
+    const backdrop = screen.getByTestId('auth-modal-backdrop');
+    fireEvent.click(backdrop);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   it('closes modal when Escape key is pressed', () => {

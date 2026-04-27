@@ -42,7 +42,7 @@ describe('WalletBalance', () => {
   it('displays all asset balances', () => {
     render(<WalletBalance {...defaultProps} />);
     
-    expect(screen.getByText('XLM')).toBeInTheDocument();
+    expect(screen.getAllByText('XLM').length).toBeGreaterThan(0);
     expect(screen.getByText('USDC')).toBeInTheDocument();
     expect(screen.getByText(/1,000/)).toBeInTheDocument();
     expect(screen.getByText(/500/)).toBeInTheDocument();
@@ -90,8 +90,8 @@ describe('WalletBalance', () => {
     const showMoreButton = screen.getByText(/Show \d+ More Assets/);
     fireEvent.click(showMoreButton);
     
-    expect(screen.getByText('BTC')).toBeInTheDocument();
-    expect(screen.getByText('ETH')).toBeInTheDocument();
+    expect(screen.getAllByText('BTC').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('ETH').length).toBeGreaterThan(0);
     expect(screen.getByText('Show Less')).toBeInTheDocument();
   });
 

@@ -1,454 +1,218 @@
-import { lazy, useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import ProtectedRoute from './components/navigation/ProtectedRoute';
+import DashboardLayout from './layouts/DashboardLayout';
 import SkipNavigation from './components/a11y/SkipNavigation';
-import LiveRegion from './components/a11y/LiveRegion';
-import AccessibilityPanel from './components/a11y/AccessibilityPanel';
-import MentorOnboarding from './components/onboarding/MentorOnboarding';
-import LearnerOnboarding from './pages/LearnerOnboarding';
-import MentorWallet from './pages/MentorWallet';
-import LearningGoals from './pages/LearningGoals';
-import MentorProfileSetup from './pages/MentorProfileSetup';
-import RatingBreakdown from './components/reviews/RatingBreakdown';
-import ReviewForm from './components/reviews/ReviewForm';
-import ReviewList from './components/reviews/ReviewList';
-import { useReviews } from './hooks/useReviews';
-import { usePerformance } from './hooks/usePerformance';
-import { preloadCriticalResources } from './utils/performance.utils';
-import MetricCard from './components/charts/MetricCard';
-const loadMentorOnboarding = () => import('./components/onboarding/MentorOnboarding');
-const loadLearnerOnboarding = () => import('./pages/LearnerOnboarding');
-const loadMentorWallet = () => import('./pages/MentorWallet');
-const loadMentorSearch = () => import('./pages/MentorSearch');
-const loadRatingBreakdown = () => import('./components/reviews/RatingBreakdown');
-const loadReviewForm = () => import('./components/reviews/ReviewForm');
-const loadReviewList = () => import('./components/reviews/ReviewList');
-const loadLineChart = () => import('./components/charts/LineChart');
-const loadBarChart = () => import('./components/charts/BarChart');
-const loadPieChart = () => import('./components/charts/PieChart');
-const loadAreaChart = () => import('./components/charts/AreaChart');
+import LoadingAnimation from './components/animations/LoadingAnimation';
+import OAuthCallback from './components/auth/OAuthCallback';
+import AuthErrorPage from './pages/AuthErrorPage';
 
-const MentorOnboarding = lazy(loadMentorOnboarding);
-const LearnerOnboarding = lazy(loadLearnerOnboarding);
-const MentorWallet = lazy(loadMentorWallet);
-const MentorSearch = lazy(loadMentorSearch);
-const RatingBreakdown = lazy(loadRatingBreakdown);
-const ReviewForm = lazy(loadReviewForm);
-const ReviewList = lazy(loadReviewList);
-const LineChart = lazy(loadLineChart);
-const BarChart = lazy(loadBarChart);
-const PieChart = lazy(loadPieChart);
-const AreaChart = lazy(loadAreaChart);
+// Lazy load pages for code splitting
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const MentorSearch = lazy(() => import('./pages/MentorSearch'));
+const MentorDashboard = lazy(() => import('./pages/MentorDashboard'));
+const MentorProfile = lazy(() => import('./pages/MentorProfile'));
+const MentorWallet = lazy(() => import('./pages/MentorWallet'));
+const MentorOnboarding = lazy(() => import('./pages/MentorOnboarding'));
+const LearnerDashboard = lazy(() => import('./pages/LearnerDashboard'));
+const LearnerProfile = lazy(() => import('./pages/LearnerProfile'));
+const LearnerOnboarding = lazy(() => import('./pages/LearnerOnboarding'));
+const SessionHistory = lazy(() => import('./pages/SessionHistory'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const LearningGoals = lazy(() => import('./pages/LearningGoals'));
+const Settings = lazy(() => import('./pages/Settings'));
+const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
+const Messages = lazy(() => import('./pages/Messages'));
+const DisputeDetailPage = lazy(() => import('./pages/DisputeDetailPage'));
+const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const AdminUsers = lazy(() => import('./components/admin/AdminUsers'));
+const AdminTransactions = lazy(() => import('./components/admin/AdminTransactions'));
+const AdminSessions = lazy(() => import('./components/admin/AdminSessions'));
+const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
+const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
+const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
+const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
 
-type AppView = 'onboarding' | 'learner' | 'wallet' | 'search' | 'reviews' | 'analytics' | 'profile';
 
-const earningsData = [
-  { label: 'Jan', earnings: 1200, sessions: 8 },
-  { label: 'Feb', earnings: 1800, sessions: 12 },
-  { label: 'Mar', earnings: 1500, sessions: 10 },
-  { label: 'Apr', earnings: 2200, sessions: 15 },
-  { label: 'May', earnings: 2800, sessions: 18 },
-  { label: 'Jun', earnings: 3100, sessions: 21 },
-];
+// Loading component for Suspense
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <LoadingAnimation size="lg" />
+  </div>
+);
 
-const sessionsByCategory = [
-  { label: 'Web Dev', value: 42 },
-  { label: 'Blockchain', value: 28 },
-  { label: 'Design', value: 18 },
-  { label: 'DevOps', value: 12 },
-];
+import { RoleBasedRoute } from './components/navigation/RoleBasedRoute';
+import { useAuth } from './hooks/useAuth';
 
-const ratingTrend = [
-  { label: 'Jan', rating: 4.2 },
-  { label: 'Feb', rating: 4.4 },
-  { label: 'Mar', rating: 4.3 },
-  { label: 'Apr', rating: 4.6 },
-  { label: 'May', rating: 4.7 },
-  { label: 'Jun', rating: 4.8 },
-];
-
-function AnalyticsDashboard() {
+function AppRoutes() {
+  const auth = useAuth();
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-      <div>
-        <h2 className="text-3xl font-bold mb-1">Analytics</h2>
-        <p className="text-gray-500">Your platform metrics at a glance.</p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard title="Total Earnings" value="$12,400" change={18.2} changeLabel="vs last month" prefix="" />
-        <MetricCard title="Sessions" value={84} change={12.5} changeLabel="vs last month" />
-        <MetricCard title="Avg. Rating" value="4.8" change={2.1} changeLabel="vs last month" suffix="★" />
-        <MetricCard title="Students" value={136} change={-3.4} changeLabel="vs last month" />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <AreaChart
-          data={earningsData}
-          series={[{ key: 'earnings', name: 'Earnings' }]}
-          title="Monthly Earnings"
-          description="Cumulative earnings over time"
-          xAxisKey="label"
-          valuePrefix="$"
-          exportable
-          exportFilename="earnings-chart"
-        />
-        <LineChart
-          data={ratingTrend}
-          series={[{ key: 'rating', name: 'Avg Rating' }]}
-          title="Rating Trend"
-          description="Average session rating per month"
-          xAxisKey="label"
-          zoomable
-          exportable
-          exportFilename="rating-trend"
-        />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <BarChart
-          data={earningsData}
-          series={[{ key: 'sessions', name: 'Sessions' }]}
-          title="Sessions per Month"
-          xAxisKey="label"
-          exportable
-          exportFilename="sessions-bar"
-        />
-        <PieChart
-          data={sessionsByCategory}
-          title="Sessions by Category"
-          description="Proportional breakdown of session types"
-          donut
-          exportable
-          exportFilename="sessions-pie"
-        />
-      </div>
-    </div>
-  );
-}
-
-function App() {
-  const [view, setView] = useState<'onboarding' | 'learner' | 'wallet' | 'goals' | 'reviews' | 'analytics' | 'profile'>('onboarding');
-  const [showForm, setShowForm] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState('booking-m1-001');
-  const [reviewMode, setReviewMode] = useState<'create' | 'edit'>('create');
-  const [a11yOpen, setA11yOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
-  const { dashboard, budgetStatus } = usePerformance();
-
-  const {
-    reviews,
-    stats,
-    voteHelpful,
-    addMentorResponse,
-    loadReviewForBooking,
-    getReviewForBooking,
-    canEditReview,
-    submitReview,
-    isSubmittingReview,
-    reviewError,
-    alreadyVotedReviewIds,
-    filterRating,
-    setFilterRating,
-    currentPage,
-    totalPages,
-    paginate,
-  } = useReviews('m1');
-  const selectedBookingReview = getReviewForBooking(selectedBookingId);
-  const selectedBookingCanEdit = canEditReview(selectedBookingReview);
-
-  useEffect(() => {
-    if (view === 'reviews') {
-      void loadReviewForBooking(selectedBookingId);
-    }
-  }, [loadReviewForBooking, selectedBookingId, view]);
-
-  const handleViewChange = (next: AppView, label: string) => {
-    setView(next);
-    setAnnouncement(`Navigated to ${label}`);
-  };
-
-  useEffect(() => {
-    preloadCriticalResources();
-  }, []);
-
-  const preloaders: Record<AppView, () => Promise<unknown>> = {
-    search: loadMentorSearch,
-    learner: loadLearnerOnboarding,
-    onboarding: loadMentorOnboarding,
-    profile: loadMentorOnboarding,
-    wallet: loadMentorWallet,
-    analytics: loadAreaChart,
-    reviews: loadReviewList,
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+    <BrowserRouter>
       <SkipNavigation />
-      <LiveRegion message={announcement} />
-      <AccessibilityPanel isOpen={a11yOpen} onClose={() => setA11yOpen(false)} />
+      <main id="main-content">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/mentors" element={<MentorSearch />} />
+            <Route path="/onboarding/mentor" element={<MentorOnboarding />} />
+            <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
+            {/* OAuth callback */}
+            <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/auth/error" element={<AuthErrorPage />} />
+            {/* MFA challenge — semi-public: requires mfaPending state in AuthContext */}
+            <Route path="/auth/mfa-challenge" element={<MFAChallengeScreen />} />
+            {/* Account deletion grace period page */}
+            <Route path="/account-scheduled-for-deletion" element={<AccountScheduledForDeletion />} />
 
-      <nav id="main-nav" aria-label="Main navigation" className="sticky top-0 z-50 border-b border-gray-100 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stellar font-bold text-white">
-              M
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              MentorMinds <span className="text-stellar">Stellar</span>
-            </span>
-              Mentor Onboarding
-            </button>
-            <button
-              onClick={() => setView('learner')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                view === 'learner' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Learner Onboarding
-            </button>
-            <button
-              onClick={() => setView('goals')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'goals' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Goals
-            </button>
-            <button
-              onClick={() => setView('wallet')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'wallet' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Wallet
-            </button>
-            <button
-              onClick={() => setView('analytics')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                view === 'analytics' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Analytics
-            </button>
-            <button
-              onClick={() => setView('reviews')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                view === 'reviews' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Ratings & Reviews
-            </button>
-            <button
-              onClick={() => setView('profile')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                view === 'profile' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Profile Setup
-            </button>
-            <button
-              onClick={() => setView('search')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                view === 'search' ? 'bg-white shadow-sm text-stellar' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              Search & Discovery
-            </button>
-          </div>
+            {/* Mentor routes */}
+            <Route path="/mentor" element={<ProtectedRoute><DashboardLayout><Navigate to="/mentor/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/dashboard" element={<ProtectedRoute><DashboardLayout><MentorDashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/profile" element={<ProtectedRoute><DashboardLayout><MentorProfile /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/wallet" element={<ProtectedRoute><DashboardLayout><MentorWallet /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/disputes/:id" element={<ProtectedRoute><DashboardLayout><DisputeDetailPage /></DashboardLayout></ProtectedRoute>} />
 
-          <div className="hidden items-center gap-2 rounded-2xl bg-gray-50 p-1 md:flex">
-            {[
-              { id: 'search', label: 'Search & Booking' },
-              { id: 'learner', label: 'Learner Onboarding' },
-              { id: 'onboarding', label: 'Mentor Onboarding' },
-              { id: 'profile', label: 'Profile Setup' },
-              { id: 'wallet', label: 'Wallet' },
-              { id: 'analytics', label: 'Analytics' },
-              { id: 'reviews', label: 'Reviews' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleViewChange(item.id as AppView, item.label)}
-                onMouseEnter={() => preloaders[item.id as AppView]?.()}
-                onFocus={() => preloaders[item.id as AppView]?.()}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${
-                  view === item.id ? 'bg-white text-stellar shadow-sm' : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+            {/* Learner routes */}
+            <Route path="/learner" element={<ProtectedRoute><DashboardLayout><Navigate to="/learner/dashboard" replace /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/dashboard" element={<ProtectedRoute><DashboardLayout><LearnerDashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/goals" element={<ProtectedRoute><DashboardLayout><LearningGoals /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/profile" element={<ProtectedRoute><DashboardLayout><LearnerProfile /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/payments" element={<ProtectedRoute><DashboardLayout><PaymentHistory /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
 
-          <button
-            type="button"
-            onClick={() => setA11yOpen(true)}
-            aria-label="Open accessibility settings"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-stellar/20 bg-stellar/10 text-stellar"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3" strokeWidth="2" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-              />
-            </svg>
-          </button>
-        </div>
-      </nav>
+                {/* Checkout */}
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <CheckoutPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-      {/* Main content area */}
-      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 pt-10 outline-none">
-        {view === 'onboarding' ? (
-          <MentorOnboarding />
-        ) : view === 'learner' ? (
-          <LearnerOnboarding />
-        ) : view === 'wallet' ? (
-          <MentorWallet />
-        ) : view === 'goals' ? (
-          <LearningGoals />
-        ) : view === 'profile' ? (
-          <MentorProfileSetup />
-        ) : view === 'dashboard' ? (
-          <MentorDashboard />
-        ) : view === 'search' ? (
-          <MentorSearch />
-        ) : view === 'analytics' ? (
-          <AnalyticsDashboard />
-        ) : (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Mentor Feedback</h2>
-                <p className="text-gray-500">See what the community is saying about your sessions.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(!showForm);
-                  setReviewMode(selectedBookingReview ? 'edit' : 'create');
-                }}
-                aria-expanded={showForm}
-                aria-controls="review-form"
-                className="rounded-xl bg-stellar px-6 py-2.5 font-bold text-white shadow-lg shadow-stellar/20 transition-all hover:bg-stellar-dark"
-              >
-                {showForm ? 'Cancel Review' : selectedBookingReview ? 'Manage Review' : 'Write a Review'}
-              </button>
-            </div>
+            {/* Admin routes */}
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminAnalytics />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminUsers />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/transactions"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminTransactions />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sessions"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminSessions />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminPayments />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disputes"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminDisputes />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/logs"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminLogs />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/email-preview/:template"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <EmailTemplatePreview />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
 
-            {showForm && (
-              <div id="review-form">
-                <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
-                  <label htmlFor="booking-selector" className="mb-2 block text-sm font-semibold text-gray-700">
-                    Select completed booking
-                  </label>
-                  <select
-                    id="booking-selector"
-                    value={selectedBookingId}
-                    onChange={(event) => {
-                      const nextBooking = event.target.value;
-                      setSelectedBookingId(nextBooking);
-                      void loadReviewForBooking(nextBooking);
-                      setReviewMode(getReviewForBooking(nextBooking) ? 'edit' : 'create');
-                    }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-stellar focus:outline-none"
-                  >
-                    <option value="booking-m1-001">booking-m1-001</option>
-                    <option value="booking-m1-002">booking-m1-002</option>
-                    <option value="booking-m1-003">booking-m1-003</option>
-                  </select>
-                </div>
-                {selectedBookingReview && reviewMode === 'create' && (
-                  <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <p className="text-sm text-gray-700">A review already exists for this booking.</p>
-                    <button
-                      type="button"
-                      onClick={() => setReviewMode('edit')}
-                      disabled={!selectedBookingCanEdit}
-                      className="mt-3 rounded-lg border border-stellar px-4 py-2 text-sm font-semibold text-stellar disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-500"
-                    >
-                      {selectedBookingCanEdit ? 'Edit' : 'Edit window expired'}
-                    </button>
-                  </div>
-                )}
-                {selectedBookingReview && reviewMode === 'edit' && !selectedBookingCanEdit ? (
-                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-700">
-                    Edit window expired
-                  </div>
-                ) : (
-                  <ReviewForm
-                    bookingId={selectedBookingId}
-                    mode={selectedBookingReview ? reviewMode : 'create'}
-                    initialValues={selectedBookingReview ? { rating: selectedBookingReview.rating, comment: selectedBookingReview.comment } : undefined}
-                    isSubmitting={isSubmittingReview}
-                    error={reviewError}
-                    onSubmit={async (data) => {
-                      const result = await submitReview({
-                        bookingId: data.session_id,
-                        rating: data.rating,
-                        comment: data.comment,
-                      });
-                      if (result.ok) {
-                        setShowForm(false);
-                        setAnnouncement('Your review has been submitted.');
-                        return;
-                      }
+            {/* Settings Redirect */}
+            <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
 
-                      if (result.mode === 'edit') {
-                        setReviewMode('edit');
-                      }
-                    }}
-                    onCancel={() => setShowForm(false)}
-                  />
-                )}
-              </div>
-            )}
-
-            <RatingBreakdown stats={stats} />
-
-            <div className="rounded-[2.5rem] border border-gray-100 bg-white p-8 shadow-sm md:p-12">
-              <ReviewList
-                reviews={reviews}
-                stats={stats}
-                onVoteHelpful={voteHelpful}
-                alreadyVotedReviewIds={alreadyVotedReviewIds}
-                onFilterChange={setFilterRating}
-                currentFilter={filterRating}
-                onAddResponse={addMentorResponse}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={paginate}
-              />
-            </div>
-          </div>
-          </LazyComponent>
-        )}
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
-
-      <aside className="fixed bottom-16 left-4 z-40 hidden w-72 rounded-[1.5rem] border border-gray-100 bg-white/95 p-4 shadow-xl backdrop-blur md:block">
-        <div className="text-xs font-bold uppercase tracking-[0.18em] text-stellar">Performance Monitor</div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {dashboard.map((item) => (
-            <div key={item.label} className="rounded-2xl bg-gray-50 p-3 text-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{item.label}</div>
-              <div className="mt-1 text-sm font-black text-gray-900">
-                {item.value ?? '--'}{item.unit}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 text-[11px] text-gray-500">
-          Budget: {budgetStatus.jsBudgetKb}KB JS / {budgetStatus.chunkBudgetKb}KB chunks / {budgetStatus.imageBudgetKb}KB images
-        </div>
-      </aside>
-
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white/80 py-4 text-center text-[10px] text-gray-400 backdrop-blur-sm">
-        Demo Version 1.0 • Built with Vite, React & Tailwind CSS • Powered by Stellar
-      </footer>
-    </div>
+    </BrowserRouter>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <AppRoutes />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}

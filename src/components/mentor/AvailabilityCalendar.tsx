@@ -1,193 +1,128 @@
-import React, { useState } from 'react';
-import type { TimeSlot } from '../../hooks/useAvailability';
-import { formatTimeSlot } from '../../utils/calendar.utils';
+import { useState } from 'react';
+import Button from '../ui/Button';
+import { useAvailabilityUpdate } from '../../hooks/queries/useMentors';
+import type { AvailabilitySchedule } from '../../services/mentor.service';
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const HOURS = Array.from({ length: 12 }, (_, i) => `${i + 8}:00`);
 
 interface AvailabilityCalendarProps {
-  timeSlots: TimeSlot[];
-  onSlotClick: (slot: TimeSlot) => void;
-  onDeleteSlot: (id: string) => void;
-  onSlotUpdate?: (id: string, updates: Partial<TimeSlot>) => void;
+  mentorId: string;
+  initialSchedule?: AvailabilitySchedule;
+  initialIsAvailable?: boolean;
+  onScheduleChange: (schedule: AvailabilitySchedule, isAvailable: boolean) => void;
 }
 
-export const AvailabilityCalendar = ({
-  timeSlots,
-  onSlotClick,
-  onDeleteSlot,
-  onSlotUpdate,
-}: AvailabilityCalendarProps) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'week' | 'month'>('week');
-  const [draggedSlot, setDraggedSlot] = useState<TimeSlot | null>(null);
+function scheduleToSlots(schedule: AvailabilitySchedule): Set<string> {
+  const set = new Set<string>();
+  for (const [day, hours] of Object.entries(schedule)) {
+    hours.forEach((h) => set.add(`${day}-${h}`));
+  }
+  return set;
+}
 
-  const getWeekDays = (date: Date) => {
-    const week = [];
-    const first = date.getDate() - date.getDay();
-    
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(date);
-      day.setDate(first + i);
-      week.push(day);
-    }
-    return week;
-  };
+function slotsToSchedule(slots: Set<string>): AvailabilitySchedule {
+  const schedule: AvailabilitySchedule = {};
+  slots.forEach((key) => {
+    const [day, hour] = key.split(/-(?=\d)/);
+    if (!schedule[day]) schedule[day] = [];
+    schedule[day].push(hour);
+  });
+  return schedule;
+}
 
-  const weekDays = getWeekDays(currentDate);
+export default function AvailabilityCalendar({
+  mentorId,
+  initialSchedule = {},
+  initialIsAvailable = true,
+  onScheduleChange,
+}: AvailabilityCalendarProps) {
+  const [slots, setSlots] = useState<Set<string>>(() => scheduleToSlots(initialSchedule));
+  const [isAvailable, setIsAvailable] = useState(initialIsAvailable);
 
-  const getSlotsForDay = (day: Date) => {
-    return timeSlots.filter((slot) => {
-      const slotDate = new Date(slot.start);
-      return (
-        slotDate.getDate() === day.getDate() &&
-        slotDate.getMonth() === day.getMonth() &&
-        slotDate.getFullYear() === day.getFullYear()
-      );
+  const { save, saving } = useAvailabilityUpdate(mentorId, onScheduleChange);
+
+  const toggle = (day: string, hour: string) => {
+    const key = `${day}-${hour}`;
+    setSlots((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
     });
   };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentDate(newDate);
-  };
+  const handleSave = async () => {
+    const schedule = slotsToSchedule(slots);
+    const prevSlots = new Set(slots);
+    const prevIsAvailable = isAvailable;
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
+    // Optimistic update
+    onScheduleChange(schedule, isAvailable);
 
-  const handleDragStart = (slot: TimeSlot) => {
-    if (!slot.isBooked) {
-      setDraggedSlot(slot);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (targetDay: Date) => {
-    if (draggedSlot && onSlotUpdate) {
-      const duration = draggedSlot.end.getTime() - draggedSlot.start.getTime();
-      const newStart = new Date(targetDay);
-      newStart.setHours(draggedSlot.start.getHours(), draggedSlot.start.getMinutes());
-      const newEnd = new Date(newStart.getTime() + duration);
-
-      onSlotUpdate(draggedSlot.id, { start: newStart, end: newEnd });
-      setDraggedSlot(null);
-    }
+    await save(schedule, isAvailable, () => {
+      // Rollback
+      setSlots(prevSlots);
+      setIsAvailable(prevIsAvailable);
+      onScheduleChange(slotsToSchedule(prevSlots), prevIsAvailable);
+    });
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <h3 className="text-lg font-semibold">
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h3>
-            <button
-              onClick={goToToday}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Today
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => navigateWeek('prev')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-              aria-label="Previous week"
-            >
-              ←
-            </button>
-            <button
-              onClick={() => navigateWeek('next')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-              aria-label="Next week"
-            >
-              →
-            </button>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-gray-900">Availability</h3>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isAvailable}
+            onChange={(e) => setIsAvailable(e.target.checked)}
+            className="rounded"
+          />
+          Available for bookings
+        </label>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-gray-200">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0">
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7">
-        {weekDays.map((day, index) => {
-          const slots = getSlotsForDay(day);
-          const isToday = day.toDateString() === new Date().toDateString();
-
-          return (
-            <div
-              key={index}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(day)}
-              className={`min-h-[120px] p-2 border-r border-b border-gray-200 last:border-r-0 ${
-                isToday ? 'bg-blue-50' : ''
-              } ${draggedSlot ? 'hover:bg-blue-100' : ''}`}
-            >
-              <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-                {day.getDate()}
-              </div>
-
-              <div className="space-y-1">
-                {slots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    draggable={!slot.isBooked}
-                    onDragStart={() => handleDragStart(slot)}
-                    onClick={() => onSlotClick(slot)}
-                    className={`text-xs p-1 rounded cursor-pointer group relative ${
-                      slot.isBooked
-                        ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                        : slot.isBlocked
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-move'
-                    }`}
-                  >
-                    <div className="truncate">
-                      {formatTimeSlot(slot.start, slot.end)}
-                    </div>
-                    {!slot.isBooked && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSlot(slot.id);
-                        }}
-                        className="absolute top-0 right-0 hidden group-hover:block text-red-600 hover:text-red-800 px-1"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
+      <div className="overflow-x-auto">
+        <table className="text-xs border-collapse w-full">
+          <thead>
+            <tr>
+              <th className="w-14 p-2 text-gray-400 font-normal" />
+              {DAYS.map((d) => (
+                <th key={d} className="p-2 text-gray-600 font-medium">{d}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map((h) => (
+              <tr key={h}>
+                <td className="p-2 text-gray-400 text-right pr-3">{h}</td>
+                {DAYS.map((d) => (
+                  <td key={d} className="p-1">
+                    <button
+                      onClick={() => toggle(d, h)}
+                      className={`w-full h-7 rounded transition-colors ${
+                        slots.has(`${d}-${h}`)
+                          ? 'bg-indigo-500 hover:bg-indigo-600'
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      aria-label={`${slots.has(`${d}-${h}`) ? 'Deselect' : 'Select'} ${d} ${h}`}
+                    />
+                  </td>
                 ))}
-              </div>
-            </div>
-          );
-        })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="p-4 bg-gray-50 flex items-center justify-center space-x-6 text-sm">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-          <span>Available</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-gray-300 border border-gray-400 rounded"></div>
-          <span>Booked</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
-          <span>Blocked</span>
-        </div>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500">
+          {slots.size} slot{slots.size !== 1 ? 's' : ''} selected
+        </p>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving…' : 'Save Availability'}
+        </Button>
       </div>
     </div>
   );
-};
+}

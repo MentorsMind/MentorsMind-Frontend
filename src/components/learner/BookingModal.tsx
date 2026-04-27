@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SessionTypeSelector from './SessionTypeSelector';
-import AvailabilityPicker from './AvailabilityPicker';
+import EnhancedAvailabilityPicker from './EnhancedAvailabilityPicker';
+import TimezoneSelector from './TimezoneSelector';
+import BookingSummaryModal from './BookingSummaryModal';
 import BookingConfirmation from './BookingConfirmation';
 import PaymentModal from '../payment/PaymentModal';
 import { useBooking } from '../../hooks/useBooking';
+import { BOOKING_ENABLED } from '../../config/app.config';
 import type { MentorProfile } from '../../types';
 
 interface BookingModalProps {
@@ -14,7 +17,7 @@ interface BookingModalProps {
 
 type BookingStep = 'details' | 'confirmation' | 'success';
 
-const DURATIONS = [30, 45, 60, 90, 120];
+const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) => {
   const {
@@ -25,6 +28,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
     learnerCalendar,
     confirmedBooking,
     paymentDetails,
+    isConfirming,
+    confirmError,
     setSessionType,
     setDuration,
     setNotes,
@@ -36,13 +41,29 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
   const [step, setStep] = useState<BookingStep>('details');
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string>('');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setStep('details');
       setPaymentOpen(false);
       setPaymentCompleted(false);
+      setShowSummaryModal(false);
+      setIdempotencyKey('');
+      setIsSubmitting(false);
       reset();
+    } else {
+      // Auto-detect timezone when modal opens
+      try {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setUserTimezone(detected);
+      } catch (error) {
+        console.error('Failed to detect timezone:', error);
+        setUserTimezone('UTC');
+      }
     }
   }, [isOpen, reset]);
 
@@ -60,13 +81,28 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
     onClose();
   };
 
-  const handlePaymentSuccess = (transactionHash: string) => {
-    confirmBooking(transactionHash);
+  const handleShowSummary = () => {
+    // Generate idempotency key before showing summary
+    const key = crypto.randomUUID();
+    setIdempotencyKey(key);
+    setShowSummaryModal(true);
+  };
+
+  const handleConfirmFromSummary = () => {
+    setShowSummaryModal(false);
+    setIsSubmitting(true);
+    setPaymentOpen(true);
+  };
+
+  const handlePaymentSuccess = async (transactionHash: string, sessionId?: string) => {
+    await confirmBooking(transactionHash, sessionId, idempotencyKey);
     setPaymentCompleted(true);
+    setIsSubmitting(false);
   };
 
   const handlePaymentClose = () => {
     setPaymentOpen(false);
+    setIsSubmitting(false);
   };
 
   const handleDownloadInvite = () => {
@@ -95,6 +131,40 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
 
   if (!isOpen || !mentor || !draft) {
     return null;
+  }
+
+  // Show Coming Soon message when booking is disabled
+  if (!BOOKING_ENABLED) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={handleClose} />
+          
+          <div className="relative z-[91] w-full max-w-md overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-2xl p-8 text-center">
+            <div className="mb-6">
+              <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-stellar via-blue-600 to-cyan-500 flex items-center justify-center">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-900 mb-4">Coming Soon</h2>
+            <p className="text-gray-600 mb-6">
+              Booking sessions with {mentor.name} will be available soon. We're working hard to bring you the best mentoring experience.
+            </p>
+            
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-full rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
@@ -201,14 +271,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
                   </div>
 
                   <div>
+                    <TimezoneSelector
+                      value={userTimezone}
+                      onChange={setUserTimezone}
+                      mentorTimezone={mentor.timezone}
+                    />
+                  </div>
+
+                  <div>
                     <label className="mb-3 block text-sm font-bold text-gray-900">
                       Availability calendar
                     </label>
-                    <AvailabilityPicker
+                    <EnhancedAvailabilityPicker
                       groupedAvailability={groupedAvailability}
                       selectedDateKey={selectedDateKey}
                       selectedSlotId={draft.selectedSlot?.id}
                       onSelect={selectSlot}
+                      userTimezone={userTimezone}
+                      mentorTimezone={mentor.timezone}
                     />
                   </div>
 
@@ -242,26 +322,40 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
                 <div className="mt-8 space-y-6">
                   <BookingConfirmation draft={draft} pricing={pricing} />
 
+                  {confirmError && (
+                    <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                      {confirmError}
+                    </p>
+                  )}
+
                   <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                     <button
                       type="button"
                       onClick={() => setStep('details')}
-                      className="rounded-2xl border border-gray-100 px-6 py-4 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
+                      disabled={isSubmitting}
+                      className="rounded-2xl border border-gray-100 px-6 py-4 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Back
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPaymentOpen(true)}
-                      className="rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark"
+                      onClick={handleShowSummary}
+                      disabled={isSubmitting}
+                      className="rounded-2xl bg-stellar px-6 py-4 text-sm font-black text-white shadow-xl shadow-stellar/20 transition-all hover:bg-stellar-dark disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Proceed to payment
+                      Review & Confirm
                     </button>
                   </div>
                 </div>
               )}
 
-              {step === 'success' && confirmedBooking && (
+              {isConfirming && (
+                <div className="mt-8 flex items-center justify-center py-12 text-sm font-bold text-gray-500">
+                  Confirming your booking…
+                </div>
+              )}
+
+              {step === 'success' && confirmedBooking && !isConfirming && (
                 <div className="mt-8 space-y-6">
                   <div className="rounded-[2rem] bg-emerald-50 p-6">
                     <div className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-600">
@@ -278,6 +372,37 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
                       Added to learner calendar and ready for invite download.
                     </p>
                   </div>
+
+                  {confirmedBooking.warning && (
+                    <div className="rounded-[2rem] border border-amber-100 bg-amber-50 p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-[0.25em] text-amber-600">
+                            Booking Warning
+                          </div>
+                          <p className="mt-1 text-sm font-medium text-amber-900">
+                            {confirmedBooking.warning}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-3xl border border-gray-100 p-5">
@@ -328,6 +453,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, mentor, onClose }) 
           </div>
         </div>
       </div>
+
+      {draft.selectedSlot && pricing && (
+        <BookingSummaryModal
+          isOpen={showSummaryModal}
+          draft={draft}
+          pricing={pricing}
+          mentorName={mentor.name}
+          userTimezone={userTimezone}
+          mentorTimezone={mentor.timezone}
+          onConfirm={handleConfirmFromSummary}
+          onCancel={() => setShowSummaryModal(false)}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {paymentDetails && (
         <PaymentModal

@@ -1,4 +1,5 @@
 import React from 'react';
+import AMLNotice from '../compliance/AMLNotice';
 import type { AssetCode } from '../../types';
 
 interface PayoutRequestProps {
@@ -97,6 +98,8 @@ const PayoutRequest: React.FC<PayoutRequestProps> = ({
               <p className="text-xs text-red-500 mt-1" role="alert">Exceeds available balance</p>
             )}
           </div>
+
+          <AMLNotice amountUsd={parsed} />
 
           <button
             onClick={onSubmit}
