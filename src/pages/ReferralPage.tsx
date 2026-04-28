@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Gift, Users } from 'lucide-react';
-import { referralService } from '../../services/referral.service';
-import { ReferralStats } from '../../components/referral/ReferralStats';
-import { ReferralLink } from '../../components/referral/ReferralLink';
-import { ReferralHistory } from '../../components/referral/ReferralHistory';
-import type { ReferralResponse, ReferralStats as ReferralStatsType } from '../../types/referral.types';
+import { referralService } from '../services/referral.service';
+import { ReferralStats } from '../components/referral/ReferralStats';
+import { ReferralLink } from '../components/referral/ReferralLink';
+import { ReferralHistory } from '../components/referral/ReferralHistory';
+import type { ReferralResponse } from '../types/referral.types';
 
 export const ReferralPage: React.FC = () => {
   const [data, setData] = useState<ReferralResponse | null>(null);
@@ -35,7 +35,7 @@ export const ReferralPage: React.FC = () => {
     }
   };
 
-  const handleDeleteReferral = async (id: string) => {
+  const handleDeleteReferral = async (_id: string) => {
     // This would call a delete endpoint once available
     // For now, just show success and reload
     try {

@@ -115,7 +115,7 @@ export async function getMentorVerificationStatus(
 export async function uploadVerificationDocument(
   mentorId: string,
   request: DocumentUploadRequest,
-  onUploadProgress?: (progressEvent: ProgressEvent) => void,
+  onUploadProgress?: (progressEvent: any) => void,
 ): Promise<DocumentUploadResponse> {
   const formData = new FormData();
 
@@ -149,7 +149,7 @@ export async function uploadVerificationDocument(
 export async function resubmitDocument(
   mentorId: string,
   request: DocumentUploadRequest,
-  onUploadProgress?: (progressEvent: ProgressEvent) => void,
+  onUploadProgress?: (progressEvent: any) => void,
 ): Promise<DocumentUploadResponse> {
   return uploadVerificationDocument(mentorId, request, onUploadProgress);
 }

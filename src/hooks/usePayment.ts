@@ -38,8 +38,8 @@ export const usePayment = (details: PaymentDetails) => {
   const refreshingRef = useRef(false);
 
   const selectedAssetData = useMemo(() => ASSETS[state.selectedAsset], [state.selectedAsset]);
-    isSubmitting: false,
-  });
+
+
 
   const assets = useMemo((): StellarAsset[] => {
     if (!wallet?.balance) return [];
@@ -157,86 +157,8 @@ export const usePayment = (details: PaymentDetails) => {
 
   // ── Payment ────────────────────────────────────────────────────────────────
 
-  const processPayment = useCallback(async () => {
-    if (selectedAssetData.balance < breakdown.totalAmount) {
-      setState(prev => ({
-        ...prev,
-        step: 'error',
-        error: `Insufficient ${state.selectedAsset} balance.`,
-  const connectWallet = useCallback(async () => {
-    try {
-      await connectWalletHook();
-      setState(prev => ({ ...prev, step: 'method' }));
-    } catch (error) {
-      console.error('Wallet connection error:', error);
-      setState(prev => ({ 
-        ...prev, 
-        step: 'error', 
-        error: error instanceof Error ? error.message : 'Failed to connect wallet' 
-      }));
-    }
-  }, [connectWalletHook]);
 
-    if (!state.quote) return;
 
-    stopCountdown();
-    setState(prev => ({ ...prev, step: 'processing', error: undefined }));
-
-    try {
-      const { data, replayed } = await service.pay(
-        { amount: details.amount, quoteId: state.quote.quoteId, assetCode: state.selectedAsset },
-        state.idempotencyKey!,
-      );
-
-      if (data.status === 'success' || replayed) {
-        setState(prev => ({
-          ...prev,
-          step: 'success',
-          transactionHash: data.transactionHash ?? 'replayed',
-        }));
-      }
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const message: string = err?.response?.data?.message ?? '';
-
-      if (status === 409 && message.toLowerCase().includes('rate')) {
-        // Rate drifted — silently refresh quote and re-present review
-        const prev = state.quote.receiveAmount;
-        setState(s => ({ ...s, step: 'review' }));
-        await fetchQuote(prev);
-      } else {
-        setState(prev => ({
-          ...prev,
-          step: 'error',
-          error: message || 'Transaction failed on Stellar network. Please try again.',
-        }));
-      }
-    }
-  }, [
-    breakdown.totalAmount,
-    details.amount,
-    fetchQuote,
-    selectedAssetData.balance,
-    state.idempotencyKey,
-    state.quote,
-    state.selectedAsset,
-    stopCountdown,
-  ]);
-
-  /** Retry: generate a fresh idempotency key and go back to review */
-  const retry = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      step: 'review',
-      error: undefined,
-      idempotencyKey: newIdempotencyKey(),
-    }));
-  }, []);
-
-  const reset = useCallback(() => {
-    stopCountdown();
-    setState({ step: 'method', selectedAsset: 'XLM', idempotencyKey: newIdempotencyKey() });
-  }, [stopCountdown]);
   const processPayment = useCallback(async () => {
     // Guard against double-submission
     if (state.isSubmitting || state.step === 'processing') return;

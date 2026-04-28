@@ -26,9 +26,9 @@ export class WebSocketService {
 
   private eventListeners: {
     onOpen?: () => void;
-    onClose?: (event: WSCloseEvent) => void;
+    onClose?: (event: CloseEvent) => void;
     onMessage?: (message: WebSocketMessage) => void;
-    onError?: (error: WSErrorEvent) => void;
+    onError?: (error: Event) => void;
     onReconnect?: (attempt: number) => void;
   } = {};
 
@@ -68,7 +68,7 @@ export class WebSocketService {
           resolve();
         };
 
-        this.ws.onclose = async (event: WSCloseEvent) => {
+        this.ws.onclose = async (event: CloseEvent) => {
           this.isConnecting = false;
           this.stopHeartbeat();
 
@@ -93,7 +93,7 @@ export class WebSocketService {
           this.eventListeners.onClose?.(event);
         };
 
-        this.ws.onmessage = (event: WSMessageEvent) => {
+        this.ws.onmessage = (event: MessageEvent) => {
           try {
             const message: WebSocketMessage = JSON.parse(event.data.toString());
             
@@ -108,10 +108,9 @@ export class WebSocketService {
           }
         };
 
-        this.ws.onerror = (error: WSErrorEvent) => {
+        this.ws.onerror = (_error: Event) => {
           this.isConnecting = false;
-          this.eventListeners.onError?.(error);
-          reject(new Error(error.message || 'WebSocket error'));
+          reject(new Error('WebSocket error'));
         };
 
       } catch (error) {
@@ -178,7 +177,7 @@ export class WebSocketService {
   private startHeartbeat(): void {
     this.heartbeatTimeout = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send({ type: 'ping', payload: {} });
+        this.send({ event: 'ping', payload: {} });
       }
     }, this.config.heartbeatInterval);
   }
@@ -210,7 +209,7 @@ export class WebSocketService {
     this.eventListeners.onOpen = callback;
   }
 
-  onClose(callback?: (event: WSCloseEvent) => void): void {
+  onClose(callback?: (event: CloseEvent) => void): void {
     this.eventListeners.onClose = callback;
   }
 
@@ -218,7 +217,7 @@ export class WebSocketService {
     this.eventListeners.onMessage = callback;
   }
 
-  onError(callback?: (error: WSErrorEvent) => void): void {
+  onError(callback?: (error: Event) => void): void {
     this.eventListeners.onError = callback;
   }
 

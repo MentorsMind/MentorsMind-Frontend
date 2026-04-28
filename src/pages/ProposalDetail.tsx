@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   XCircle,
   Play,
-  Copy,
   Check
 } from 'lucide-react';
 import VoteBreakdown from '../components/governance/VoteBreakdown';

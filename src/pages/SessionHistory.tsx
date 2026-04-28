@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Badge from '../components/ui/Badge';
+import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import NoteEditor from '../components/learner/NoteEditor';
 import SessionHistoryCard from '../components/session/SessionHistoryCard';
 import DisputeFormModal from '../components/session/DisputeFormModal';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
@@ -11,9 +9,7 @@ import { useFeedback } from '../hooks/useFeedback';
 import FeedbackForm from '../components/learner/FeedbackForm';
 import FeedbackHistory from '../components/learner/FeedbackHistory';
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
-  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'danger', rescheduled: 'warning',
-};
+
 
 function EmptyState({ tab }: { tab: TabKey }) {
   const navigate = useNavigate();
@@ -45,8 +41,9 @@ function EmptyState({ tab }: { tab: TabKey }) {
 export type SessionHistoryTab = TabKey | 'feedback';
 
 export default function SessionHistory() {
+  const navigate = useNavigate();
   const {
-    tab: bookingTab, switchTab: switchBookingTab,
+    tab: _bookingTab, switchTab: switchBookingTab,
     filters, updateFilter,
     bookings,
     totalCount,
@@ -176,7 +173,7 @@ export default function SessionHistory() {
           {[1, 2, 3].map(i => <SkeletonCard key={i} variant="booking" />)}
         </div>
       ) : bookings.length === 0 ? (
-        <EmptyState tab={tab === 'feedback' ? 'past' : tab} />
+        <EmptyState tab={((tab as string) === 'feedback' ? 'past' : tab) as TabKey} />
       ) : (
         <div className="space-y-4">
           {bookings.map((b) => (

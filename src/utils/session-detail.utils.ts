@@ -26,6 +26,7 @@ export interface SessionDetailViewModel {
   meetingExpiresAt?: string;
   hasReview: boolean;
   canCancel?: boolean;
+  transaction_id?: string;
 }
 
 export interface SessionActionState {
@@ -185,6 +186,7 @@ export const normalizeSessionDetail = (
     ),
     hasReview: readReviewState(raw),
     canCancel: readBoolean(raw.canCancel, raw.can_cancel),
+    transaction_id: readString(raw.transaction_id, raw.transactionId),
   };
 };
 
