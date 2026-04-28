@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import MetricCard from '../charts/MetricCard';
 import LineChart from '../charts/LineChart';
@@ -124,25 +125,56 @@ export const AdminAnalytics: React.FC = () => {
 
   return (
     <div className="p-6 space-y-8 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Analytics</h1>
-          <p className="text-gray-500">Monitor platform performance and growth</p>
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-500">Monitor platform performance and track system activity</p>
+          </div>
+          
+          <div className="flex bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+            {(['7d', '30d', '90d', '1y'] as TimeRange[]).map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  timeRange === range
+                    ? 'bg-stellar text-white'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {range.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
-          {(['7d', '30d', '90d', '1y'] as TimeRange[]).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                timeRange === range
-                  ? 'bg-stellar text-white'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {range.toUpperCase()}
-            </button>
-          ))}
+        
+        {/* Admin Navigation Tabs */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <NavLink 
+            to="/admin/analytics" 
+            className={({ isActive }) => 
+              `py-2 px-4 font-medium text-sm border-b-2 transition-colors ${
+                isActive 
+                  ? 'border-indigo-600 text-indigo-600 font-semibold' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`
+            }
+          >
+            Analytics
+          </NavLink>
+          <NavLink 
+            to="/admin/audit-log" 
+            className={({ isActive }) => 
+              `py-2 px-4 font-medium text-sm border-b-2 transition-colors ${
+                isActive 
+                  ? 'border-indigo-600 text-indigo-600 font-semibold' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`
+            }
+          >
+            Audit Log
+          </NavLink>
         </div>
       </div>
 

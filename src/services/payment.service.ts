@@ -1,8 +1,9 @@
+import api from "./api.client";
 import { apiConfig } from "../config/api.config";
 import type { RequestOptions } from "../types/api.types";
 import type { PaymentQuote } from "../types/payment.types";
 import { request } from "../utils/request.utils";
-import api from "./api.client";
+import type { Payment, PaymentTransaction, PaymentHistoryResponse, PaymentDetailResponse, PaymentType, PaymentStatus } from '../types';
 
 export default class PaymentService {
   async getQuote(amount: number, assetCode: string, opts?: RequestOptions) {
@@ -30,8 +31,7 @@ export default class PaymentService {
       replayed: res.headers["x-idempotency-replayed"] === "true",
     };
   }
-import api from './api';
-import type { Payment, PaymentTransaction, PaymentHistoryResponse, PaymentDetailResponse, PaymentType, PaymentStatus } from '../types';
+}
 
 export interface InitiatePaymentPayload {
   bookingId: string;
@@ -75,9 +75,6 @@ export async function requestRefund(id: string): Promise<Payment> {
   return data.data;
 }
 
-/**
- * Get payment history with filtering and cursor-based pagination
- */
 export async function getPaymentHistory(filters: PaymentHistoryFilters = {}): Promise<PaymentHistoryResponse> {
   const params = new URLSearchParams();
   
@@ -113,17 +110,11 @@ export async function getPaymentHistory(filters: PaymentHistoryFilters = {}): Pr
   return data.data;
 }
 
-/**
- * Get detailed payment information with full breakdown
- */
 export async function getPaymentDetail(id: string): Promise<PaymentDetailResponse> {
   const { data } = await api.get(`/payments/${id}/detail`);
   return data.data;
 }
 
-/**
- * Retry a failed payment
- */
 export async function retryPayment(id: string): Promise<Payment> {
   const { data } = await api.post(`/payments/${id}/retry`);
   return data.data;
@@ -148,17 +139,11 @@ export interface PaymentStatusResponse {
   transactionHash?: string;
 }
 
-/**
- * Create a new payment record
- */
 export async function createPayment(request: PaymentRequest): Promise<PaymentResponse> {
   const { data } = await api.post('/payments/create', request);
   return data.data;
 }
 
-/**
- * Poll payment status until confirmed or failed
- */
 export async function pollPaymentStatus(
   paymentId: string,
   onStatusUpdate?: (status: PaymentStatusResponse) => void,

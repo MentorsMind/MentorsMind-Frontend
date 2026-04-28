@@ -5,7 +5,7 @@ import {
   formatTime,
   formatTimezoneOffset,
   parseTimezoneOffset,
-} from '../../../utils/timezone.utils';
+} from '../../utils/timezone.utils';
 
 interface MentorTimeDisplayProps {
   timezone: string;

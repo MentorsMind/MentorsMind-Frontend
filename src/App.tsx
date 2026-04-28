@@ -25,6 +25,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
 const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const AdminAuditLog = lazy(() => import('./components/admin/AdminAuditLog'));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -90,6 +91,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminAnalytics />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/audit-log" 
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminAuditLog />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>

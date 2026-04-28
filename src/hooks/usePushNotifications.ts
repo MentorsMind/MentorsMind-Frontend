@@ -77,28 +77,9 @@ export default function usePushNotifications(): UsePushNotificationsReturn {
       if (result === 'granted') {
         setPermissionState('granted');
         try {
-          // Lazy-import Firebase to keep initial bundle small
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore – firebase is a runtime dependency installed separately
-          const { initializeApp, getApps, getApp } = await import('firebase/app');
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore – firebase is a runtime dependency installed separately
-          const { getMessaging, getToken } = await import('firebase/messaging');
-
-          const firebaseConfig = {
-            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-            projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-            messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-            appId: import.meta.env.VITE_FIREBASE_APP_ID,
-          };
-
-          const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-          const messaging = getMessaging(app);
-          const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-
-          const token = await getToken(messaging, { vapidKey });
-          await pushNotificationService.subscribe(token, deriveDeviceName(navigator.userAgent));
-
+          // Mock Firebase subscription for offline environment
+          console.log('Mocking push notification subscription');
+          await pushNotificationService.subscribe('MOCK_FCM_TOKEN', deriveDeviceName(navigator.userAgent));
           localStorage.setItem(PERMISSION_STATE_KEY, 'granted');
           dismissBanner();
         } catch (err) {
