@@ -3,6 +3,7 @@ import type { RequestOptions } from "../types/api.types";
 import type { PaymentQuote } from "../types/payment.types";
 import { request } from "../utils/request.utils";
 import api from "./api.client";
+import type { Payment, PaymentHistoryResponse, PaymentDetailResponse, PaymentType, PaymentStatus } from '../types';
 
 export default class PaymentService {
   async getQuote(amount: number, assetCode: string, opts?: RequestOptions) {
@@ -30,8 +31,9 @@ export default class PaymentService {
       replayed: res.headers["x-idempotency-replayed"] === "true",
     };
   }
-import api from './api';
-import type { Payment, PaymentTransaction, PaymentHistoryResponse, PaymentDetailResponse, PaymentType, PaymentStatus } from '../types';
+}
+
+
 
 export interface InitiatePaymentPayload {
   bookingId: string;

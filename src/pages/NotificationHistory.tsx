@@ -1,5 +1,5 @@
 import React from 'react'
-import useNotifications from '../hooks/useNotifications'
+import { useNotifications } from '../hooks/useNotifications'
 import EmptyState from '../components/ui/EmptyState'
 
 const groupByDate = (items: any[]) => {
@@ -13,7 +13,7 @@ const groupByDate = (items: any[]) => {
 }
 
 const NotificationHistory: React.FC = () => {
-  const { notifications, markRead, dismiss } = useNotifications()
+  const { notifications, markRead, remove } = useNotifications()
   const grouped = groupByDate(notifications)
 
   return (
@@ -34,7 +34,7 @@ const NotificationHistory: React.FC = () => {
                 </div>
                 <div className="flex flex-col gap-2">
                   {!n.read && <button className="text-xs text-blue-600" onClick={() => markRead(n.id)}>Mark read</button>}
-                  <button className="text-xs text-red-600" onClick={() => dismiss(n.id)}>Dismiss</button>
+                  <button className="text-xs text-red-600" onClick={() => remove(n.id)}>Dismiss</button>
                 </div>
               </div>
             ))}

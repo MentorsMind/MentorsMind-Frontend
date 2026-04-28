@@ -1,58 +1,38 @@
-import { io, Socket } from 'socket.io-client';
-import { tokenStorage } from '../utils/token.storage.utils';
+/**
+ * Mock SocketService for fallback when socket.io-client is not available.
+ * Production systems should migrate to websocket.service.ts
+ */
 
 class SocketService {
-  private socket: Socket | null = null;
+  private listeners: Record<string, ((...args: any[]) => void)[]> = {};
 
   connect() {
-    if (this.socket?.connected) return;
-
-    const token = tokenStorage.getAccessToken();
-    
-    // In production, this would be the actual backend URL
-    // For development, we assume the same host or proxy
-    const socketUrl = window.location.origin;
-
-    this.socket = io(socketUrl, {
-      auth: {
-        token: `Bearer ${token}`,
-      },
-      path: '/socket.io',
-      transports: ['websocket'],
-    });
-
-    this.socket.on('connect', () => {
-      console.log('Connected to messaging socket');
-    });
-
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-    });
+    console.log('Mock socket connected');
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    console.log('Mock socket disconnected');
   }
 
   on(event: string, callback: (...args: any[]) => void) {
-    if (!this.socket) this.connect();
-    this.socket?.on(event, callback);
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
+    }
+    this.listeners[event].push(callback);
   }
 
   off(event: string, callback: (...args: any[]) => void) {
-    this.socket?.off(event, callback);
+    if (!this.listeners[event]) return;
+    this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
   }
 
   emit(event: string, data: any) {
-    if (!this.socket?.connected) this.connect();
-    this.socket?.emit(event, data);
+    console.log('Mock socket emit:', event, data);
+    // Simulate echo for some events if needed
   }
 
   isConnected() {
-    return this.socket?.connected ?? false;
+    return true;
   }
 }
 

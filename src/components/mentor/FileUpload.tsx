@@ -210,6 +210,7 @@ export default function FileUpload({
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
+            </div>
             {!isLoading && (
               <button
                 type="button"
@@ -240,6 +241,7 @@ export default function FileUpload({
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
+            </div>
           )}
 
           {uploadStatus === 'uploaded' && (
@@ -310,6 +312,7 @@ export default function FileUpload({
               <p>Accepted formats: {config.requiredFormats.join(', ')}</p>
               <p>Maximum file size: {(config.maxSize / 1024 / 1024).toFixed(1)} MB</p>
             </div>
+          </div>
         </div>
       )}
 

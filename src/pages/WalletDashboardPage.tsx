@@ -19,7 +19,6 @@ export default function WalletDashboardPage() {
   const [publicKey, setPublicKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<string | undefined>();
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -37,7 +36,6 @@ export default function WalletDashboardPage() {
       // Always fetch balances — the response tells us whether the account exists on-chain
       const balanceResponse: WalletBalanceResponse = await getWalletBalances();
       setAccountExists(balanceResponse.accountExists);
-      setLastUpdated(balanceResponse.lastUpdated);
 
       if (balanceResponse.accountExists && balanceResponse.balances) {
         // Normalise raw balances (assetType/assetCode) into uniform WalletBalance[]

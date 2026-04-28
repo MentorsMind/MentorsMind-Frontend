@@ -8,7 +8,7 @@ import { LayoutDashboard, Wallet, TrendingUp, PieChart as PieChartIcon, External
 import { Link } from 'react-router-dom';
 
 const TreasuryDashboard: React.FC = () => {
-  const { metrics, assets, allocations, history, lastUpdated, isLoading } = useTreasury();
+  const { metrics, assets, allocations, history, lastUpdated } = useTreasury();
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -52,33 +52,25 @@ const TreasuryDashboard: React.FC = () => {
           title="Total Value Locked"
           value={formatCurrency(metrics.totalValueLocked)}
           change={12.5}
-          changeLabel="vs last month"
           icon={<LayoutDashboard className="w-5 h-5" />}
-          isLoading={isLoading}
         />
         <MetricCard
           title="DAO Balance"
           value={formatCurrency(metrics.daoBalance)}
           change={8.2}
-          changeLabel="vs last month"
           icon={<Wallet className="w-5 h-5" />}
-          isLoading={isLoading}
         />
         <MetricCard
           title="Monthly Revenue"
           value={formatCurrency(metrics.monthlyRevenue)}
           change={15.8}
-          changeLabel="vs last month"
           icon={<TrendingUp className="w-5 h-5" />}
-          isLoading={isLoading}
         />
         <MetricCard
           title="Monthly Expenses"
           value={formatCurrency(metrics.monthlyExpenses)}
           change={3.4}
-          changeLabel="vs last month"
           icon={<ArrowDownRight className="w-5 h-5" />}
-          isLoading={isLoading}
         />
       </div>
 

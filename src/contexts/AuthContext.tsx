@@ -200,6 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const ws = new WebSocketService(config);
     setWebSocket(ws);
     ws.connect(token).catch(console.error);
+  };
+
   const updateUser = (patch: Partial<User>) => {
     setUser((prev: User | null) => {
       if (!prev) return prev;

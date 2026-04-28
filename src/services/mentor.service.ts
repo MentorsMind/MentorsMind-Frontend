@@ -90,7 +90,18 @@ export interface RatingSummary {
 
 export async function getMentorRatingSummary(id: string): Promise<RatingSummary> {
   const { data } = await api.get(`/mentors/${id}/rating-summary`);
-  return data.data;
+  const summary = data.data;
+  return {
+    average: summary.average ?? summary.average_rating ?? 0,
+    total: summary.total ?? 0,
+    breakdown: summary.breakdown ?? [
+      { stars: 5, count: 0 },
+      { stars: 4, count: 0 },
+      { stars: 3, count: 0 },
+      { stars: 2, count: 0 },
+      { stars: 1, count: 0 }
+    ],
+  };
 }
 
 export interface AvailabilitySlot {
