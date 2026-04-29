@@ -24,6 +24,7 @@ const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const LearningGoals = lazy(() => import('./pages/LearningGoals'));
 const Settings = lazy(() => import('./pages/Settings'));
+const CalendarSettingsPage = lazy(() => import('./pages/CalendarSettingsPage'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
 const DisputeDetailPage = lazy(() => import('./pages/DisputeDetailPage'));
@@ -197,6 +198,7 @@ function AppRoutes() {
 
             {/* Settings Redirect */}
             <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
+            <Route path="/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettingsPage /></DashboardLayout></ProtectedRoute>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
