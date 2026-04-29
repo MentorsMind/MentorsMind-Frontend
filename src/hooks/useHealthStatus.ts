@@ -8,6 +8,8 @@ export interface HealthStatus {
   components: Record<string, ComponentStatus>;
 }
 
+export const isHealthy = (s: string): boolean => s === 'healthy';
+
 export function useHealthStatus(): HealthStatus | null {
   const [health, setHealth] = useState<HealthStatus | null>(null);
 
@@ -16,7 +18,7 @@ export function useHealthStatus(): HealthStatus | null {
       .get<HealthStatus>('/api/health/ready', { validateStatus: () => true })
       .then((res) => {
         const data = res.data;
-        if (data?.status && data.status !== 'healthy') {
+        if (typeof data?.status === 'string' && !isHealthy(data.status)) {
           setHealth(data);
         }
       })

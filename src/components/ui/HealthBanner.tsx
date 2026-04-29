@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHealthStatus, ComponentStatus } from '../../hooks/useHealthStatus';
+import { useHealthStatus, isHealthy, ComponentStatus } from '../../hooks/useHealthStatus';
 
 const COMPONENT_MESSAGES: Record<string, string> = {
   horizon: 'Payment processing is temporarily unavailable.',
@@ -7,11 +7,11 @@ const COMPONENT_MESSAGES: Record<string, string> = {
   redis: 'Some caching features may be affected.',
 };
 
-function getAffectedMessages(components: Record<string, ComponentStatus>): string[] {
-  return Object.entries(components)
-    .filter(([, status]) => status !== 'healthy')
-    .map(([key]) => COMPONENT_MESSAGES[key] ?? `${key} is temporarily unavailable.`);
-}
+const STATUS_COLORS: Record<ComponentStatus, string> = {
+  healthy: 'text-green-700',
+  degraded: 'text-amber-700',
+  unhealthy: 'text-red-700',
+};
 
 export default function HealthBanner() {
   const health = useHealthStatus();
@@ -19,30 +19,29 @@ export default function HealthBanner() {
 
   if (!health || dismissed) return null;
 
-  const isUnhealthy = health.status === 'unhealthy';
-  const affectedMessages = getAffectedMessages(health.components ?? {});
+  const unhealthy = health.status === 'unhealthy';
+  const affected = Object.entries(health.components ?? {}).filter(([, s]) => !isHealthy(s));
 
-  const bannerClass = isUnhealthy
+  const bannerClass = unhealthy
     ? 'bg-red-50 border-red-300 text-red-800'
     : 'bg-yellow-50 border-yellow-300 text-yellow-800';
 
-  const headline = isUnhealthy
+  const headline = unhealthy
     ? "Some services are currently experiencing issues. We're working on it."
     : 'Some features may be temporarily unavailable.';
 
   return (
-    <div
-      role="alert"
-      aria-live="polite"
-      className={`w-full border-b px-4 py-3 text-sm ${bannerClass}`}
-    >
+    <div role="alert" aria-live="polite" className={`w-full border-b px-4 py-3 text-sm ${bannerClass}`}>
       <div className="flex items-start justify-between gap-4 max-w-7xl mx-auto">
         <div>
           <p className="font-medium">{headline}</p>
-          {affectedMessages.length > 0 && (
+          {affected.length > 0 && (
             <ul className="mt-1 list-disc list-inside space-y-0.5 opacity-90">
-              {affectedMessages.map((msg) => (
-                <li key={msg}>{msg}</li>
+              {affected.map(([key, status]) => (
+                <li key={key} className={STATUS_COLORS[status as ComponentStatus] ?? STATUS_COLORS.unhealthy}>
+                  {COMPONENT_MESSAGES[key] ?? `${key} is temporarily unavailable.`}
+                  {' '}<span className="opacity-70">({status})</span>
+                </li>
               ))}
             </ul>
           )}
