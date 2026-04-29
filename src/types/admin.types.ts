@@ -92,3 +92,36 @@ export interface EmailPreviewResponse {
 export interface EmailPreviewRequest {
   sampleData?: any;
 }
+
+// Revenue report types
+
+export type RevenuePeriod = '7d' | '30d' | '90d' | '1y';
+
+export interface RevenueSummary {
+  totalRevenue: number;
+  transactionCount: number;
+  platformFees: number;
+  currency?: string;
+}
+
+export interface RevenueDailyPoint {
+  date: string;
+  revenue: number;
+}
+
+export interface RevenueTransaction {
+  id: string;
+  amount: number;
+  asset: string;
+  status: string;
+  createdAt: string;
+  userId: string;
+  userName: string;
+  sessionId?: string;
+  type?: string;
+}
+
+export interface RevenueTransactionsResponse {
+  data: RevenueTransaction[];
+  meta: AdminListMeta;
+}

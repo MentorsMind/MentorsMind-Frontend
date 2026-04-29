@@ -35,6 +35,7 @@ export default function MentorWallet() {
     sortDir,
     setSort,
     exportCSV,
+    exportLoading,
     currency,
   } = useEarnings();
 
@@ -122,6 +123,7 @@ export default function MentorWallet() {
           onSort={setSort}
           onPageChange={setPage}
           onExport={exportCSV}
+          exportLoading={exportLoading}
         />
       )}
 

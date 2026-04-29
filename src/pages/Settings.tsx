@@ -198,7 +198,18 @@ const Settings: React.FC = () => {
                   {(['google', 'outlook'] as const).map(provider => (
                     <button
                       key={provider}
-                      onClick={() => updateSettings('connected', { calendarSync: true, calendarProvider: provider })}
+                      onClick={() => {
+                        if (provider === 'google') {
+                          // Mark that an OAuth flow is in progress so the
+                          // callback page can detect a broken redirect.
+                          // Use window.location.origin — never hardcode the host.
+                          sessionStorage.setItem('calendarOAuthPending', '1');
+                          window.location.href = `/api/calendar/google/connect?redirect_uri=${encodeURIComponent(window.location.origin + '/settings/calendar')}`;
+                        } else {
+                          // Outlook: local settings update (no OAuth redirect yet)
+                          updateSettings('connected', { calendarSync: true, calendarProvider: provider });
+                        }
+                      }}
                       className="flex-1 px-4 py-2 border border-border text-text text-sm font-semibold rounded-xl hover:bg-surface capitalize transition-colors"
                     >
                       {provider === 'google' ? 'Google Calendar' : 'Outlook'}

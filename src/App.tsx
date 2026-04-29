@@ -35,6 +35,8 @@ const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
 const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
 const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
 const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
+const AdminRevenueReport = lazy(() => import('./components/admin/AdminRevenueReport'));
+const CalendarOAuthCallback = lazy(() => import('./pages/CalendarOAuthCallback'));
 
 
 // Loading component for Suspense
@@ -105,6 +107,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminAnalytics />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/revenue"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminRevenueReport />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>
@@ -194,6 +208,11 @@ function AppRoutes() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Calendar OAuth callback — must be accessible without auth guard
+                because the backend redirect happens before the user is back in
+                the app session. The page itself handles auth state gracefully. */}
+            <Route path="/settings/calendar" element={<CalendarOAuthCallback />} />
 
             {/* Settings Redirect */}
             <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
