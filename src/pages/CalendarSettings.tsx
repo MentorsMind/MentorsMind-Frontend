@@ -6,9 +6,13 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { calendarService } from '../services/calendar.service';
 
 type CalendarState = 'success' | 'error' | 'incomplete' | 'default';
 
@@ -17,12 +21,21 @@ interface CalendarError {
   code?: string;
 }
 
+interface ICalData {
+  icalUrl: string;
+}
+
 const CalendarSettings: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [state, setState] = useState<CalendarState>('default');
   const [error, setError] = useState<CalendarError | null>(null);
+  const [icalData, setIcalData] = useState<ICalData | null>(null);
+  const [isLoadingICal, setIsLoadingICal] = useState(false);
+  const [showRegenerateWarning, setShowRegenerateWarning] = useState(false);
+  const [showInvalidationBanner, setShowInvalidationBanner] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const determineState = () => {
@@ -60,6 +73,57 @@ const CalendarSettings: React.FC = () => {
     const timer = setTimeout(determineState, 500);
     return () => clearTimeout(timer);
   }, [searchParams]);
+
+  useEffect(() => {
+    fetchICalUrl();
+  }, []);
+
+  const fetchICalUrl = async () => {
+    try {
+      setIsLoadingICal(true);
+      const response = await calendarService.getICalToken();
+      // Parse nested data.data.icalUrl as specified in requirements
+      setIcalData(response.data);
+    } catch (err) {
+      console.error('Failed to fetch iCal URL:', err);
+      setError({
+        message: 'Failed to load calendar feed URL. Please refresh the page.'
+      });
+    } finally {
+      setIsLoadingICal(false);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    if (icalData?.icalUrl) {
+      try {
+        await navigator.clipboard.writeText(icalData.icalUrl);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy URL:', err);
+      }
+    }
+  };
+
+  const handleRegenerateUrl = async () => {
+    try {
+      setIsLoadingICal(true);
+      const response = await calendarService.regenerateICalToken();
+      setIcalData(response.data);
+      setShowInvalidationBanner(true);
+      setShowRegenerateWarning(false);
+      // Hide banner after 10 seconds
+      setTimeout(() => setShowInvalidationBanner(false), 10000);
+    } catch (err) {
+      console.error('Failed to regenerate iCal URL:', err);
+      setError({
+        message: 'Failed to regenerate calendar feed URL. Please try again.'
+      });
+    } finally {
+      setIsLoadingICal(false);
+    }
+  };
 
   const handleConnectGoogle = () => {
     // Set OAuth pending flag before redirecting
@@ -109,6 +173,125 @@ const CalendarSettings: React.FC = () => {
         <p className="text-muted-foreground mt-1">
           Connect your calendar to sync sessions and manage your availability.
         </p>
+      </div>
+
+      {/* iCal Feed Section */}
+      <div className="bg-background rounded-3xl border border-border shadow-sm p-6 md:p-8 mb-6">
+        <h2 className="text-xl font-bold text-text mb-4">iCal Feed</h2>
+        <p className="text-muted-foreground mb-6">
+          Subscribe to your mentoring sessions in any calendar app that supports iCal feeds.
+        </p>
+
+        {isLoadingICal ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-stellar" />
+            <span className="ml-2 text-muted-foreground">Loading calendar feed...</span>
+          </div>
+        ) : icalData?.icalUrl ? (
+          <div className="space-y-4">
+            {/* Invalidation Banner */}
+            {showInvalidationBanner && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">Feed URL Updated</h4>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      Your old feed URL is now invalid. Update your calendar app with the new URL below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* URL Display */}
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">
+                Calendar Feed URL
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={icalData.icalUrl}
+                  readOnly
+                  className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-sm font-mono"
+                />
+                <Button
+                  onClick={handleCopyUrl}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Use this URL to subscribe to your mentoring sessions in calendar apps like Google Calendar, Outlook, or Apple Calendar.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => window.open(icalData.icalUrl, '_blank')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open .ics File
+              </Button>
+              <Button
+                onClick={() => setShowRegenerateWarning(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Regenerate URL
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              Unable to load calendar feed URL. Please refresh the page to try again.
+            </p>
+          </div>
+        )}
+
+        {/* Regenerate Warning Dialog */}
+        {showRegenerateWarning && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                <h3 className="text-lg font-semibold text-text">Regenerate Calendar Feed URL</h3>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                This will invalidate your current calendar subscription. Any apps using the old URL will stop syncing.
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => setShowRegenerateWarning(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRegenerateUrl}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Regenerate
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status Card */}
