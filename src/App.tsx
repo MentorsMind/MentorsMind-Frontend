@@ -8,6 +8,7 @@ import SkipNavigation from './components/a11y/SkipNavigation';
 import LoadingAnimation from './components/animations/LoadingAnimation';
 import OAuthCallback from './components/auth/OAuthCallback';
 import AuthErrorPage from './pages/AuthErrorPage';
+import HealthBanner from './components/ui/HealthBanner';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -24,7 +25,7 @@ const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const LearningGoals = lazy(() => import('./pages/LearningGoals'));
 const Settings = lazy(() => import('./pages/Settings'));
-const CalendarSettings = lazy(() => import('./pages/CalendarSettings'));
+const CalendarSettingsPage = lazy(() => import('./pages/CalendarSettingsPage'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
 const DisputeDetailPage = lazy(() => import('./pages/DisputeDetailPage'));
@@ -36,6 +37,8 @@ const AdminPayments = lazy(() => import('./components/admin/AdminPayments'));
 const AdminDisputes = lazy(() => import('./components/admin/AdminDisputes'));
 const AdminLogs = lazy(() => import('./components/admin/AdminLogs'));
 const EmailTemplatePreview = lazy(() => import('./components/admin/EmailTemplatePreview'));
+const AdminRevenueReport = lazy(() => import('./components/admin/AdminRevenueReport'));
+const CalendarOAuthCallback = lazy(() => import('./pages/CalendarOAuthCallback'));
 
 
 // Loading component for Suspense
@@ -47,12 +50,16 @@ const PageLoader = () => (
 
 import { RoleBasedRoute } from './components/navigation/RoleBasedRoute';
 import { useAuth } from './hooks/useAuth';
+import { useHeartbeat } from './hooks/useHeartbeat';
 
 function AppRoutes() {
   const auth = useAuth();
+  // Initialize heartbeat for authenticated users
+  useHeartbeat(30000); // 30 second interval
   return (
     <BrowserRouter>
       <SkipNavigation />
+      <HealthBanner />
       <main id="main-content">
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -108,6 +115,18 @@ function AppRoutes() {
                   <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
                     <DashboardLayout>
                       <AdminAnalytics />
+                    </DashboardLayout>
+                  </RoleBasedRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/revenue"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoute auth={auth} allowedRoles={['admin']}>
+                    <DashboardLayout>
+                      <AdminRevenueReport />
                     </DashboardLayout>
                   </RoleBasedRoute>
                 </ProtectedRoute>
@@ -198,9 +217,14 @@ function AppRoutes() {
               }
             />
 
+            {/* Calendar OAuth callback — must be accessible without auth guard
+                because the backend redirect happens before the user is back in
+                the app session. The page itself handles auth state gracefully. */}
+            <Route path="/settings/calendar" element={<CalendarOAuthCallback />} />
+
             {/* Settings Redirect */}
             <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
-            <Route path="/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettingsPage /></DashboardLayout></ProtectedRoute>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

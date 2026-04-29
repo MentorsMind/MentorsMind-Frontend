@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { AxiosError, AxiosResponse } from "axios";
-import { parseApiError } from "../../utils/parse.api.error";
+import { parseApiError } from "../utils/parse.api.error";
 
 function makeError(
   status: number,
@@ -66,5 +66,21 @@ describe("parseApiError", () => {
   it("returns fallback message when response is undefined", () => {
     const err = { response: undefined, isAxiosError: true } as unknown as AxiosError;
     expect(parseApiError(err)).toBe("An unexpected error occurred.");
+  });
+
+  // Zod field error shape: { errors: { userIds: ["..."] } }
+  it("extracts userIds error from Zod field error shape (POST /users/online-status)", () => {
+    const err = makeError(422, { errors: { userIds: ["Maximum 100 userIds per request"] } });
+    expect(parseApiError(err)).toBe("Maximum 100 userIds per request");
+  });
+
+  it("extracts message error from Zod field error shape", () => {
+    const err = makeError(422, { errors: { message: ["Invalid request body"] } });
+    expect(parseApiError(err)).toBe("Invalid request body");
+  });
+
+  it("prefers userIds over message in Zod field error shape", () => {
+    const err = makeError(422, { errors: { userIds: ["Too many userIds"], message: ["Other error"] } });
+    expect(parseApiError(err)).toBe("Too many userIds");
   });
 });

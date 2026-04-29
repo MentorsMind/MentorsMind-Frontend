@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
-import type { Message, Conversation, SendMessageRequest } from '../services/messaging.service';
+import type { Message, Conversation, SendMessageRequest, MessageSearchResult, MessageSearchMeta } from '../services/messaging.service';
 import MessagingService from '../services/messaging.service';
 import socketService from '../services/socket.service';
 import PresenceService from '../services/presence.service';
@@ -12,6 +12,8 @@ export interface EnhancedMessage extends Message {
   status?: MessageStatus;
   optimistic?: boolean;
 }
+
+export type { MessageSearchResult, MessageSearchMeta };
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -188,6 +190,15 @@ export const useMessages = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Global message search state (GET /messages/search)
+  const [globalSearchInput, setGlobalSearchInput] = useState('');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] = useState<MessageSearchResult[]>([]);
+  const [globalSearchMeta, setGlobalSearchMeta] = useState<MessageSearchMeta | null>(null);
+  const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
+  const [globalSearchPage, setGlobalSearchPage] = useState(1);
+  const globalSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceService = new PresenceService();
 
   // Cursor pagination: track the oldest message ID (cursor) per conv
@@ -396,6 +407,79 @@ export const useMessages = () => {
     setSearchResults([]);
   }, []);
 
+  // ── Global search (GET /messages/search) ────────────────────────────────
+
+  const executeGlobalSearch = useCallback(async (query: string, page: number) => {
+    if (!query.trim()) return;
+    setGlobalSearchLoading(true);
+    try {
+      const response = await messagingService.current.searchGlobal(query.trim(), page);
+      setGlobalSearchResults(response.data.results);
+      setGlobalSearchMeta(response.meta);
+    } catch (err) {
+      console.error('Global search failed:', err);
+    } finally {
+      setGlobalSearchLoading(false);
+    }
+  }, []);
+
+  /** Called on every keystroke — debounces 300ms then fires page 1 search */
+  const handleGlobalSearchInput = useCallback((value: string) => {
+    setGlobalSearchInput(value);
+
+    if (globalSearchDebounceRef.current) {
+      clearTimeout(globalSearchDebounceRef.current);
+    }
+
+    if (!value.trim()) {
+      setGlobalSearchQuery('');
+      setGlobalSearchResults([]);
+      setGlobalSearchMeta(null);
+      setGlobalSearchPage(1);
+      return;
+    }
+
+    globalSearchDebounceRef.current = setTimeout(() => {
+      setGlobalSearchQuery(value.trim());
+      setGlobalSearchPage(1);
+      void executeGlobalSearch(value.trim(), 1);
+    }, 300);
+  }, [executeGlobalSearch]);
+
+  const clearGlobalSearch = useCallback(() => {
+    if (globalSearchDebounceRef.current) {
+      clearTimeout(globalSearchDebounceRef.current);
+    }
+    setGlobalSearchInput('');
+    setGlobalSearchQuery('');
+    setGlobalSearchResults([]);
+    setGlobalSearchMeta(null);
+    setGlobalSearchPage(1);
+  }, []);
+
+  const globalSearchNextPage = useCallback(() => {
+    if (!globalSearchMeta?.hasNext) return;
+    const next = globalSearchPage + 1;
+    setGlobalSearchPage(next);
+    void executeGlobalSearch(globalSearchQuery, next);
+  }, [globalSearchMeta, globalSearchPage, globalSearchQuery, executeGlobalSearch]);
+
+  const globalSearchPrevPage = useCallback(() => {
+    if (!globalSearchMeta?.hasPrev) return;
+    const prev = globalSearchPage - 1;
+    setGlobalSearchPage(prev);
+    void executeGlobalSearch(globalSearchQuery, prev);
+  }, [globalSearchMeta, globalSearchPage, globalSearchQuery, executeGlobalSearch]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (globalSearchDebounceRef.current) {
+        clearTimeout(globalSearchDebounceRef.current);
+      }
+    };
+  }, []);
+
   const createConversation = useCallback(async (participantId: string) => {
     try {
       const newConv = await messagingService.current.createConversation(participantId);
@@ -462,5 +546,16 @@ export const useMessages = () => {
     clearSearch,
     createConversation,
     loadMoreMessages,
+    // Global search
+    globalSearchInput,
+    globalSearchQuery,
+    globalSearchResults,
+    globalSearchMeta,
+    globalSearchLoading,
+    globalSearchPage,
+    handleGlobalSearchInput,
+    clearGlobalSearch,
+    globalSearchNextPage,
+    globalSearchPrevPage,
   };
 };

@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react';
 import type { MentorPayoutSession, SortKey } from '../../types/earnings.types';
 import { formatAmount } from '../../utils/earnings.utils';
 import PayoutStatusChip from './PayoutStatusChip';
@@ -13,6 +14,7 @@ interface SessionTableProps {
   onSort: (key: SortKey) => void;
   onPageChange: (page: number) => void;
   onExport: () => void;
+  exportLoading?: boolean;
 }
 
 const SORTABLE_COLUMNS: { key: SortKey; label: string }[] = [
@@ -40,9 +42,10 @@ export default function SessionTable({
   onSort,
   onPageChange,
   onExport,
+  exportLoading = false,
 }: SessionTableProps) {
   const totalPages = Math.ceil(totalSessions / 20);
-  const exportDisabled = totalSessions === 0;
+  const exportDisabled = totalSessions === 0 || exportLoading;
 
   const columns: { label: string; sortable: boolean; key?: SortKey }[] = [
     { label: 'Date', sortable: true, key: 'sessionDate' },
@@ -62,10 +65,18 @@ export default function SessionTable({
         <button
           onClick={exportDisabled ? undefined : onExport}
           disabled={exportDisabled}
-          title={exportDisabled ? 'No data to export' : undefined}
-          className="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title={totalSessions === 0 ? 'No data to export' : undefined}
+          aria-busy={exportLoading}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Export CSV
+          {exportLoading ? (
+            <>
+              <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+              Exporting…
+            </>
+          ) : (
+            'Export CSV'
+          )}
         </button>
       </div>
 
