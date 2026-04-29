@@ -4,6 +4,7 @@ import paymentRoutes from './payments.routes.js';
 import goalsRoutes from './goals.routes.js';
 import mentorsRoutes from './mentors.routes.js';
 import revenueRoutes from './revenue.routes.js';
+import exportRoutes from './export.routes.js';
 import { apiConfig } from '../config/api.config.js';
 
 const router = Router();
@@ -19,6 +20,7 @@ router.use(`/${apiVersion}/health`, healthRoutes);
 router.use(`/${apiVersion}/payments`, paymentRoutes);
 router.use(`/${apiVersion}/goals`, goalsRoutes);
 router.use(`/${apiVersion}/revenue`, revenueRoutes);
+router.use(`/${apiVersion}/export`, exportRoutes);
 router.use(`/${apiVersion}`, mentorsRoutes);
 
 // API info endpoint
