@@ -137,8 +137,13 @@ export class RevenueReportService {
   async getTransactions(params: GetTransactionsParams): Promise<GetTransactionsResult> {
     const { from, to, status, page, limit } = params;
 
+    // Both `from` and `to` are full ISO 8601 UTC timestamps — use Date comparison
+    const fromMs = new Date(from).getTime();
+    const toMs = new Date(to).getTime();
+
     let results = MOCK_TRANSACTIONS.filter((tx) => {
-      const inRange = tx.date >= from && tx.date <= to + 'T23:59:59Z';
+      const txMs = new Date(tx.date).getTime();
+      const inRange = txMs >= fromMs && txMs <= toMs;
       const matchesStatus = status ? tx.status === status : true;
       return inRange && matchesStatus;
     });

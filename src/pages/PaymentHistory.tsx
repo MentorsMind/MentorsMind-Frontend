@@ -61,6 +61,7 @@ const PaymentHistory: React.FC = () => {
     transactions,
     loading,
     error,
+    dateRangeError,
     hasFetched,
     filters,
     updateFilters,
@@ -150,6 +151,7 @@ const PaymentHistory: React.FC = () => {
             onLoad={fetchTransactions}
             loading={loading}
             canLoad={canFetch}
+            dateRangeError={dateRangeError}
           />
         </div>
 

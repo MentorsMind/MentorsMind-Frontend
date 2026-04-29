@@ -27,6 +27,8 @@ interface RevenuePaymentFiltersProps {
   onLoad: () => void;
   loading: boolean;
   canLoad: boolean;
+  /** Inline error shown below the date pickers (e.g. from < to violation or 400 from server) */
+  dateRangeError?: string | null;
 }
 
 // ── Status dropdown options ───────────────────────────────────────────────────
@@ -46,40 +48,61 @@ export const RevenuePaymentFilters: React.FC<RevenuePaymentFiltersProps> = ({
   onLoad,
   loading,
   canLoad,
+  dateRangeError,
 }) => (
   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-5">
     {/* Date range */}
-    <div className="grid grid-cols-2 gap-3">
-      <div>
-        <label
-          htmlFor="revenue-date-from"
-          className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5"
-        >
-          From <span className="text-red-400">*</span>
-        </label>
-        <input
-          id="revenue-date-from"
-          type="date"
-          value={filters.from}
-          onChange={(e) => onUpdateFilters({ from: e.target.value })}
-          className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all"
-        />
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label
+            htmlFor="revenue-date-from"
+            className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5"
+          >
+            From <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="revenue-date-from"
+            type="date"
+            value={filters.from}
+            onChange={(e) => onUpdateFilters({ from: e.target.value })}
+            aria-invalid={!!dateRangeError}
+            aria-describedby={dateRangeError ? 'date-range-error' : undefined}
+            className={`w-full px-4 py-2.5 text-sm rounded-xl border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all ${
+              dateRangeError ? 'border-red-300' : 'border-gray-200'
+            }`}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="revenue-date-to"
+            className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5"
+          >
+            To <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="revenue-date-to"
+            type="date"
+            value={filters.to}
+            onChange={(e) => onUpdateFilters({ to: e.target.value })}
+            aria-invalid={!!dateRangeError}
+            className={`w-full px-4 py-2.5 text-sm rounded-xl border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all ${
+              dateRangeError ? 'border-red-300' : 'border-gray-200'
+            }`}
+          />
+        </div>
       </div>
-      <div>
-        <label
-          htmlFor="revenue-date-to"
-          className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5"
+
+      {/* Inline date range error */}
+      {dateRangeError && (
+        <p
+          id="date-range-error"
+          role="alert"
+          className="text-xs text-red-500 font-medium pt-0.5"
         >
-          To <span className="text-red-400">*</span>
-        </label>
-        <input
-          id="revenue-date-to"
-          type="date"
-          value={filters.to}
-          onChange={(e) => onUpdateFilters({ to: e.target.value })}
-          className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-stellar/30 focus:border-stellar transition-all"
-        />
-      </div>
+          {dateRangeError}
+        </p>
+      )}
     </div>
 
     {/* Status dropdown */}
