@@ -50,9 +50,12 @@ const PageLoader = () => (
 
 import { RoleBasedRoute } from './components/navigation/RoleBasedRoute';
 import { useAuth } from './hooks/useAuth';
+import { useHeartbeat } from './hooks/useHeartbeat';
 
 function AppRoutes() {
   const auth = useAuth();
+  // Initialize heartbeat for authenticated users
+  useHeartbeat(30000); // 30 second interval
   return (
     <BrowserRouter>
       <SkipNavigation />
@@ -80,6 +83,7 @@ function AppRoutes() {
             <Route path="/mentor/wallet" element={<ProtectedRoute><DashboardLayout><MentorWallet /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
             <Route path="/disputes/:id" element={<ProtectedRoute><DashboardLayout><DisputeDetailPage /></DashboardLayout></ProtectedRoute>} />
 
@@ -91,6 +95,7 @@ function AppRoutes() {
             <Route path="/learner/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/payments" element={<ProtectedRoute><DashboardLayout><PaymentHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
 
                 {/* Checkout */}
                 <Route
