@@ -2,11 +2,13 @@ import type { AxiosError, AxiosResponse } from "axios";
 
 /**
  * Extracts a user-friendly error message from any known API error response shape:
- *   { success: false, error: "..." }       — AuthController, PaymentsController
- *   { error: "..." }                        — DisputesController
- *   { status: "error", message: "..." }    — rate-limiter middleware
- *   { details: [{ message: "..." }] }      — Zod validation errors
- *   response.statusText                    — fallback
+ *   { success: false, error: "..." }                    — AuthController, PaymentsController
+ *   { error: "..." }                                     — DisputesController
+ *   { status: "error", message: "..." }                 — rate-limiter middleware
+ *   { details: [{ message: "..." }] }                   — Zod validation errors (array shape)
+ *   { errors: { userIds: ["..."] } }                    — Zod field errors (POST /users/online-status)
+ *   { errors: { message: ["..."] } }                    — other Zod field errors
+ *   response.statusText                                  — fallback
  */
 export function parseApiError(error: AxiosError): string {
   const response = error.response as AxiosResponse<any> | undefined;
@@ -47,6 +49,9 @@ export function parseApiError(error: AxiosError): string {
   if (data?.error) return data.error;
   if (data?.message) return data.message;
   if (data?.details?.[0]?.message) return data.details[0].message;
+  // Zod field error shape: { errors: { userIds: ["..."] } } or { errors: { message: ["..."] } }
+  if (data?.errors?.userIds?.[0]) return data.errors.userIds[0];
+  if (data?.errors?.message?.[0]) return data.errors.message[0];
   if (response?.statusText) return response.statusText;
 
   return "An unexpected error occurred.";
