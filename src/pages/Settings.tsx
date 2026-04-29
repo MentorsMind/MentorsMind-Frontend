@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import SanctionsError from '../components/compliance/SanctionsError';
 import NotificationSettings from '../components/settings/NotificationSettings';
 import ProfileSettings from '../components/settings/ProfileSettings';
@@ -63,6 +64,7 @@ const Settings: React.FC = () => {
   
   const { settings, updateSettings, saveStatus } = useSettings();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Create a local mutable copy of user for the Profile settings
   // If user is not yet loaded, we provide a fallback
@@ -198,7 +200,7 @@ const Settings: React.FC = () => {
                   {(['google', 'outlook'] as const).map(provider => (
                     <button
                       key={provider}
-                      onClick={() => updateSettings('connected', { calendarSync: true, calendarProvider: provider })}
+                      onClick={() => navigate('/settings/calendar')}
                       className="flex-1 px-4 py-2 border border-border text-text text-sm font-semibold rounded-xl hover:bg-surface capitalize transition-colors"
                     >
                       {provider === 'google' ? 'Google Calendar' : 'Outlook'}
@@ -210,12 +212,20 @@ const Settings: React.FC = () => {
                   <p className="text-sm text-muted-foreground capitalize">
                     Connected to {settings.connected.calendarProvider} Calendar
                   </p>
-                  <button
-                    onClick={() => updateSettings('connected', { calendarSync: false, calendarProvider: null })}
-                    className="text-sm text-destructive hover:opacity-80 font-semibold"
-                  >
-                    Disconnect
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate('/settings/calendar')}
+                      className="text-sm text-stellar hover:opacity-80 font-semibold"
+                    >
+                      Manage
+                    </button>
+                    <button
+                      onClick={() => updateSettings('connected', { calendarSync: false, calendarProvider: null })}
+                      className="text-sm text-destructive hover:opacity-80 font-semibold"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

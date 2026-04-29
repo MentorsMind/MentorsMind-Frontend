@@ -22,9 +22,11 @@ const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const LearningGoals = lazy(() => import('./pages/LearningGoals'));
 const Settings = lazy(() => import('./pages/Settings'));
+const CalendarSettings = lazy(() => import('./pages/CalendarSettings'));
 const MFAChallengeScreen = lazy(() => import('./pages/MFAChallengeScreen'));
 const Messages = lazy(() => import('./pages/Messages'));
 const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const OAuthCallback = lazy(() => import('./components/auth/OAuthCallback'));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -61,6 +63,7 @@ function AppRoutes() {
             <Route path="/mentor/wallet" element={<ProtectedRoute><DashboardLayout><MentorWallet /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/mentor/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
 
             {/* Learner routes */}
@@ -71,6 +74,7 @@ function AppRoutes() {
             <Route path="/learner/sessions" element={<ProtectedRoute><DashboardLayout><SessionHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/payments" element={<ProtectedRoute><DashboardLayout><PaymentHistory /></DashboardLayout></ProtectedRoute>} />
             <Route path="/learner/settings" element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/learner/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
 
                 {/* Checkout */}
                 <Route
@@ -98,6 +102,7 @@ function AppRoutes() {
 
             {/* Settings Redirect */}
             <Route path="/settings" element={<ProtectedRoute><Navigate to={auth.user?.role === 'mentor' ? '/mentor/settings' : '/learner/settings'} replace /></ProtectedRoute>} />
+            <Route path="/settings/calendar" element={<ProtectedRoute><DashboardLayout><CalendarSettings /></DashboardLayout></ProtectedRoute>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
