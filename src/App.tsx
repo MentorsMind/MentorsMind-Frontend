@@ -8,6 +8,7 @@ import SkipNavigation from './components/a11y/SkipNavigation';
 import LoadingAnimation from './components/animations/LoadingAnimation';
 import OAuthCallback from './components/auth/OAuthCallback';
 import AuthErrorPage from './pages/AuthErrorPage';
+import HealthBanner from './components/ui/HealthBanner';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -52,6 +53,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <SkipNavigation />
+      <HealthBanner />
       <main id="main-content">
         <Suspense fallback={<PageLoader />}>
           <Routes>
