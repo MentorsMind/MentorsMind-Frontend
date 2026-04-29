@@ -72,3 +72,4 @@ export interface WalletNotification {
   read: boolean;
   actionUrl?: string;
 }
+

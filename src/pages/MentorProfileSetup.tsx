@@ -60,6 +60,26 @@ export const MentorProfileSetup = () => {
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
+  const confirmNavigationIfDirty = useCallback(() => {
+    if (!isDirty) {
+      return true;
+    }
+    return window.confirm('You have unsaved changes. Are you sure you want to leave this page?');
+  }, [isDirty]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleSave = async () => {
     if (currentStep === 'profile') {
       if (!profile) return;
@@ -225,6 +245,11 @@ export const MentorProfileSetup = () => {
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Profile Information</h2>
+                {isDirty && (
+                  <span className="text-sm font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-md">
+                    Unsaved changes
+                  </span>
+                )}
                 <button
                   onClick={() => setShowPreview(true)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"

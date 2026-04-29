@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react';
+import { updatePricing, updateAvailability } from '../../services/mentor.service';
+import type { AvailabilitySchedule } from '../../services/mentor.service';
+import { showErrorToast } from '../../utils/toast.utils';
 
 export interface MentorProfile {
   id?: string;
@@ -111,3 +114,62 @@ export const useMentorProfile = () => {
     removePortfolioItem,
   };
 };
+
+// ─── Partial-update hooks ─────────────────────────────────────────────────────
+
+export function usePricingUpdate(
+  mentorId: string,
+  onSuccess: (hourlyRate: number) => void,
+) {
+  const [saving, setSaving] = useState(false);
+
+  const save = useCallback(
+    async (hourlyRate: number, onRollback: () => void) => {
+      setSaving(true);
+      try {
+        const result = await updatePricing(mentorId, hourlyRate);
+        onSuccess(result.hourlyRate);
+      } catch (err) {
+        onRollback();
+        showErrorToast(err instanceof Error ? err.message : 'Failed to update pricing');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [mentorId, onSuccess],
+  );
+
+  return { save, saving };
+}
+
+export function useAvailabilityUpdate(
+  mentorId: string,
+  onSuccess: (schedule: AvailabilitySchedule, isAvailable: boolean) => void,
+) {
+  const [saving, setSaving] = useState(false);
+
+  const save = useCallback(
+    async (
+      schedule: AvailabilitySchedule,
+      isAvailable: boolean,
+      onRollback: () => void,
+    ) => {
+      setSaving(true);
+      try {
+        const result = await updateAvailability(mentorId, {
+          availability_schedule: schedule,
+          is_available: isAvailable,
+        });
+        onSuccess(result.availability_schedule, result.is_available);
+      } catch (err) {
+        onRollback();
+        showErrorToast(err instanceof Error ? err.message : 'Failed to update availability');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [mentorId, onSuccess],
+  );
+
+  return { save, saving };
+}

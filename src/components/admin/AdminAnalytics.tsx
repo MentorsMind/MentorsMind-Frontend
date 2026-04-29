@@ -6,7 +6,7 @@ import BarChart from '../charts/BarChart';
 import PieChart from '../charts/PieChart';
 import ChartContainer from '../charts/ChartContainer';
 import { TableSkeletonLoader } from '../animations/SkeletonLoader';
-import { exportToCSV } from '../../utils/export.utils';
+import { exportAnalyticsCSV } from '../../utils/analyticsExport.utils';
 import { CHART_COLORS } from '../../utils/chart.utils';
 import apiClient from '../../services/api.client';
 
@@ -30,6 +30,7 @@ export const AdminAnalytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState<'revenue' | 'sessions' | null>(null);
 
   const fetchAnalytics = async (range: TimeRange) => {
     setLoading(true);
@@ -107,18 +108,19 @@ export const AdminAnalytics: React.FC = () => {
     fetchAnalytics(timeRange);
   }, [timeRange]);
 
-  const handleExportCSV = (type: 'revenue' | 'sessions') => {
+  const handleExportCSV = async (type: 'revenue' | 'sessions') => {
     if (!data) return;
-    
-    if (type === 'revenue') {
-      const headers = ['Date', 'Revenue (USD)'];
-      const rows = data.revenueData.map(d => [d.date, d.revenue]);
-      exportToCSV('revenue_analytics', headers, rows);
-    } else {
-      const headers = ['Date', 'Sessions'];
-      // Assuming sessions growth follows a similar pattern for export
-      const rows = data.revenueData.map(d => [d.date, Math.floor(d.revenue / 50)]);
-      exportToCSV('sessions_analytics', headers, rows);
+
+    setExportLoading(type);
+    try {
+      const endpoint = type === 'revenue' ? '/admin/analytics/revenue' : '/admin/analytics/sessions';
+      const filename = `${type}_analytics_${timeRange}.csv`;
+      await exportAnalyticsCSV(endpoint, timeRange, filename);
+    } catch (err) {
+      console.error('Export failed:', err);
+      setError(err instanceof Error ? err.message : 'Export failed. Please try again.');
+    } finally {
+      setExportLoading(null);
     }
   };
 
@@ -187,10 +189,11 @@ export const AdminAnalytics: React.FC = () => {
           <div className="absolute top-6 right-6">
             <button
               onClick={() => handleExportCSV('revenue')}
-              className="flex items-center gap-2 text-xs font-medium text-stellar hover:text-stellar-dark transition-colors"
+              disabled={exportLoading === 'revenue'}
+              className="flex items-center gap-2 text-xs font-medium text-stellar hover:text-stellar-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={14} />
-              Export CSV
+              {exportLoading === 'revenue' ? 'Exporting...' : 'Export CSV'}
             </button>
           </div>
           <LineChart
@@ -207,6 +210,16 @@ export const AdminAnalytics: React.FC = () => {
           isLoading={loading}
           error={error}
         >
+          <div className="absolute top-6 right-6">
+            <button
+              onClick={() => handleExportCSV('sessions')}
+              disabled={exportLoading === 'sessions'}
+              className="flex items-center gap-2 text-xs font-medium text-stellar hover:text-stellar-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download size={14} />
+              {exportLoading === 'sessions' ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
           <BarChart
             data={data?.userGrowthData ?? []}
             xKey="date"

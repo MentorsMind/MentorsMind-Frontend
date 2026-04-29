@@ -42,12 +42,12 @@ export async function getBooking(id: string): Promise<Session> {
   return data.data;
 }
 
-export async function listBookings(params?: ListBookingsParams): Promise<Session[]> {
+export async function listBookings(params?: any): Promise<Session[]> {
   const { data } = await api.get('/bookings', { params });
   return data.data;
 }
 
-export async function listBookingsPaged(params?: ListBookingsParams): Promise<BookingsPage> {
+export async function listBookingsPaged(params?: any): Promise<any> {
   const { data } = await api.get('/bookings', { params: { ...params, limit: params?.limit ?? 10 } });
   return data.data;
 }

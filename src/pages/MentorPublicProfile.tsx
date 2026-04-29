@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ProfileHeader from '../components/mentor/ProfileHeader';
 import RatingBreakdown from '../components/mentor/RatingBreakdown';
 import PublicAvailability from '../components/mentor/PublicAvailability';
@@ -7,6 +7,8 @@ import ReviewsList from '../components/mentor/ReviewsList';
 import { EndorsementSection } from '../components/profile/EndorsementSection';
 import { useShare } from '../hooks/useShare';
 import { useEndorsements } from '../hooks/useEndorsements';
+import { useAuthContext } from '../contexts/AuthContext';
+import { useCreateConversation } from '../hooks/useCreateConversation';
 import { applyMetaTags, buildMentorProfileMeta } from '../utils/og-meta.utils';
 import {
   getPublicUserProfile,
@@ -18,10 +20,78 @@ import {
   type AvailabilitySlot,
   type VerificationStatus
 } from '../services/mentor.service';
+import { ROUTES } from '../config/routes.config';
+
+// ─── MessageButton ────────────────────────────────────────────────────────────
+
+interface MessageButtonProps {
+  mentorId: string;
+  mentorName: string;
+  isOwnProfile: boolean;
+}
+
+function MessageButton({ mentorId, mentorName, isOwnProfile }: MessageButtonProps) {
+  const navigate = useNavigate();
+  const { status, conversation, create } = useCreateConversation();
+
+  const handleClick = async () => {
+    if (status === 'success' && conversation) {
+      navigate(`/messages?conversation=${conversation.id}`);
+      return;
+    }
+    await create(mentorId);
+  };
+
+  useEffect(() => {
+    if (status === 'success' && conversation) {
+      navigate(`/messages?conversation=${conversation.id}`);
+    }
+  }, [status, conversation, navigate]);
+
+  if (isOwnProfile || status === 'self') return null;
+
+  if (status === 'forbidden') {
+    return (
+      <div className="space-y-3">
+        <div className="relative group">
+          <button
+            disabled
+            className="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-2.5 text-sm font-bold text-gray-400 cursor-not-allowed"
+          >
+            Message
+          </button>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg z-10">
+            You can only message mentors you have booked a session with.
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            const el = document.getElementById('availability');
+            el?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="w-full rounded-xl bg-stellar px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-stellar-dark transition"
+        >
+          Book a Session to Message
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={status === 'loading'}
+      className="rounded-xl border border-stellar/20 bg-white px-6 py-2.5 text-sm font-bold text-stellar shadow-sm hover:bg-stellar/5 transition disabled:opacity-50"
+    >
+      {status === 'loading' ? 'Loading…' : 'Message'}
+    </button>
+  );
+}
 
 export default function MentorPublicProfile() {
   const { id } = useParams<{ id: string }>();
   const { share } = useShare();
+  const { user } = useAuthContext();
   const [shareStatus, setShareStatus] = useState('');
   const [mentor, setMentor] = useState<PublicUserProfile | null>(null);
   const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null);
@@ -31,6 +101,7 @@ export default function MentorPublicProfile() {
   const [error, setError] = useState<string | null>(null);
 
   const mentorId = id ?? 'm1';
+  const isOwnProfile = !!user && user.id === mentorId;
 
   useEffect(() => {
     const fetchMentorData = async () => {
@@ -90,7 +161,6 @@ export default function MentorPublicProfile() {
         text: `Check out ${mentor.name}'s mentor profile with ${mentor.rating.toFixed(1)} star rating.`,
         url: profileUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Profile shared.' : 'Profile link copied to clipboard.');
     } catch {
       setShareStatus('Unable to share profile right now.');
@@ -105,20 +175,16 @@ export default function MentorPublicProfile() {
         text: `Join my MentorMinds session: ${sessionInviteUrl}`,
         url: sessionInviteUrl,
       });
-
       setShareStatus(result.method === 'native' ? 'Session invite shared.' : 'Session invite copied to clipboard.');
     } catch {
       setShareStatus('Unable to share session invite right now.');
     }
   };
 
-  const {
-    endorsements,
-    pendingSkill,
-    requestEndorsement,
-    cancelRequest,
-    toggleEndorsement,
-  } = useEndorsements(true);
+  const { endorsements, pendingSkill, requestEndorsement, cancelRequest, toggleEndorsement } =
+    useEndorsements(true);
+
+  const { allReviews, markHelpful, editReview } = useReviews(mentorId);
 
   const handleBookSession = () => {
     const availabilityElement = document.getElementById('availability');
@@ -169,6 +235,11 @@ export default function MentorPublicProfile() {
         >
           Share Session Invite
         </button>
+        <MessageButton
+          mentorId={mentorId}
+          mentorName={mentor?.name ?? ''}
+          isOwnProfile={isOwnProfile}
+        />
       </div>
       {shareStatus && <p className="text-sm font-medium text-stellar">{shareStatus}</p>}
 
@@ -197,7 +268,12 @@ export default function MentorPublicProfile() {
 
       <PublicAvailability availability={availability} />
 
-      <ReviewsList />
+      <ReviewsList
+        reviews={allReviews}
+        currentUserId={CURRENT_USER_ID}
+        onVoteHelpful={markHelpful}
+        onEdit={editReview}
+      />
 
       {/* Skills */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">

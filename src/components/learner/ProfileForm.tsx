@@ -3,7 +3,8 @@ import { LearnerProfile, LearningStyle, ProfileVisibility } from '../../types/le
 import { TextInput, TextArea, Select, FileUpload, FormField } from '../forms';
 import { LearningGoals } from './LearningGoals';
 import { SkillLevelIndicator } from './SkillLevelIndicator';
-import { Camera, Save, X } from 'lucide-react';
+import { Save, X } from 'lucide-react';
+import UserAvatar from '../ui/UserAvatar';
 
 interface ProfileFormProps {
   initialData: LearnerProfile;
@@ -78,13 +79,11 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               <div className="mt-2 flex items-center space-x-5">
                 <div className="relative">
                   <span className="h-20 w-20 overflow-hidden rounded-full bg-gray-100 border-2 border-gray-200 block">
-                    {formData.avatarUrl ? (
-                      <img src={formData.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-gray-400">
-                        <Camera className="h-8 w-8" />
-                      </div>
-                    )}
+                    <UserAvatar
+                      avatarUrl={formData.avatarUrl}
+                      name={formData.fullName}
+                      size="xl"
+                    />
                   </span>
                 </div>
                 <FileUpload

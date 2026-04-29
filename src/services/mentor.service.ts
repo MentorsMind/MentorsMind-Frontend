@@ -1,26 +1,35 @@
 import api from './api';
 import type { Mentor, Session, Review } from '../types';
 
+// GET /mentors — cursor-based pagination
+// Response shape: { data: { data: Mentor[], next_cursor: string | null, has_more: boolean, total: number } }
 export interface MentorSearchParams {
   q?: string;
   skills?: string;
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
-  page?: number;
+  cursor?: string;
   limit?: number;
 }
 
-export interface PaginatedMentors {
+export interface CursorPaginatedMentors {
   mentors: Mentor[];
+  next_cursor: string | null;
+  has_more: boolean;
   total: number;
-  page: number;
-  limit: number;
 }
 
-export async function searchMentors(params: MentorSearchParams = {}): Promise<PaginatedMentors> {
+export async function searchMentors(params: MentorSearchParams = {}): Promise<CursorPaginatedMentors> {
   const { data } = await api.get('/mentors', { params });
-  return data.data;
+  // Response: { data: { data: [...], next_cursor, has_more, total } }
+  const payload = data.data;
+  return {
+    mentors: payload.data,
+    next_cursor: payload.next_cursor ?? null,
+    has_more: payload.has_more ?? false,
+    total: payload.total ?? 0,
+  };
 }
 
 export async function getMentor(id: string): Promise<Mentor> {
@@ -81,7 +90,18 @@ export interface RatingSummary {
 
 export async function getMentorRatingSummary(id: string): Promise<RatingSummary> {
   const { data } = await api.get(`/mentors/${id}/rating-summary`);
-  return data.data;
+  const summary = data.data;
+  return {
+    average: summary.average ?? summary.average_rating ?? 0,
+    total: summary.total ?? 0,
+    breakdown: summary.breakdown ?? [
+      { stars: 5, count: 0 },
+      { stars: 4, count: 0 },
+      { stars: 3, count: 0 },
+      { stars: 2, count: 0 },
+      { stars: 1, count: 0 }
+    ],
+  };
 }
 
 export interface AvailabilitySlot {
@@ -91,5 +111,31 @@ export interface AvailabilitySlot {
 
 export async function getMentorAvailability(id: string): Promise<AvailabilitySlot[]> {
   const { data } = await api.get(`/mentors/${id}/availability`);
+  return data.data;
+}
+
+export interface PricingResponse {
+  hourlyRate: number;
+}
+
+export async function updatePricing(id: string, hourlyRate: number): Promise<PricingResponse> {
+  const { data } = await api.put(`/mentors/${id}/pricing`, { hourlyRate });
+  return data.data;
+}
+
+export interface AvailabilitySchedule {
+  [day: string]: string[];
+}
+
+export interface AvailabilityResponse {
+  availability_schedule: AvailabilitySchedule;
+  is_available: boolean;
+}
+
+export async function updateAvailability(
+  id: string,
+  payload: { availability_schedule: AvailabilitySchedule; is_available: boolean },
+): Promise<AvailabilityResponse> {
+  const { data } = await api.post(`/mentors/${id}/availability`, payload);
   return data.data;
 }

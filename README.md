@@ -126,7 +126,7 @@ graph TB
 
 ### Core Tables
 ```sql
--- Users with Stellar integration
+
 CREATE TABLE users (
     id UUID PRIMARY KEY,
     email VARCHAR(255) UNIQUE,

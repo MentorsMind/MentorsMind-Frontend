@@ -101,6 +101,7 @@ export interface BookingPricingBreakdown {
   baseAmount: number;
   sessionTypeMultiplier: number;
   sessionTypeFee: number;
+  sessionFee: number;
   platformFee: number;
   totalAmount: number;
   currency: string;
@@ -133,6 +134,7 @@ export interface BookingConfirmationDetails {
   calendarInvite: CalendarInvite;
   learnerCalendarEvent: LearnerCalendarEvent;
   paymentTransactionHash?: string;
+  warning?: string;
 }
 
 export interface RecommendationReason {

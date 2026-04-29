@@ -1,4 +1,4 @@
-import type { MentorMatch, Session } from '../types';
+// No longer using MentorMatch and Session types for mock data
 
 export interface SearchContent {
   id: string;
@@ -11,8 +11,8 @@ export interface SearchContent {
 }
 
 export type SearchResultItem = 
-  | { type: 'mentor'; data: MentorMatch }
-  | { type: 'session'; data: Session }
+  | { type: 'mentor'; data: any }
+  | { type: 'session'; data: any }
   | { type: 'content'; data: SearchContent };
 
 export interface SearchFilters {
@@ -39,14 +39,14 @@ export interface PaginatedResult<T> {
 }
 
 // Mock Data
-const MOCK_MENTORS: MentorMatch[] = [
+const MOCK_MENTORS: any[] = [
   { id: '1', name: 'Alex Johnson', specialization: 'Blockchain Development', rating: 4.8, hourlyRate: 50, matchScore: 95, avatar: 'https://i.pravatar.cc/150?u=1' },
   { id: '2', name: 'Sarah Smith', specialization: 'UI/UX Design', rating: 4.9, hourlyRate: 45, matchScore: 90, avatar: 'https://i.pravatar.cc/150?u=2' },
   { id: '3', name: 'Michael Chen', specialization: 'Smart Contracts', rating: 4.7, hourlyRate: 60, matchScore: 85, avatar: 'https://i.pravatar.cc/150?u=3' },
   { id: '4', name: 'Emma Davis', specialization: 'Stellar Ecosystem', rating: 4.9, hourlyRate: 55, matchScore: 98, avatar: 'https://i.pravatar.cc/150?u=4' },
 ];
 
-const MOCK_SESSIONS: Session[] = [
+const MOCK_SESSIONS: any[] = [
   { id: 's1', learnerId: 'l1', learnerName: 'John Doe', topic: 'Intro to Stellar', startTime: '2026-04-01T10:00:00Z', duration: 60, status: 'confirmed', price: 50, currency: 'XLM' },
   { id: 's2', learnerId: 'l2', learnerName: 'Jane Doe', topic: 'Advanced Rust', startTime: '2026-04-02T14:00:00Z', duration: 90, status: 'pending', price: 75, currency: 'XLM' },
 ];

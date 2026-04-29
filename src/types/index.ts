@@ -1,13 +1,15 @@
 import type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate } from './goals.types.js';
 import type { PaymentStatus } from './payment.types';
+import type { AdminUser, AdminTransaction, AdminSession, AdminPayment, AdminDispute, AdminLog, AdminListResponse } from './admin.types';
 
 export type { Goal, GoalStatus, GoalCategory, Milestone, GoalSummary, GoalStats, CreateGoalPayload, UpdateGoalPayload, UpdateProgressPayload, LinkSessionPayload, GoalTemplate };
 export * from './payment.types';
+export type { AdminUser, AdminTransaction, AdminSession, AdminPayment, AdminDispute, AdminLog, AdminListResponse };
 
 // Global shared types
 
 export type Priority = 'high' | 'medium' | 'low';
-export type UserRole = 'mentor' | 'learner' | 'admin';
+export type UserRole = 'mentor' | 'mentee' | 'admin';
 export type SessionStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 export type AssetType = 'XLM' | 'USDC' | 'PYUSD';
 
@@ -86,7 +88,7 @@ export interface Payment {
 
 export interface Review {
   id: string;
-  sessionId: string;
+  bookingId: string;
   mentorId: string;
   learnerId: string;
   reviewerId?: string;
@@ -94,6 +96,15 @@ export interface Review {
   comment: string;
   helpfulCount?: number;
   createdAt: string;
+  isFlagged?: boolean;
+  mentorResponse?: { text: string; date: string };
+}
+
+export interface RatingStats {
+  average: number;
+  totalReviews: number;
+  distribution: { star: number; count: number }[];
+  trends: { labels: string[]; values: number[] };
 }
 
 export interface Notification {

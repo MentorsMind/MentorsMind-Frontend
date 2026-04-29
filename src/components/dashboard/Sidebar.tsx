@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import UserAvatar from '../ui/UserAvatar';
 
 // Nav item shape
 interface NavItem {
@@ -152,21 +153,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
         ) : (
           <div className={`flex items-center ${collapsed ? '' : 'gap-3'}`} data-testid="sidebar-user-info">
             {/* Avatar */}
-            {user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="w-9 h-9 rounded-full object-cover shrink-0"
-                data-testid="sidebar-avatar"
-              />
-            ) : (
-              <div
-                className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-bold text-sm shrink-0"
-                data-testid="sidebar-avatar-fallback"
-              >
-                {user?.name?.[0]?.toUpperCase() ?? '?'}
-              </div>
-            )}
+            <UserAvatar
+              avatarUrl={user?.avatarUrl}
+              firstName={user?.firstName}
+              lastName={user?.lastName}
+              name={user?.name}
+              size="sm"
+              data-testid={user?.avatarUrl ? 'sidebar-avatar' : 'sidebar-avatar-fallback'}
+            />
             {!collapsed && (
               <div className="min-w-0">
                 <p className="text-sm font-medium text-text truncate" data-testid="sidebar-display-name">

@@ -5,7 +5,7 @@ export const CONSENT_AUTO_DECLINE_SECONDS = 30;
 export const DEMO_REMOTE_RESPONSE_DELAY_MS = 1800;
 export const INCOMING_CONSENT_REQUEST_DELAY_MS = 12000;
 
-export type RecordingPartyRole = 'mentor' | 'learner';
+export type RecordingPartyRole = 'mentor' | 'mentee';
 export type RecordingRequestType = 'start' | 'stop';
 
 export interface RecordingConsentRequest {
@@ -42,13 +42,13 @@ interface UseRecordingOptions {
   remotePartyName?: string;
 }
 
-const getRoleLabel = (role: RecordingPartyRole) => (role === 'mentor' ? 'Mentor' : 'Learner');
+const getRoleLabel = (role: RecordingPartyRole) => (role === 'mentor' ? 'Mentor' : 'Mentee');
 
 export const useRecording = ({
   sessionId,
   sessionTopic = 'Mentoring Session',
   isSessionConnected,
-  localPartyRole = 'learner',
+  localPartyRole = 'mentee',
   remotePartyRole = 'mentor',
   remotePartyName,
 }: UseRecordingOptions) => {
