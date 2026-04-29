@@ -5,6 +5,7 @@ import FocusTrap from '../a11y/FocusTrap';
 import AccountService from '../../services/account.service';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import DataExportSettings from './DataExportSettings';
 
 const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 bg-white';
 
@@ -39,6 +40,8 @@ const DangerZoneSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <DataExportSettings />
+
       <div className="p-6 border border-red-100 bg-red-50/30 rounded-3xl">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
