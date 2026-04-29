@@ -25,6 +25,8 @@ export interface Message {
   senderName: string;
   senderAvatar?: string;
   content: string;
+  /** ts_headline HTML from search — sanitized before rendering */
+  headline?: string;
   timestamp: string;
   read: boolean;
   attachments?: MessageAttachment[];
@@ -59,6 +61,40 @@ export interface SendMessageRequest {
 export interface SearchMessagesRequest {
   conversationId: string;
   query: string;
+}
+
+// ─── Global message search (GET /messages/search) ─────────────────────────────
+
+export interface MessageSearchResult {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  timestamp: string;
+  read: boolean;
+  /** HTML snippet with <b> tags around matched terms, from the server's headline field */
+  headline?: string;
+}
+
+export interface MessageSearchMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface MessageSearchResponse {
+  data: {
+    results: MessageSearchResult[];
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+  meta: MessageSearchMeta;
 }
 
 export default class MessagingService {
@@ -131,6 +167,22 @@ export default class MessagingService {
         method: "GET",
         url: `${apiConfig.url.conversations}/${data.conversationId}/search`,
         params: { query: data.query },
+      },
+      opts,
+    );
+  }
+
+  /**
+   * Global message search across all conversations.
+   * GET /messages/search?q={query}&page={page}
+   * Returns offset-paginated results with headline HTML for match highlighting.
+   */
+  async searchGlobal(query: string, page = 1, opts?: RequestOptions) {
+    return request<MessageSearchResponse>(
+      {
+        method: "GET",
+        url: "/messages/search",
+        params: { q: query, page },
       },
       opts,
     );

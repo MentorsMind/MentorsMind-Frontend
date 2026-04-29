@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import ConversationList from '../components/messaging/ConversationList';
 import MessageThread from '../components/messaging/MessageThread';
 import MessageInput from '../components/messaging/MessageInput';
+import MessageSearchPanel from '../components/messaging/MessageSearchPanel';
 import UserAvatar from '../components/ui/UserAvatar';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
 import { useMinimumLoading } from '../hooks/useMinimumLoading';
@@ -27,6 +28,17 @@ const Messages: React.FC = () => {
     clearSearch,
     createConversation,
     loadMoreMessages,
+    // Global search
+    globalSearchInput,
+    globalSearchQuery,
+    globalSearchResults,
+    globalSearchMeta,
+    globalSearchLoading,
+    globalSearchPage,
+    handleGlobalSearchInput,
+    clearGlobalSearch,
+    globalSearchNextPage,
+    globalSearchPrevPage,
   } = useMessages();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +51,19 @@ const Messages: React.FC = () => {
   const showSkeleton = useMinimumLoading(isLoading || messagesLoading, 300);
 
   const displayMessages = searchQuery.trim() && searchResults.length > 0 ? searchResults : activeMessages;
+
+  const isGlobalSearchActive = globalSearchInput.trim().length > 0;
+
+  /** Navigate to the conversation containing the result, then scroll to the message */
+  const handleSearchResultSelect = (conversationId: string, messageId: string) => {
+    clearGlobalSearch();
+    selectConversation(conversationId);
+    // Scroll to the specific message after the thread renders
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`msg-${messageId}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,8 +79,8 @@ const Messages: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="grid md:grid-cols-[380px_1fr] h-[calc(100vh-220px)]">
-            {/* Conversation List */}
-            <div className={`border-r border-gray-100 ${activeConversationId ? 'hidden md:block' : 'block'}`}>
+            {/* Conversation List / Search Panel */}
+            <div className={`border-r border-gray-100 ${activeConversationId && !isGlobalSearchActive ? 'hidden md:block' : 'block'}`}>
               {showSkeleton ? (
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b border-gray-100">
@@ -71,6 +96,24 @@ const Messages: React.FC = () => {
                   conversations={conversations}
                   activeConversationId={activeConversationId}
                   onSelectConversation={selectConversation}
+                  searchInput={globalSearchInput}
+                  onSearchInput={handleGlobalSearchInput}
+                  onClearSearch={clearGlobalSearch}
+                  isSearchActive={isGlobalSearchActive}
+                  searchPanel={
+                    isGlobalSearchActive ? (
+                      <MessageSearchPanel
+                        query={globalSearchQuery}
+                        results={globalSearchResults}
+                        meta={globalSearchMeta}
+                        loading={globalSearchLoading}
+                        page={globalSearchPage}
+                        onSelectResult={handleSearchResultSelect}
+                        onNextPage={globalSearchNextPage}
+                        onPrevPage={globalSearchPrevPage}
+                      />
+                    ) : null
+                  }
                 />
               )}
             </div>
