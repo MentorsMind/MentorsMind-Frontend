@@ -37,9 +37,12 @@ const PageLoader = () => (
 
 import { RoleBasedRoute } from './components/navigation/RoleBasedRoute';
 import { useAuth } from './hooks/useAuth';
+import { useHeartbeat } from './hooks/useHeartbeat';
 
 function AppRoutes() {
   const auth = useAuth();
+  // Initialize heartbeat for authenticated users
+  useHeartbeat(30000); // 30 second interval
   return (
     <BrowserRouter>
       <SkipNavigation />
