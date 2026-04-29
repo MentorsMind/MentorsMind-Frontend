@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import type { EnhancedMessage, MessageStatus } from '../../hooks/useMessages';
 
 interface MessageThreadProps {
@@ -297,7 +298,17 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 ) : (
                   <>
                     {message.content && (
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                      message.headline
+                        ? <p
+                            className="text-sm whitespace-pre-wrap break-words [&_b]:font-semibold [&_b]:bg-yellow-200 [&_b]:text-gray-900 [&_b]:rounded-sm [&_b]:px-0.5"
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(message.headline, {
+                                ALLOWED_TAGS: ['b'],
+                                ALLOWED_ATTR: [],
+                              }),
+                            }}
+                          />
+                        : <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     )}
                     {message.attachments?.map((att) => (
                   <AttachmentItem key={att.id} attachment={att} isOwn={isOwn} />

@@ -25,6 +25,8 @@ export interface Message {
   senderName: string;
   senderAvatar?: string;
   content: string;
+  /** ts_headline HTML from search — sanitized before rendering */
+  headline?: string;
   timestamp: string;
   read: boolean;
   attachments?: MessageAttachment[];
