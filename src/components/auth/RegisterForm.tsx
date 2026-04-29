@@ -6,10 +6,15 @@ import Button from '../ui/Button';
 import Alert from '../ui/Alert';
 import OAuthButtons from './OAuthButtons';
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  onSuccess?: () => void;
+  onLogin?: () => void;
+}
+
+export default function RegisterForm({ onSuccess, onLogin }: RegisterFormProps) {
   const { register, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'learner' as 'mentor' | 'learner' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'mentee' as 'mentor' | 'mentee' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +30,11 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       await register(form.firstName, form.lastName, form.email, form.password, form.role);
-      navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/learner/onboarding');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        navigate(form.role === 'mentor' ? '/mentor/onboarding' : '/mentee/onboarding');
+      }
     } catch {
       // Error is already set in context, just handle navigation
     } finally {
@@ -57,11 +66,11 @@ export default function RegisterForm() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-text">I want to</label>
             <div className="grid grid-cols-2 gap-3">
-              {(['learner', 'mentor'] as const).map(r => (
+              {(['mentee', 'mentor'] as const).map(r => (
                 <label key={r} className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors
                   ${form.role === r ? 'border-primary bg-accent text-accent-foreground' : 'border-border hover:border-border/80'}`}>
                   <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} className="sr-only" />
-                  <span>{r === 'learner' ? '🎓 Learn' : '👨‍🏫 Mentor'}</span>
+                  <span>{r === 'mentee' ? '🎓 Learn' : '👨‍🏫 Mentor'}</span>
                 </label>
               ))}
             </div>
@@ -70,9 +79,15 @@ export default function RegisterForm() {
           <Button type="submit" loading={loading} className="w-full">Create Account</Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+          <button
+            type="button"
+            onClick={onLogin}
+            className="text-primary font-medium hover:underline"
+          >
+            Sign in
+          </button>
         </p>
       </div>
     </div>

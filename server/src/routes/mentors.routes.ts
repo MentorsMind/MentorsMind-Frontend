@@ -49,7 +49,7 @@ const mockAvailability = {
 const router = Router();
 
 // GET /mentors/:id/verification-status
-router.get('/:id/verification-status',
+router.get('/mentors/:id/verification-status',
   param('id').isString().notEmpty(),
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -123,7 +123,7 @@ router.get('/users/:id/public',
 );
 
 // GET /mentors/:id/rating-summary
-router.get('/:id/rating-summary',
+router.get('/mentors/:id/rating-summary',
   param('id').isString().notEmpty(),
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -135,13 +135,29 @@ router.get('/:id/rating-summary',
     }
 
     const { id } = req.params;
-    const ratingSummary = mockRatingSummary[id as keyof typeof mockRatingSummary];
+    let ratingSummary = mockRatingSummary[id as keyof typeof mockRatingSummary];
 
     if (!ratingSummary) {
-      return res.status(404).json({
-        success: false,
-        error: { code: 'RATING_SUMMARY_NOT_FOUND', message: 'Rating summary not found' }
-      } as ApiResponse);
+      const mentor = mockMentors[id as keyof typeof mockMentors];
+      if (mentor) {
+        ratingSummary = {
+          average: 0,
+          average_rating: 0,
+          total: 0,
+          breakdown: [
+            { stars: 5, count: 0 },
+            { stars: 4, count: 0 },
+            { stars: 3, count: 0 },
+            { stars: 2, count: 0 },
+            { stars: 1, count: 0 }
+          ]
+        };
+      } else {
+        return res.status(404).json({
+          success: false,
+          error: { code: 'RATING_SUMMARY_NOT_FOUND', message: 'Rating summary not found' }
+        } as ApiResponse);
+      }
     }
 
     res.json({
@@ -152,7 +168,7 @@ router.get('/:id/rating-summary',
 );
 
 // GET /mentors/:id/availability
-router.get('/:id/availability',
+router.get('/mentors/:id/availability',
   param('id').isString().notEmpty(),
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);

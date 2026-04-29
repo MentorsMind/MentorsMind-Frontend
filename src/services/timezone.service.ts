@@ -1,6 +1,5 @@
-import { apiClient } from './api.service';
+import apiClient from './api.client';
 import type {
-  MentorTimezoneData,
   MentorWithTimezoneData,
   TimezoneProximityFilter,
   MapMentorPin,
@@ -12,9 +11,7 @@ import {
   getNearbyTimezones,
   isMentorAvailableNow,
   getNextAvailableTime,
-  formatTimezoneOffset,
   parseTimezoneOffset,
-  getTimezonesByRegion,
 } from '../utils/timezone.utils';
 import type { Mentor } from '../types';
 
@@ -69,7 +66,7 @@ class TimezoneService {
       mentor,
       localTime: formatTime(localTime),
       timezoneOffset,
-      nextAvailableTime: getNextAvailableTime(mentor.timezone, mockAvailability),
+      nextAvailableTime: getNextAvailableTime(mentor.timezone, mockAvailability) ?? undefined,
       isAvailableNow: isMentorAvailableNow(mentor.timezone, mockAvailability),
     };
   }

@@ -6,7 +6,7 @@ import SearchResults from '../components/search/SearchResults';
 import SavedSearches from '../components/search/SavedSearches';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import { useSearch } from '../hooks/useSearch';
-import { Search as SearchIcon, Sliders, History, Sparkles } from 'lucide-react';
+import { Sliders, History, Sparkles } from 'lucide-react';
 
 const SearchPage: React.FC = () => {
   const {
@@ -19,8 +19,6 @@ const SearchPage: React.FC = () => {
     results,
     loading,
     error,
-    suggestions,
-    history,
     savedSearches,
     saveCurrentSearch,
     setPage,
@@ -57,13 +55,7 @@ const SearchPage: React.FC = () => {
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <SearchBar
-              ref={searchInputRef}
-              value={query}
-              onChange={setQuery}
-              suggestions={suggestions}
-              history={history}
               onSearch={(val) => setQuery(val)}
-              onClear={() => setQuery('')}
             />
             <button
               onClick={() => setIsAdvancedOpen(true)}
@@ -96,7 +88,7 @@ const SearchPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Sidebar */}
           <aside className="lg:w-80 flex-shrink-0 space-y-8">
-            <FilterPanel filters={filters} onFilterChange={setFilters} />
+            <FilterPanel filters={filters as any} onChange={setFilters as any} onReset={() => setFilters({} as any)} />
             <SavedSearches 
               savedSearches={savedSearches} 
               onApply={(opts) => {
@@ -141,8 +133,8 @@ const SearchPage: React.FC = () => {
       <AdvancedSearch 
         isOpen={isAdvancedOpen} 
         onClose={() => setIsAdvancedOpen(false)} 
-        filters={filters} 
-        onApply={setFilters} 
+        filters={filters as any} 
+        onApply={setFilters as any} 
       />
 
       {/* Analytics Indicator (Fake) */}

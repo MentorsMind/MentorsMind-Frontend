@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import Badge from '../ui/Badge';
 import Alert from '../ui/Alert';
 import type { AssetType, Mentor } from '../../types';
 
@@ -41,7 +40,11 @@ export default function PaymentModal({ isOpen, onClose, mentor, sessionDuration,
     onSuccess?.(mockHash);
   };
 
-  const handleClose = () => { setStep('review'); setIsSubmitting(false); onClose(); };
+  const handleClose = () => { 
+    setStep('review'); 
+    setIsSubmitting(false); 
+    onClose(); 
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={step === 'review' ? 'Confirm Payment' : undefined} size="md">
@@ -50,7 +53,7 @@ export default function PaymentModal({ isOpen, onClose, mentor, sessionDuration,
           {/* Mentor info */}
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-              {mentor.name[0]}
+              {mentor.name ? mentor.name[0] : 'M'}
             </div>
             <div>
               <p className="font-medium text-gray-900">{mentor.name}</p>

@@ -3,7 +3,7 @@
  */
 
 export type DocumentType = 'government_id' | 'professional_credentials' | 'linkedin_profile';
-export type VerificationStatus = 'not_started' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+export type VerificationStatus = 'not_started' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'more_info_required';
 export type FileFormat = 'PDF' | 'JPG' | 'PNG';
 
 export interface VerificationDocument {
@@ -15,6 +15,8 @@ export interface VerificationDocument {
   submittedAt?: string;
   approvedAt?: string;
   rejectionReason?: string;
+  additionalInfoRequest?: string;
+  reviewedBy?: string;
   fileUrl?: string;
 }
 
@@ -27,11 +29,45 @@ export interface VerificationTimeline {
 export interface MentorVerificationData {
   mentorId: string;
   documents: VerificationDocument[];
-  overallStatus: 'not_started' | 'in_progress' | 'approved' | 'rejected';
+  overallStatus: 'not_started' | 'in_progress' | 'approved' | 'rejected' | 'more_info_required';
   timeline: VerificationTimeline[];
   allDocumentsApproved: boolean;
   verificationBadgeEligible: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Presigned URL Upload Flow
+// ---------------------------------------------------------------------------
+
+export interface PresignedUrlRequest {
+  fileName: string;
+  fileType: string;
+}
+
+export interface PresignedUrlResponse {
+  presignedUrl: string;
+  publicUrl: string;
+  expiresAt: string;
+}
+
+export interface VerificationSubmitPayload {
+  documentType: DocumentType;
+  documentUrl: string;
+  credentialUrl?: string;
+  linkedinUrl?: string;
+  additionalNotes?: string;
+}
+
+export interface VerificationSubmitResponse {
+  success: boolean;
+  documentId: string;
+  status: VerificationStatus;
+  message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy types (kept for backward compatibility)
+// ---------------------------------------------------------------------------
 
 export interface DocumentUploadRequest {
   file: File;
@@ -93,6 +129,7 @@ export const STATUS_MESSAGES: Record<VerificationStatus, string> = {
   under_review: 'Under review by our team',
   approved: 'Verified and approved',
   rejected: 'Review required - resubmit needed',
+  more_info_required: 'Additional information needed',
 };
 
 /**
@@ -127,5 +164,10 @@ export const STATUS_COLORS: Record<VerificationStatus, {
     bg: 'bg-red-50',
     text: 'text-red-700',
     badge: 'bg-red-100 text-red-800',
+  },
+  more_info_required: {
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+    badge: 'bg-orange-100 text-orange-800',
   },
 };

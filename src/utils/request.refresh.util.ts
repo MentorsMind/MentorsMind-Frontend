@@ -1,47 +1,60 @@
 import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import toast from "react-hot-toast";
 import { refreshToken as authRefreshToken } from "../services/auth.service";
 import { triggerGlobalLogout } from "./global.logout.utils";
 import { tokenStorage } from "./token.storage.utils";
 
-type Queue = {
+// Messages that indicate the token is permanently invalid — do not attempt refresh
+const TERMINAL_401_MESSAGES = [
+  "Token has been revoked. Please log in again.",
+  "Signing key has expired.",
+];
+
+type QueueEntry = {
   resolve: (val: unknown) => void;
   reject: (reason?: unknown) => void;
 };
 
 let isRefreshing = false;
-let failedQueue: Array<Queue> = [];
+let failedQueue: QueueEntry[] = [];
 
-const processQueue = (err: unknown, token: string | null = null) => {
-  failedQueue.forEach((q) => {
-    if (err) {
-      q.reject(err);
-    } else {
-      q.resolve(token);
-    }
-  });
-
+const flushQueue = (err: unknown, token: string | null = null) => {
+  failedQueue.forEach((q) => (err ? q.reject(err) : q.resolve(token)));
   failedQueue = [];
 };
 
-export async function initTokenRefresh(api: AxiosInstance) {
-  api.interceptors.response.use(
-    (response) => response, // Pass through successful responses
-    async (err: AxiosError) => {
-      const originalReq = err.config as AxiosRequestConfig & {
-        _retry?: boolean;
-      };
+const clearAndLogout = () => {
+  tokenStorage.clearTokens();
+  triggerGlobalLogout();
+};
 
-      // Only handle 401 errors
+export function initTokenRefresh(api: AxiosInstance) {
+  api.interceptors.response.use(
+    (response) => response,
+    async (err: AxiosError) => {
+      const originalReq = err.config as AxiosRequestConfig & { _retry?: boolean };
+
       if (err.response?.status !== 401 || originalReq._retry) {
         return Promise.reject(err);
       }
 
-      // if already refreshing, queue request
+      // Check for terminal error messages — clear tokens and redirect immediately
+      const serverMessage: string =
+        (err.response?.data as any)?.error ??
+        (err.response?.data as any)?.message ??
+        "";
+
+      if (TERMINAL_401_MESSAGES.some((m) => serverMessage.includes(m))) {
+        clearAndLogout();
+        return Promise.reject(err);
+      }
+
+      // Queue concurrent requests that arrive while a refresh is in flight
       if (isRefreshing) {
-        return new Promise((res, rej) => {
+        return new Promise((resolve, reject) => {
           failedQueue.push({
-            resolve: () => res(api(originalReq)),
-            reject: rej,
+            resolve: () => resolve(api(originalReq)),
+            reject,
           });
         });
       }
@@ -50,29 +63,23 @@ export async function initTokenRefresh(api: AxiosInstance) {
       originalReq._retry = true;
 
       try {
-        // Attemp rotating token
         const rt = tokenStorage.getRefreshToken();
-        if (!rt) {
-          throw new Error("No refesh token available");
-        }
+        if (!rt) throw new Error("No refresh token available");
 
-        const { token: accessToken, refreshToken: newRefreshToken } = await authRefreshToken(rt);
-        // Update token
+        const { token: accessToken, refreshToken: newRefreshToken } =
+          await authRefreshToken(rt);
+
         tokenStorage.setTokens(accessToken, newRefreshToken);
 
-        // Retry queued request with the new token
-        processQueue(null, accessToken);
+        // Replay all queued requests with the new token
+        flushQueue(null, accessToken);
 
-        // Retry original request
         return api(originalReq);
-      } catch (err) {
-        // Refresh fail - logout user
-        processQueue(err, null);
-        tokenStorage.cleaTokens();
-
-        triggerGlobalLogout();
-
-        return Promise.reject(err);
+      } catch (refreshErr) {
+        flushQueue(refreshErr, null);
+        clearAndLogout();
+        toast.error("Session expired. Please log in again.");
+        return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
       }

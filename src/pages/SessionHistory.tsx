@@ -1,13 +1,15 @@
-import type { Session } from '../types';
-import Badge from '../components/ui/Badge';
-import NoteEditor from '../components/learner/NoteEditor';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Button from '../components/ui/Button';
+import SessionHistoryCard from '../components/session/SessionHistoryCard';
+import DisputeFormModal from '../components/session/DisputeFormModal';
 import { SkeletonCard } from '../components/animations/SkeletonLoader';
-import { useMinimumLoading } from '../hooks/useMinimumLoading';
+import { useBookingHistory, TabKey, StatusFilter } from '../hooks/useBookingHistory';
+import { useFeedback } from '../hooks/useFeedback';
+import FeedbackForm from '../components/learner/FeedbackForm';
+import FeedbackHistory from '../components/learner/FeedbackHistory';
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
-  pending: 'warning', confirmed: 'default', completed: 'success', cancelled: 'danger', rescheduled: 'warning',
-};
+
 
 function EmptyState({ tab }: { tab: TabKey }) {
   const navigate = useNavigate();
@@ -36,119 +38,144 @@ function EmptyState({ tab }: { tab: TabKey }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+export type SessionHistoryTab = TabKey | 'feedback';
 
 export default function SessionHistory() {
-  const [activeNotes, setActiveNotes] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const {
+    tab: _bookingTab, switchTab: switchBookingTab,
+    filters, updateFilter,
+    bookings,
+    totalCount,
+    hasMore,
+    loadMore,
+    isLoading: isHookLoading,
+    isInDisputeWindow,
+  } = useBookingHistory();
+
+  const { history, editFeedback, submitFeedback } = useFeedback();
+
+  const [tab, setTab] = useState<SessionHistoryTab>('upcoming');
+
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<{ id: string, txId: string } | null>(null);
   
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  const showSkeleton = useMinimumLoading(isLoading, 300);
+  const showSkeleton = isLoading || isHookLoading;
+
+  const handleLeaveReview = (id: string) => console.log('Leave review', id);
+  const handleOpenDispute = (id: string, transactionId?: string | null) => {
+    if (transactionId) {
+      setSelectedBookingForDispute({ id, txId: transactionId });
+    }
+  };
+  const handleViewReceipt = (url: string) => window.open(url, '_blank');
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900">Session History</h1>
-      <div className="space-y-3">
-        {showSkeleton ? (
-          <>
-            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} variant="booking" />)}
-          </>
-        ) : MOCK.map(s => (
-          <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{new Date(s.scheduledAt).toLocaleDateString()}</p>
-                <p className="text-xs text-gray-500">{s.duration} min · {s.price} {s.asset}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
-                <Link
-                  to={`/sessions/${s.id}`}
-                  className="text-xs font-semibold text-indigo-600 hover:underline"
-                >
-                  Details
-                </Link>
-                <button onClick={() => setActiveNotes(activeNotes === s.id ? null : s.id)}
-                  className="text-xs text-indigo-600 hover:underline">Notes</button>
-              </div>
-            </div>
-            {activeNotes === s.id && <NoteEditor sessionId={s.id} />}
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Your Learning History</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">Export Report</Button>
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => { setTab('upcoming'); switchBookingTab('upcoming'); }}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+              tab === 'upcoming' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Upcoming
+          </button>
+          <button
+            onClick={() => { setTab('past'); switchBookingTab('past'); }}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+              tab === 'past' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Past
+          </button>
+          <button
+            onClick={() => setTab('feedback')}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+              tab === 'feedback' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Feedback
+          </button>
+        </div>
+        </div>
       </div>
 
-      {/* Filters — only for Past tab */}
+      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Time Invested</h2>
+        <p className="text-2xl font-bold text-gray-900 mt-1">12.5 hours</p>
+      </div>
+
       {tab === 'past' && (
-        <div className="flex flex-wrap gap-3 items-end">
+        <div className="flex flex-wrap gap-3 items-end bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Status</label>
             <select
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value as StatusFilter)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
             >
-              <option value="all">All</option>
+              <option value="all">All Statuses</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">From</label>
             <input
               type="date"
               value={filters.dateFrom}
               onChange={(e) => updateFilter('dateFrom', e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">To</label>
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => updateFilter('dateTo', e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
             />
           </div>
           {(filters.status !== 'all' || filters.dateFrom || filters.dateTo) && (
             <button
               onClick={() => { updateFilter('status', 'all'); updateFilter('dateFrom', ''); updateFilter('dateTo', ''); }}
-              className="text-xs text-gray-500 hover:text-gray-700 underline pb-1.5"
+              className="text-xs text-indigo-600 font-bold hover:text-indigo-700 pb-2.5"
             >
-              Clear filters
+              Clear
             </button>
           )}
         </div>
       )}
 
-      {/* Results count */}
-      {totalCount > 0 && (
-        <p className="text-xs text-gray-400">{totalCount} session{totalCount !== 1 ? 's' : ''}</p>
-      )}
-
-      {/* List */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
-              <div className="flex gap-3">
-                <div className="w-11 h-11 rounded-full bg-gray-200" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                </div>
-              </div>
-            </div>
-          ))}
+      {tab === 'feedback' ? (
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Post-session feedback</h3>
+            <FeedbackForm onSubmit={submitFeedback} />
+          </div>
+          <div>
+            <FeedbackHistory history={history} onEdit={editFeedback} />
+          </div>
+        </div>
+      ) : showSkeleton ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <SkeletonCard key={i} variant="booking" />)}
         </div>
       ) : bookings.length === 0 ? (
-        <EmptyState tab={tab} />
+        <EmptyState tab={((tab as string) === 'feedback' ? 'past' : tab) as TabKey} />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {bookings.map((b) => (
             <SessionHistoryCard
               key={b.id}
@@ -160,12 +187,30 @@ export default function SessionHistory() {
             />
           ))}
 
-          {hasMore && (
-            <div className="flex justify-center pt-2">
-              <Button variant="outline" onClick={loadMore}>Load more</Button>
+          {hasMore && tab !== 'upcoming' && (
+            <div className="flex justify-center pt-4">
+              <Button variant="outline" onClick={loadMore}>Load more sessions</Button>
             </div>
           )}
         </div>
+      )}
+      
+      {selectedBookingForDispute && (
+        <DisputeFormModal
+          isOpen={!!selectedBookingForDispute}
+          onClose={() => setSelectedBookingForDispute(null)}
+          bookingId={selectedBookingForDispute.id}
+          transactionId={selectedBookingForDispute.txId}
+          onSuccess={(disputeId) => {
+            navigate(`/disputes/${disputeId}`);
+          }}
+        />
+      )}
+
+      {totalCount > 0 && !showSkeleton && tab !== 'feedback' && (
+        <p className="text-center text-xs text-gray-400 mt-4">
+          Showing {bookings.length} of {totalCount} session{totalCount !== 1 ? 's' : ''}
+        </p>
       )}
     </div>
   );

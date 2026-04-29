@@ -1,6 +1,6 @@
 /**
- * FileUpload component with drag-and-drop support
- * Handles file selection, validation, and upload progress
+ * FileUpload component — simplified to only handle file selection and LinkedIn URL input.
+ * Upload logic (presigned URL + direct-to-storage) is handled by the parent via useVerification.
  */
 
 import React, { useRef, useState } from 'react';
@@ -14,6 +14,9 @@ interface FileUploadProps {
   onLinkedInUrlChange?: (url: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  uploadProgress?: number;
+  uploadStatus?: 'idle' | 'requesting_url' | 'uploading' | 'uploaded' | 'error';
+  uploadError?: string | null;
 }
 
 interface ValidationState {
@@ -27,6 +30,9 @@ export default function FileUpload({
   onLinkedInUrlChange,
   disabled = false,
   isLoading = false,
+  uploadProgress = 0,
+  uploadStatus = 'idle',
+  uploadError = null,
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -37,7 +43,6 @@ export default function FileUpload({
   const config = DOCUMENT_TYPES[documentType];
   const isLinkedIn = documentType === 'linkedin_profile';
 
-  // Handle file selection from input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.currentTarget.files?.[0];
     if (file) {
@@ -45,31 +50,28 @@ export default function FileUpload({
     }
   };
 
-  // Validate and set file
   const validateAndSetFile = (file: File) => {
-    const validation = validateFile(
+    const result = validateFile(
       file,
       config.requiredFormats as string[],
-      config.maxSize
+      config.maxSize,
     );
 
-    if (validation.valid) {
+    if (result.valid) {
       setSelectedFile(file);
       setValidation({ isValid: true });
       onFileSelect(file);
     } else {
       setSelectedFile(null);
-      setValidation({ isValid: false, error: validation.error });
+      setValidation({ isValid: false, error: result.error });
       onFileSelect(null);
     }
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Handle drag and drop
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -102,25 +104,23 @@ export default function FileUpload({
     }
   };
 
-  // Handle LinkedIn URL change
   const handleLinkedInUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setLinkedInUrl(url);
 
     if (url) {
-      const validation = validateLinkedInUrl(url);
-      if (validation.valid) {
+      const result = validateLinkedInUrl(url);
+      if (result.valid) {
         setValidation({ isValid: true });
         onLinkedInUrlChange?.(url);
       } else {
-        setValidation({ isValid: false, error: validation.error });
+        setValidation({ isValid: false, error: result.error });
       }
     } else {
       setValidation({ isValid: true });
     }
   };
 
-  // Clear selected file
   const handleClearFile = () => {
     setSelectedFile(null);
     setValidation({ isValid: true });
@@ -130,7 +130,6 @@ export default function FileUpload({
     }
   };
 
-  // Clear LinkedIn URL
   const handleClearLinkedInUrl = () => {
     setLinkedInUrl('');
     setValidation({ isValid: true });
@@ -189,7 +188,6 @@ export default function FileUpload({
     );
   }
 
-  // File upload UI
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-700">
@@ -198,7 +196,6 @@ export default function FileUpload({
       </label>
 
       {selectedFile ? (
-        // File selected state
         <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
@@ -225,9 +222,43 @@ export default function FileUpload({
               </button>
             )}
           </div>
+
+          {(uploadStatus === 'requesting_url' || uploadStatus === 'uploading') && (
+            <div className="mt-3 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-medium text-gray-700">
+                  {uploadStatus === 'requesting_url' ? 'Requesting upload URL...' : 'Uploading...'}
+                </span>
+                <span className="text-gray-600">{uploadProgress}%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-300 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
+                  role="progressbar"
+                  aria-valuenow={uploadProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {uploadStatus === 'uploaded' && (
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-green-100 p-2">
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600 mt-0.5" />
+              <p className="text-xs text-green-800">Upload complete</p>
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 p-2">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-500 mt-0.5" />
+              <p className="text-xs text-red-800">{uploadError}</p>
+            </div>
+          )}
         </div>
       ) : (
-        // Drag and drop area
         <div
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}

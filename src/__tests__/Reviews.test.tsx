@@ -13,7 +13,7 @@ describe('Rating & Reviews', () => {
 
   test('ReviewForm validates required fields', () => {
     const onSubmit = vi.fn();
-    render(<ReviewForm onSubmit={onSubmit} />);
+    render(<ReviewForm bookingId="booking-m1-001" onSubmit={onSubmit} />);
     
     fireEvent.click(screen.getByText(/Post Review/i));
     expect(screen.getByText(/Please select a rating/i)).toBeInTheDocument();

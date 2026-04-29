@@ -79,4 +79,18 @@ export default class AccountService {
       opts
     );
   }
+
+  async requestDeletion(opts?: RequestOptions): Promise<{ deletion_scheduled_for: string }> {
+    return request<{ deletion_scheduled_for: string }>(
+      { method: 'POST', url: 'users/me/request-deletion' },
+      opts
+    );
+  }
+
+  async cancelDeletion(opts?: RequestOptions): Promise<void> {
+    return request<void>(
+      { method: 'POST', url: 'users/me/cancel-deletion' },
+      opts
+    );
+  }
 }

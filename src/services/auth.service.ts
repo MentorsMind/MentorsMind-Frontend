@@ -46,7 +46,7 @@ export async function register(
   lastName: string,
   email: string,
   password: string,
-  role: 'mentor' | 'learner'
+  role: 'mentor' | 'mentee'
 ): Promise<AuthResponse> {
   const { data } = await api.post('/auth/register', { firstName, lastName, email, password, role });
   return data.data;
@@ -64,6 +64,14 @@ export async function getMe(): Promise<User> {
 
 export async function logout(): Promise<void> {
   await api.post('/auth/logout').catch(() => {});
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  await api.post('/auth/verify-email', { token });
+}
+
+export async function resendVerification(): Promise<void> {
+  await api.post('/auth/resend-verification');
 }
 
 // ── MFA ───────────────────────────────────────────────────────────────────────

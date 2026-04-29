@@ -257,8 +257,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         const showAvatar =
           !isOwn &&
           (index === 0 || messages[index - 1].senderId !== message.senderId);
+        const isDeleted = message.content === '[Message deleted]';
         const isHighlighted =
-          searchQuery && message.content.toLowerCase().includes(searchQuery.toLowerCase());
+          !isDeleted && searchQuery && message.content.toLowerCase().includes(searchQuery.toLowerCase());
 
         return (
           <div
@@ -285,16 +286,23 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[70%]`}>
               <div
                 className={`rounded-2xl px-4 py-2.5 ${
-                  isOwn ? 'bg-stellar text-white' : 'bg-gray-100 text-gray-900'
+                  isDeleted
+                    ? 'bg-gray-50 border border-gray-200'
+                    : isOwn ? 'bg-stellar text-white' : 'bg-gray-100 text-gray-900'
                 } ${isHighlighted ? 'ring-2 ring-yellow-400' : ''}`}
               >
-                {message.content && (
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                )}
-
-                {message.attachments?.map((att) => (
+                {isDeleted ? (
+                  <p className="text-sm italic text-gray-400">[Message deleted]</p>
+                ) : (
+                  <>
+                    {message.content && (
+                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    )}
+                    {message.attachments?.map((att) => (
                   <AttachmentItem key={att.id} attachment={att} isOwn={isOwn} />
                 ))}
+                  </>
+                )}
               </div>
 
               {/* Timestamp + status */}

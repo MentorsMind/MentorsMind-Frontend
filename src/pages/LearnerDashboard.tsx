@@ -65,6 +65,18 @@ export default function LearnerDashboard() {
           <SessionList />
         )}
       </div>
+
+      {/* Post-session review prompt — auto-appears when a completed session has no review */}
+      {pendingSession && (
+        <PostSessionReview
+          session={pendingSession}
+          submitted={submitted}
+          updatedRating={updatedRating}
+          onSubmit={submitReview}
+          onDismiss={dismissForNow}
+          onClose={close}
+        />
+      )}
     </div>
   );
 }
