@@ -1,4 +1,11 @@
-import type { MentorPayoutSession, ChartSeries, ChartRange, SortKey } from '../types/earnings.types';
+import type {
+  MentorPayoutSession,
+  ChartSeries,
+  ChartRange,
+  SortKey,
+  GroupBy,
+  MentorEarningsBreakdownItem,
+} from '../types/earnings.types';
 
 // ---------------------------------------------------------------------------
 // ISO week helpers
@@ -33,7 +40,48 @@ function formatMonthLabel(year: number, month: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// aggregateChartSeries
+// parseWalletAmount
+// ---------------------------------------------------------------------------
+
+/**
+ * Parses a wallet earnings amount string safely using parseFloat().
+ * Returns 0 for empty, null, undefined, or unparseable strings.
+ */
+export function parseWalletAmount(value: string | null | undefined): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+// ---------------------------------------------------------------------------
+// formatPeriodLabel
+// ---------------------------------------------------------------------------
+
+/**
+ * Formats a period date string from the mentor earnings breakdown
+ * based on the current groupBy value.
+ */
+export function formatPeriodLabel(period: string, groupBy: GroupBy): string {
+  const d = new Date(period);
+  if (Number.isNaN(d.getTime())) return period;
+
+  switch (groupBy) {
+    case 'day':
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    case 'week': {
+      const week = getISOWeek(d);
+      const year = getISOWeekYear(d);
+      return formatWeekLabel(week, year);
+    }
+    case 'month':
+      return formatMonthLabel(d.getFullYear(), d.getMonth());
+    default:
+      return period;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// aggregateChartSeries (legacy — from sessions)
 // ---------------------------------------------------------------------------
 
 /**
@@ -103,6 +151,24 @@ export function aggregateChartSeries(
 
     return result;
   }
+}
+
+// ---------------------------------------------------------------------------
+// aggregateBreakdownSeries (new — from mentor earnings breakdown)
+// ---------------------------------------------------------------------------
+
+/**
+ * Converts the mentor earnings breakdown array into ChartSeries.
+ * Parses each period with new Date() and formats the label by groupBy.
+ */
+export function aggregateBreakdownSeries(
+  breakdown: MentorEarningsBreakdownItem[],
+  groupBy: GroupBy,
+): ChartSeries[] {
+  return breakdown.map((item) => ({
+    label: formatPeriodLabel(item.period, groupBy),
+    netPayout: item.earnings,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -191,3 +257,4 @@ export function sortSessions(
   });
   return copy;
 }
+

@@ -2,14 +2,9 @@ import { apiConfig } from '../config/api.config';
 import type { RequestOptions } from '../types/api.types';
 import type {
   Goal,
-  GoalSummary,
-  GoalStats,
   GoalsListResponse,
   CreateGoalPayload,
   UpdateGoalPayload,
-  UpdateProgressPayload,
-  LinkSessionPayload,
-  GoalTemplate,
 } from '../types';
 import { request } from '../utils/request.utils';
 

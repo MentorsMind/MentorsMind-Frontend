@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import UserAvatar from '../ui/UserAvatar';
 
 export interface SecondaryNavItem {
   id: string;
@@ -114,17 +115,13 @@ export function HamburgerDrawer({ isOpen, onClose, secondaryNavItems }: Hamburge
       >
         {/* User info header */}
         <div className="flex items-center gap-3 px-5 py-6 border-b border-border">
-          {user?.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={displayName}
-              className="w-11 h-11 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center flex-shrink-0 text-accent-foreground font-semibold text-lg">
-              {displayName ? displayName.charAt(0).toUpperCase() : '?'}
-            </div>
-          )}
+          <UserAvatar
+            avatarUrl={user?.avatarUrl}
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            name={displayName}
+            size="md"
+          />
           <div className="min-w-0">
             <p className="font-semibold text-text truncate">{displayName || 'User'}</p>
             {roleLabel && (

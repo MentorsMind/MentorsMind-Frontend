@@ -53,12 +53,8 @@ const TIMEZONE_DATABASE: TimezoneInfo[] = [
   { ianaId: 'Pacific/Auckland', region: 'Asia/Pacific', offset: 12, displayName: 'NZDT (UTC+12)', label: 'Pacific/Auckland' },
 ];
 
-const REGION_COORDINATES: Record<TimezoneRegion, { center: [number, number]; zoom: number }> = {
-  'Americas': [{ lat: 0, lng: -100 }, 3],
-  'Europe': [{ lat: 50, lng: 15 }, 4],
-  'Africa': [{ lat: 0, lng: 20 }, 3],
-  'Asia/Pacific': [{ lat: 20, lng: 100 }, 3],
-};
+
+
 
 /**
  * Get all available timezones

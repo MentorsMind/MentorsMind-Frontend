@@ -42,8 +42,7 @@ const PlatformStats: React.FC = () => {
 
         <LineChart
           title="Monthly Growth"
-          description={`Updated ${new Date(stats.source.lastUpdated).toLocaleTimeString()}`}
-          data={stats.growthTrend}
+          data={stats.growthTrend as any}
           series={[
             { key: 'sessions', name: 'Sessions', color: '#2563eb' },
             { key: 'mentors', name: 'Mentors', color: '#0f766e' },

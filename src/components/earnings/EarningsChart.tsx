@@ -8,12 +8,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { ChartSeries, ChartRange } from '../../types/earnings.types';
+import type { ChartSeries, GroupBy } from '../../types/earnings.types';
 
 interface EarningsChartProps {
   series: ChartSeries[];
-  range: ChartRange;
-  onRangeChange: (range: ChartRange) => void;
+  groupBy: GroupBy;
+  onGroupByChange: (groupBy: GroupBy) => void;
   currency: string;
 }
 
@@ -36,33 +36,32 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, c
   );
 };
 
-const EarningsChart: React.FC<EarningsChartProps> = ({ series, range, onRangeChange, currency }) => {
+const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+];
+
+const EarningsChart: React.FC<EarningsChartProps> = ({ series, groupBy, onGroupByChange, currency }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
-      {/* Weekly / Monthly toggle */}
+      {/* Day / Week / Month toggle */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-700">Net Earnings</h3>
         <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-          <button
-            onClick={() => onRangeChange('weekly')}
-            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-              range === 'weekly'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Weekly
-          </button>
-          <button
-            onClick={() => onRangeChange('monthly')}
-            className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-200 ${
-              range === 'monthly'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Monthly
-          </button>
+          {GROUP_BY_OPTIONS.map((option, index) => (
+            <button
+              key={option.value}
+              onClick={() => onGroupByChange(option.value)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                groupBy === option.value
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              } ${index > 0 ? 'border-l border-gray-200' : ''}`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -87,3 +86,4 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ series, range, onRangeCha
 };
 
 export default EarningsChart;
+
