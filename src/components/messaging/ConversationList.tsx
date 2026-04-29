@@ -6,6 +6,13 @@ interface ConversationListProps {
   conversations: Conversation[];
   activeConversationId: string | null;
   onSelectConversation: (conversationId: string) => void;
+  // Global search props
+  searchInput: string;
+  onSearchInput: (value: string) => void;
+  onClearSearch: () => void;
+  isSearchActive: boolean;
+  /** Rendered in place of the conversation list when search is active */
+  searchPanel?: React.ReactNode;
 }
 
 const formatTimeAgo = (dateString: string): string => {
@@ -37,6 +44,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
   activeConversationId,
   onSelectConversation,
+  searchInput,
+  onSearchInput,
+  onClearSearch,
+  isSearchActive,
+  searchPanel,
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -48,8 +60,46 @@ const ConversationList: React.FC<ConversationListProps> = ({
         </p>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Global search input */}
+      <div className="px-3 py-2 border-b border-gray-100">
+        <div className="relative">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="search"
+            placeholder="Search all messages…"
+            value={searchInput}
+            onChange={(e) => onSearchInput(e.target.value)}
+            aria-label="Search all messages"
+            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-stellar/20 focus:border-stellar transition-all"
+          />
+          {searchInput && (
+            <button
+              onClick={onClearSearch}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Search results panel — shown in place of conversation list when active */}
+      {isSearchActive && searchPanel ? (
+        <div className="flex-1 overflow-hidden">
+          {searchPanel}
+        </div>
+      ) : (
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
             <div className="w-14 h-14 mb-3 rounded-full bg-gray-100 flex items-center justify-center">
@@ -116,7 +166,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             })}
           </ul>
         )}
-      </div>
+      )}
     </div>
   );
 };
