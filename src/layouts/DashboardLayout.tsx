@@ -10,6 +10,7 @@ import { HamburgerDrawer, SECONDARY_NAV_ITEMS } from '../components/navigation/H
 import usePushNotifications from '../hooks/usePushNotifications';
 import { PermissionBanner } from '../components/notifications/PermissionBanner';
 import { DeniedTooltip } from '../components/notifications/DeniedTooltip';
+import { usePresenceHeartbeat } from '../hooks/usePresenceHeartbeat';
 
 // Hamburger icon
 const HamburgerIcon = () => (
@@ -36,6 +37,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { isMobile } = useMobile();
   const { drawerOpen, openDrawer, closeDrawer, sidebarCollapsed, toggleSidebarCollapse } =
     useNavLayout();
+  usePresenceHeartbeat();
   const {
     showBanner,
     showDeniedTooltip,
