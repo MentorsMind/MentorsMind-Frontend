@@ -264,6 +264,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         return (
           <div
             key={message.id}
+            id={`msg-${message.id}`}
             className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'} ${
               message.optimistic ? 'opacity-70' : 'opacity-100'
             } transition-opacity`}

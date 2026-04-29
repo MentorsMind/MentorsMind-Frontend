@@ -7,6 +7,7 @@ import {
   sortSessions,
   parseWalletAmount,
 } from '../utils/earnings.utils';
+import { fetchAndDownloadCSV } from '../utils/analyticsExport.utils';
 import type {
   EarningsSummaryData,
   MentorPayoutSession,
@@ -76,6 +77,7 @@ export interface UseEarningsReturn {
   sortDir: 'asc' | 'desc';
   setSort: (key: SortKey) => void;
   exportCSV: () => void;
+  exportLoading: boolean;
   currency: string;
 }
 
@@ -217,47 +219,28 @@ export function useEarnings(): UseEarningsReturn {
     };
   }, [walletEarnings]);
 
-  const exportCSV = useCallback(() => {
-    const headers = [
-      'Date',
-      'Mentee Name',
-      'Duration (min)',
-      'Gross Amount',
-      'Platform Fee',
-      'Net Payout',
-      'Asset',
-      'Payout Status',
-      'Transaction Hash',
-    ];
+  const [exportLoading, setExportLoading] = useState(false);
 
-    const rows = allSortedSessions.map((s) => [
-      s.sessionDate,
-      s.menteeName,
-      String(s.durationMinutes),
-      s.grossAmount.toFixed(2),
-      s.platformFee.toFixed(2),
-      s.netPayout.toFixed(2),
-      s.asset,
-      s.payoutStatus,
-      s.txHash ?? '',
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const date = new Date().toISOString().split('T')[0];
-    link.href = url;
-    link.download = `mentor-earnings-${date}.csv`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [allSortedSessions]);
+  const exportCSV = useCallback(async () => {
+    if (exportLoading) return;
+    setExportLoading(true);
+    try {
+      const params = new URLSearchParams({
+        from: dateRange.from,
+        to: dateRange.to,
+      });
+      await fetchAndDownloadCSV(
+        `/api/export/earnings?${params.toString()}`,
+        'earnings.csv',
+      );
+    } catch (err: unknown) {
+      // Surface the error as a toast or console — don't crash the page
+      const message = err instanceof Error ? err.message : 'Export failed. Please try again.';
+      console.error('[exportCSV]', message);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [dateRange, exportLoading]);
 
   return {
     mentorEarnings,
@@ -281,6 +264,7 @@ export function useEarnings(): UseEarningsReturn {
     sortDir,
     setSort,
     exportCSV,
+    exportLoading,
     currency,
   };
 }
